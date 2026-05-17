@@ -88,7 +88,7 @@
     position: fixed;
     top: 0; left: 0; right: 0;
     z-index: 1000;
-    padding: 1.4rem 2rem;
+    padding: 1.4rem 4vw;
     transition: all 0.4s ease;
   }
   .nav.scrolled {
@@ -96,12 +96,11 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(212, 175, 55, 0.15);
-    padding: 0.9rem 2rem;
+    padding: 0.9rem 4vw;
     box-shadow: 0 4px 30px rgba(0,0,0,0.4);
   }
   .nav-inner {
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
