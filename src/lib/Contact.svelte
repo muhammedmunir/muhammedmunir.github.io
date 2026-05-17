@@ -33,11 +33,25 @@
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
           access_key: WEB3FORMS_KEY,
-          name: formData.name,
-          email: formData.email,
-          subject: `[Portfolio] ${formData.subject}`,
-          message: formData.message,
-          from_name: 'Portfolio Contact Form',
+          subject: `[Portfolio] ${formData.subject} — dari ${formData.name}`,
+          from_name: formData.name,
+          replyto: formData.email,
+          message: `
+Mesej baharu diterima dari Portfolio — muhammedmunir.github.io
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Nama     : ${formData.name}
+  Email    : ${formData.email}
+  Subjek   : ${formData.subject}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Mesej    :
+
+${formData.message}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
+          `.trim(),
           botcheck: ''
         })
       });
