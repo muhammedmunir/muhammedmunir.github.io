@@ -9,6 +9,9 @@
   let formData = $state({ name: '', email: '', subject: '', message: '' });
   let submitted = $state(false);
   let submitting = $state(false);
+  let errorMsg = $state('');
+
+  const WEB3FORMS_KEY = '2a358a62-7093-4dfa-bb91-1b9fa8957ba2';
 
   const t = derived(lang, ($l) => translations[$l].contact);
 
@@ -19,10 +22,38 @@
     gsap.fromTo('.contact-form-wrap', { opacity:0, x:40 }, { opacity:1, x:0, duration:0.8, ease:'power3.out', scrollTrigger:{ trigger:'.contact-form-wrap', start:'top 85%' } });
   });
 
-  function handleSubmit(e: Event) {
+  async function handleSubmit(e: Event) {
     e.preventDefault();
     submitting = true;
-    setTimeout(() => { submitted = true; submitting = false; }, 1500);
+    errorMsg = '';
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          access_key: WEB3FORMS_KEY,
+          name: formData.name,
+          email: formData.email,
+          subject: `[Portfolio] ${formData.subject}`,
+          message: formData.message,
+          from_name: 'Portfolio Contact Form',
+          botcheck: ''
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        submitted = true;
+      } else {
+        errorMsg = result.message || 'Ralat berlaku. Cuba semula.';
+      }
+    } catch {
+      errorMsg = 'Tiada sambungan internet. Cuba semula.';
+    } finally {
+      submitting = false;
+    }
   }
 
   const contactDetails = [
@@ -116,6 +147,9 @@
                 placeholder={$t.msg_placeholder} rows="5" required></textarea>
             </div>
 
+            {#if errorMsg}
+              <div class="error-banner" role="alert">⚠️ {errorMsg}</div>
+            {/if}
             <button type="submit" class="btn btn-primary submit-btn" id="contact-submit-btn" disabled={submitting}>
               {#if submitting}
                 <span class="spinner" aria-hidden="true"></span>
@@ -166,6 +200,7 @@
   input:focus, textarea:focus { border-color:var(--gold); background:rgba(212,175,55,0.04); box-shadow:0 0 0 3px rgba(212,175,55,0.1); }
   textarea { min-height:120px; }
   .submit-btn { width:100%; justify-content:center; padding:1rem; font-size:1rem; }
+  .error-banner { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:8px; padding:0.75rem 1rem; font-size:0.85rem; color:#fca5a5; margin-bottom:1rem; }
   .spinner { width:16px;height:16px; border:2px solid rgba(0,0,0,0.3); border-top-color:var(--navy-dark); border-radius:50%; animation:spin 0.8s linear infinite; }
   @keyframes spin { to{transform:rotate(360deg);} }
   .success-state { display:flex; flex-direction:column; align-items:center; text-align:center; gap:1rem; padding:2rem; }
