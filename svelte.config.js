@@ -13,7 +13,7 @@ const config = {
 			precompress: false,
 			strict: true
 		}),
-		// Empty base = root URL (for username.github.io user site)
+		// User site = empty base → https://muhammedmunir.github.io
 		paths: {
 			base: ''
 		}
