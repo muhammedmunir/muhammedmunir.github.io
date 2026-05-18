@@ -9,6 +9,7 @@
 
   let { children }: { children: Snippet } = $props();
   let navScrolled = $state(false);
+  let mobileOpen = $state(false);
 
   // Reactive translation
   const t = derived(lang, ($lang) => translations[$lang]);
@@ -73,8 +74,37 @@
         {$t.nav.hire}
       </a>
       {/if}
+
+      <!-- Hamburger button (mobile only) -->
+      <button
+        class="hamburger"
+        class:open={mobileOpen}
+        onclick={() => mobileOpen = !mobileOpen}
+        aria-label={mobileOpen ? 'Tutup menu' : 'Buka menu'}
+        aria-expanded={mobileOpen}
+      >
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
+
+  <!-- Mobile dropdown menu -->
+  {#if mobileOpen}
+    <div class="mobile-menu" role="navigation" aria-label="Mobile navigation">
+      {#each navKeys as link}
+        <a
+          href={link.href}
+          class="mobile-nav-link"
+          onclick={() => mobileOpen = false}
+        >{$t.nav[link.key]}</a>
+      {/each}
+      <div class="mobile-menu-divider"></div>
+      <a href="/games" class="mobile-nav-link mobile-games-link" onclick={() => mobileOpen = false}>🎮 Games</a>
+      <a href="#contact" class="btn btn-primary mobile-cta" onclick={() => mobileOpen = false} id="mobile-hire-btn">
+        {$t.nav.hire}
+      </a>
+    </div>
+  {/if}
 </nav>
 {/if}
 
@@ -100,7 +130,9 @@
     top: 0; left: 0; right: 0;
     z-index: 1000;
     padding: 1.4rem 4vw;
-    transition: all 0.4s ease;
+    /* Push content below iOS notch / Dynamic Island */
+    padding-top: max(1.4rem, env(safe-area-inset-top, 0px));
+    transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease, padding 0.4s ease;
   }
   .nav.scrolled {
     background: rgba(10, 20, 35, 0.92);
@@ -243,11 +275,84 @@
   }
   .footer-copy { font-size: 0.8rem; color: var(--text-muted); }
 
+  /* Hamburger button */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 4px;
+    border-radius: 6px;
+    transition: var(--transition);
+  }
+  .hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--text-secondary);
+    border-radius: 2px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); background: var(--gold); }
+  .hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); background: var(--gold); }
+
+  /* Mobile dropdown menu */
+  .mobile-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.75rem 4vw 1.25rem;
+    background: rgba(10, 20, 35, 0.98);
+    border-top: 1px solid rgba(212,175,55,0.12);
+    animation: menuSlide 0.22s ease;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  @keyframes menuSlide {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .mobile-nav-link {
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: 8px;
+    transition: var(--transition);
+  }
+  .mobile-nav-link:hover { color: var(--gold); background: rgba(212,175,55,0.07); }
+  .mobile-games-link { color: var(--gold); }
+  .mobile-menu-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0.25rem 0; }
+  .mobile-cta { margin-top: 0.5rem; justify-content: center; }
+
   @media (max-width: 900px) {
     .nav-links { display: none; }
     .nav-cta { display: none; }
+    .hamburger { display: flex; }
+    /* Mobile nav: no transitions (prevents half-transparent flash), no backdrop-filter
+       (expensive on mobile + causes frosted-glass "separuh" look), fully opaque bg. */
+    .nav {
+      transition: none;
+      padding: 1.1rem 4vw;
+      padding-top: max(1.1rem, env(safe-area-inset-top, 0px));
+    }
+    .nav.scrolled {
+      transition: none;
+      padding: 1.1rem 4vw;
+      padding-top: max(1.1rem, env(safe-area-inset-top, 0px));
+      background: rgba(10, 20, 35, 0.97);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
   }
-  @media (max-width: 480px) {
-    .lang-opt { padding: 0.45rem 0.6rem; font-size: 0.72rem; }
+  @media (max-width: 540px) {
+    /* Hide standalone Games button on very small screens — accessible via hamburger */
+    .btn-games { display: none; }
+    .nav-logo { font-size: 1.2rem; }
+    .lang-opt { padding: 0.4rem 0.55rem; font-size: 0.72rem; }
   }
 </style>
