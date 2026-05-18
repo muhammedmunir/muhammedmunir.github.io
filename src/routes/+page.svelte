@@ -86,12 +86,4 @@
     transform: translateY(-3px);
     box-shadow: 0 12px 40px rgba(212,175,55,0.35);
   }
-  @media (max-width: 768px) {
-    .fab-present {
-      bottom: 5.5rem;
-      right: 1.5rem;
-      padding: 0.7rem 1.3rem;
-      font-size: 0.8rem;
-    }
-  }
 </style>
