@@ -4,7 +4,8 @@
   import type { Snippet } from 'svelte';
   import { lang, toggleLang } from '$lib/i18n';
   import { translations } from '$lib/translations';
-  import { derived } from 'svelte/store';
+  import { derived, get } from 'svelte/store';
+  import { page } from '$app/stores';
 
   let { children }: { children: Snippet } = $props();
   let navScrolled = $state(false);
@@ -25,23 +26,25 @@
     { href: '#skills',     key: 'skills' as const },
     { href: '#contact',    key: 'contact' as const }
   ];
+  // isGamesPage will be evaluated in template via $page store
 </script>
 
 <svelte:head>
   <title>Muhammed Munir | Full-Stack Developer & IT Professional</title>
 </svelte:head>
 
+{#if !$page.url.pathname.startsWith('/games')}
 <!-- NAV -->
 <nav class="nav" class:scrolled={navScrolled} aria-label="Main navigation">
   <div class="nav-inner">
-    <a href="#hero" class="nav-logo" id="nav-logo">
+    <a href={$page.url.pathname.startsWith('/games') ? '/#hero' : '#hero'} class="nav-logo" id="nav-logo">
       <span class="logo-port">Port</span><span class="logo-folio">folio</span>
     </a>
 
     <ul class="nav-links" role="list">
       {#each navKeys as link}
         <li>
-          <a href={link.href} class="nav-link" id="nav-{link.key}">
+          <a href={$page.url.pathname.startsWith('/games') ? `/${link.href}` : link.href} class="nav-link" id="nav-{link.key}">
             {$t.nav[link.key]}
           </a>
         </li>
@@ -62,17 +65,24 @@
         <span class="lang-opt" class:active={$lang === 'en'}>EN</span>
       </button>
 
+      <a href="/games" class="btn btn-games nav-games" id="nav-games-btn">
+        🎮 Games
+      </a>
+      {#if !$page.url.pathname.startsWith('/games')}
       <a href="#contact" class="btn btn-primary nav-cta" id="nav-hire-btn">
         {$t.nav.hire}
       </a>
+      {/if}
     </div>
   </div>
 </nav>
+{/if}
 
 <main>
   {@render children()}
 </main>
 
+{#if !$page.url.pathname.startsWith('/games')}
 <!-- Footer -->
 <footer class="footer">
   <div class="footer-inner">
@@ -82,6 +92,7 @@
     <p class="footer-copy">© {new Date().getFullYear()} {$t.footer.copy}</p>
   </div>
 </footer>
+{/if}
 
 <style>
   .nav {
@@ -195,6 +206,20 @@
   }
 
   .nav-cta { padding: 0.6rem 1.3rem; font-size: 0.88rem; }
+  .btn-games {
+    background: rgba(212,175,55,0.08);
+    border: 1px solid rgba(212,175,55,0.3);
+    color: #D4AF37;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+  .btn-games:hover {
+    background: rgba(212,175,55,0.18);
+    transform: none;
+  }
 
   .footer {
     background: var(--navy-dark);
