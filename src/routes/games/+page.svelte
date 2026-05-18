@@ -596,6 +596,17 @@
         </div>
       {/if}
     </div>
+
+    <!-- Mobile D-pad Controller -->
+    <div class="mobile-dpad">
+      <button class="dpad-btn btn-up" onclick={(e) => { e.stopPropagation(); movePlayer(0, -6); }} aria-label="Move Up">▲</button>
+      <div class="dpad-row">
+        <button class="dpad-btn btn-left" onclick={(e) => { e.stopPropagation(); movePlayer(-6, 0); }} aria-label="Move Left">◀</button>
+        <button class="dpad-btn btn-action" onclick={(e) => { e.stopPropagation(); if (activeHotspot) interact(activeHotspot); else if (activeDoor) enterRoom(activeDoor.to, currentRoom); }} aria-label="Action Intercept">E</button>
+        <button class="dpad-btn btn-right" onclick={(e) => { e.stopPropagation(); movePlayer(6, 0); }} aria-label="Move Right">▶</button>
+      </div>
+      <button class="dpad-btn btn-down" onclick={(e) => { e.stopPropagation(); movePlayer(0, 6); }} aria-label="Move Down">▼</button>
+    </div>
   </div>
 
   <!-- Bottom Console Panel (Quest Log & Minimap) -->
@@ -667,23 +678,18 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700;800&family=Outfit:wght@400;600;800&display=swap');
 
-  :global(body) {
-    margin: 0;
-    overflow: hidden;
-    font-family: 'JetBrains Mono', monospace;
-    background: #020617;
-    color: #e2e8f0;
-  }
-
   .game-wrapper {
     width: 100vw;
     height: 100vh;
-    position: relative;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     transition: background 0.5s ease, border-color 0.5s ease;
+    font-family: 'JetBrains Mono', monospace;
   }
 
   /* Scanlines & CRT Glitch Aesthetics */
@@ -825,6 +831,7 @@
   .room-grid {
     flex: 1;
     position: relative;
+    min-height: 440px;
     transition: opacity 0.3s ease, transform 0.3s ease;
     cursor: crosshair;
     overflow: hidden;
@@ -873,7 +880,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    transform: translate(-5%, -5%);
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    min-width: 80px;
   }
   .portal-vortex {
     width: 60px;
@@ -930,6 +939,10 @@
     justify-content: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
+    min-width: 95px;
+    min-height: 80px;
+    transform: translate(-50%, -50%);
+    z-index: 10;
   }
   .node-glow {
     position: absolute;
@@ -939,7 +952,7 @@
     transition: opacity 0.3s ease;
   }
   .datalink-node:hover {
-    transform: scale(1.04);
+    transform: translate(-50%, -50%) scale(1.05);
     box-shadow: 0 0 30px var(--accent);
   }
   .node-core {
@@ -1304,8 +1317,65 @@
     40%, 60% { transform: translate(-50%, -50%) translate3d(6px, 0, 0); }
   }
 
+  /* Mobile D-pad styling */
+  .mobile-dpad {
+    display: none;
+  }
+
   /* Responsiveness styling fixes */
   @media (max-width: 800px) {
+    .mobile-dpad {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 90;
+      background: rgba(3, 7, 18, 0.85);
+      border: 1.5px solid var(--accent);
+      border-radius: 24px;
+      padding: 8px;
+      box-shadow: 0 0 20px var(--theme-color);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .dpad-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 0;
+    }
+    .dpad-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--accent);
+      background: rgba(2, 6, 23, 0.9);
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.1s ease;
+      touch-action: manipulation;
+    }
+    .dpad-btn:active {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 12px var(--accent);
+      transform: scale(0.9);
+    }
+    .btn-action {
+      background: var(--accent);
+      color: #000;
+      font-family: 'Outfit', sans-serif;
+      border-color: #fff;
+    }
+
     .hud-panel {
       padding: 0.6rem 1rem;
     }
@@ -1321,14 +1391,15 @@
       padding: 0.6rem 1rem;
     }
     .system-logs-box {
-      width: 100%;
+      display: none; /* Hide log logs on phone to make full space for D-pad */
     }
     .quick-bridge {
       width: 100%;
-      justify-content: space-between;
+      justify-content: center;
     }
     .terminal-popup {
       max-height: 90vh;
+      width: 95%;
     }
     .terminal-display {
       padding: 1.2rem;
