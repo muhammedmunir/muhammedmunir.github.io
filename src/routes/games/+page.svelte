@@ -880,9 +880,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-    min-width: 80px;
+    transform: translate(-5%, -5%);
   }
   .portal-vortex {
     width: 60px;
@@ -939,10 +937,6 @@
     justify-content: center;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
-    min-width: 95px;
-    min-height: 80px;
-    transform: translate(-50%, -50%);
-    z-index: 10;
   }
   .node-glow {
     position: absolute;
@@ -952,7 +946,7 @@
     transition: opacity 0.3s ease;
   }
   .datalink-node:hover {
-    transform: translate(-50%, -50%) scale(1.05);
+    transform: scale(1.04);
     box-shadow: 0 0 30px var(--accent);
   }
   .node-core {
@@ -1324,6 +1318,11 @@
 
   /* Responsiveness styling fixes */
   @media (max-width: 800px) {
+    .room-grid {
+      transform: scale(0.72);
+      transform-origin: center center;
+      min-height: 380px;
+    }
     .mobile-dpad {
       display: flex;
       flex-direction: column;

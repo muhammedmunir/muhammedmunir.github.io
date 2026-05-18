@@ -244,6 +244,7 @@
   .footer-copy { font-size: 0.8rem; color: var(--text-muted); }
 
   @media (max-width: 900px) {
+    .nav { padding: 0.8rem 4vw !important; }
     .nav-links { display: none; }
     .nav-cta { display: none; }
   }
