@@ -77,13 +77,22 @@
     letter-spacing: 0.06em;
     cursor: pointer;
     box-shadow: 0 8px 30px rgba(0,0,0,0.4), 0 0 0 1px rgba(212,175,55,0.1);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
   }
   .fab-present:hover {
     background: linear-gradient(135deg, #D4AF37, #e8c84a);
     color: #0a1422;
     border-color: transparent;
-    transform: translateY(-3px);
     box-shadow: 0 12px 40px rgba(212,175,55,0.35);
+  }
+  @media (max-width: 640px) {
+    .fab-present {
+      right: 1rem;
+      /* 5rem (~80px) clears the Android navigation bar (~48px) that slides in on scroll-up */
+      bottom: max(5rem, calc(env(safe-area-inset-bottom, 0px) + 5rem));
+      padding: 0.6rem 1rem;
+      font-size: 0.8rem;
+      gap: 0.4rem;
+    }
   }
 </style>

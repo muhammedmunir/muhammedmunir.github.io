@@ -628,7 +628,7 @@
 
   @media (max-width: 768px) {
     .pres-main { padding: 1.5rem; }
-    .highlights-grid, .features-grid, .skills-3col { grid-template-columns: 1fr; }
+    .highlights-grid, .features-grid, .skills-3col, .detail-grid { grid-template-columns: 1fr; }
     .exp-header-row, .proj-header-row { flex-direction: column; gap: 0.75rem; }
     .edu-card-slide { flex-direction: column; }
   }

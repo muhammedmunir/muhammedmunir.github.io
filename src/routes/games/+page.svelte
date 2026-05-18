@@ -439,6 +439,8 @@
   }
 
   onMount(() => {
+    document.body.style.overflow = 'hidden';
+
     function onKey(e: KeyboardEvent) {
       const step = 3.5;
       if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
@@ -467,7 +469,10 @@
       }
     }
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
   });
 </script>
 
@@ -669,7 +674,6 @@
 
   :global(body) {
     margin: 0;
-    overflow: hidden;
     font-family: 'JetBrains Mono', monospace;
     background: #020617;
     color: #e2e8f0;
@@ -1310,28 +1314,45 @@
       padding: 0.6rem 1rem;
     }
     .hud-title {
-      font-size: 1.1rem;
+      font-size: 1rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 45vw;
     }
     .hud-desc, .sync-progress {
       display: none;
     }
     .console-footer {
-      flex-direction: column;
-      gap: 0.8rem;
-      padding: 0.6rem 1rem;
+      flex-direction: row;
+      gap: 0.5rem;
+      padding: 0.5rem 0.75rem;
     }
     .system-logs-box {
-      width: 100%;
+      flex: 1;
+      min-width: 0;
+    }
+    .log-entry {
+      font-size: 0.58rem;
     }
     .quick-bridge {
-      width: 100%;
-      justify-content: space-between;
+      flex-shrink: 0;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 0.3rem;
     }
+    .bridge-tag { display: none; }
+    .bridge-btn { width: 32px; height: 32px; font-size: 0.9rem; }
     .terminal-popup {
       max-height: 90vh;
     }
     .terminal-display {
       padding: 1.2rem;
     }
+  }
+
+  @media (max-width: 480px) {
+    .hud-left { gap: 0.4rem; }
+    .btn-terminal { padding: 0.3rem 0.6rem; font-size: 0.7rem; }
   }
 </style>
