@@ -88,8 +88,7 @@
   @media (max-width: 640px) {
     .fab-present {
       right: 1rem;
-      /* 5rem (~80px) clears the Android navigation bar (~48px) that slides in on scroll-up */
-      bottom: max(5rem, calc(env(safe-area-inset-bottom, 0px) + 5rem));
+      bottom: 5rem;
       padding: 0.6rem 1rem;
       font-size: 0.8rem;
       gap: 0.4rem;
