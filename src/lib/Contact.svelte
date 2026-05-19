@@ -197,7 +197,7 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
   .detail-icon { font-size:1.3rem; }
   .detail-content { display:flex; flex-direction:column; gap:0.1rem; }
   .detail-label { font-size:0.72rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-muted); }
-  .detail-value { font-size:0.9rem; font-weight:500; color:var(--text-primary); transition:var(--transition); }
+  .detail-value { font-size:0.9rem; font-weight:500; color:var(--text-primary); transition:var(--transition); overflow-wrap:break-word; word-break:break-all; min-width:0; }
   a.detail-value:hover { color:var(--gold); }
   .availability-banner { display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; background:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.2); border-radius:var(--radius); }
   .avail-dot { width:12px;height:12px; background:#22c55e; border-radius:50%; flex-shrink:0; animation:pulse-dot 2s infinite; }

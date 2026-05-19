@@ -130,8 +130,6 @@
     top: 0; left: 0; right: 0;
     z-index: 1000;
     padding: 1.4rem 4vw;
-    /* Push content below iOS notch / Dynamic Island */
-    padding-top: max(1.4rem, env(safe-area-inset-top, 0px));
     transition: background 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease, padding 0.4s ease;
   }
   .nav.scrolled {
@@ -191,6 +189,9 @@
   }
   .nav-link:hover { color: var(--gold); }
   .nav-link:hover::after { width: 60%; }
+  /* active class is added via JS — :global() prevents "unused selector" false positive */
+  :global(.nav-link.active) { color: var(--gold); }
+  :global(.nav-link.active)::after { width: 60%; }
 
   .nav-actions {
     display: flex;
@@ -338,12 +339,10 @@
     .nav {
       transition: none;
       padding: 1.1rem 4vw;
-      padding-top: max(1.1rem, env(safe-area-inset-top, 0px));
     }
     .nav.scrolled {
       transition: none;
       padding: 1.1rem 4vw;
-      padding-top: max(1.1rem, env(safe-area-inset-top, 0px));
       background: rgba(10, 20, 35, 0.97);
       backdrop-filter: none;
       -webkit-backdrop-filter: none;

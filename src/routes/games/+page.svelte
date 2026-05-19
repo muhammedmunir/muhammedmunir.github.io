@@ -682,6 +682,7 @@
   .game-wrapper {
     width: 100vw;
     height: 100vh;
+    height: 100dvh; /* modern: excludes browser chrome for true full-screen on mobile */
     position: relative;
     overflow: hidden;
     display: flex;
@@ -1313,12 +1314,18 @@
     .hud-panel {
       padding: 0.6rem 1rem;
     }
+    /* Allow center to shrink so buttons on left don't push content off-screen */
+    .hud-center {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+    }
     .hud-title {
       font-size: 1rem;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      max-width: 45vw;
+      max-width: 100%;
     }
     .hud-desc, .sync-progress {
       display: none;
@@ -1352,7 +1359,9 @@
   }
 
   @media (max-width: 480px) {
-    .hud-left { gap: 0.4rem; }
-    .btn-terminal { padding: 0.3rem 0.6rem; font-size: 0.7rem; }
+    /* Very small phones: shrink buttons further so they don't overflow the HUD */
+    .hud-left { gap: 0.25rem; flex-shrink: 0; }
+    .btn-terminal { padding: 0.2rem 0.45rem; font-size: 0.62rem; white-space: nowrap; }
+    .hud-blink { width: 5px; height: 5px; }
   }
 </style>

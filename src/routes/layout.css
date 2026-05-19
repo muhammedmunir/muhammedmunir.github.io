@@ -35,6 +35,7 @@ html {
   scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: var(--gold) var(--navy-dark);
+  overflow-x: hidden;
 }
 
 ::-webkit-scrollbar { width: 6px; }

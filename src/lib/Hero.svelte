@@ -269,7 +269,15 @@
 
   @media (max-width: 640px) {
     .hero-stats { flex-wrap: wrap; max-width: 100%; }
-    .stat-item { min-width: 50%; border-bottom: 1px solid var(--card-border); }
+    .stat-item {
+      min-width: 50%;
+      border-right: none;
+      border-bottom: 1px solid var(--card-border);
+    }
+    /* Left column items get the vertical divider */
+    .stat-item:nth-child(odd) { border-right: 1px solid var(--card-border); }
+    /* Bottom-row items (3 & 4) must not have a bottom border — they're at the card edge */
+    .stat-item:nth-child(3), .stat-item:nth-child(4) { border-bottom: none; }
     .hero-tagline { font-size: 0.85rem; gap: 0.3rem; }
   }
 </style>

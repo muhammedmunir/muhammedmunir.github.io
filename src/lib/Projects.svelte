@@ -103,7 +103,7 @@
   section::before { content:''; position:absolute; top:0;left:0;right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(212,175,55,0.3),transparent); }
   .section-desc { font-size:1rem; color:var(--text-muted); margin-top:0.75rem; }
   .projects-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); gap:1.75rem; }
-  .project-card { padding:2rem; display:flex; flex-direction:column; gap:1.25rem; position:relative; overflow:hidden; transition:all 0.4s cubic-bezier(0.4,0,0.2,1); }
+  .project-card { padding:2rem; display:flex; flex-direction:column; gap:1.25rem; position:relative; overflow:hidden; transition:border-color 0.4s cubic-bezier(0.4,0,0.2,1), box-shadow 0.4s cubic-bezier(0.4,0,0.2,1), transform 0.4s cubic-bezier(0.4,0,0.2,1); }
   .project-top { display:flex; align-items:center; justify-content:space-between; }
   .project-icon-wrap { width:56px;height:56px; border:1px solid; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:1.6rem; }
   .project-badges { display:flex; align-items:center; gap:0.6rem; }
