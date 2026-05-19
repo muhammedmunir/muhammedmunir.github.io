@@ -6,6 +6,7 @@
 
   let { onClose }: { onClose: () => void } = $props();
   let currentSlide = $state(0);
+  let selectedTech  = $state<string | null>(null);
   const t = derived(lang, ($l) => translations[$l]);
 
   const slides = [
@@ -92,42 +93,121 @@
     }
   };
 
-  const projMeta: Record<string, { icon: string; accent: string; tags: string[]; context: string; architecture: string; security: string; impact: string }> = {
+  const projMeta: Record<string, { icon: string; accent: string; tags: string[]; context: string; architecture: string; security: string; impact: string; flow: { icon: string; label: string; detail: string }[] }> = {
     iwa001: {
       icon:'🔐', accent:'#D4AF37', context:'Nova Bitara Development Sdn Bhd',
       tags:['SvelteKit 2.8','TypeScript','Supabase','Tailwind CSS','Vercel','GoDaddy'],
-      architecture: 'SvelteKit (SSR/CSR) → Supabase PostgreSQL dengan Row Level Security → Vercel Edge deployment → GoDaddy custom domain. 17 halaman: Dashboard, Loan Application, Document Upload, Admin Panel, User Management, Report Generation.',
-      security: 'RLS (Row Level Security) di peringkat database — setiap query disaring mengikut user_id. JWT token validation pada setiap request. Role-based access: Pemohon / Pegawai / Admin. Audit trail untuk semua transaksi pinjaman.',
-      impact: 'Sistem pengeluaran mengendalikan aliran kerja pinjaman bercagar yang kompleks. Menggantikan proses manual kertas — menjimatkan masa pemprosesan dan mengurangkan ralat manusia.'
+      flow: [
+        { icon:'🔑', label:'Daftar / Log Masuk',   detail:'Pengguna daftar & log masuk. Supabase Auth (JWT) mengesahkan identiti & menetapkan role (Pemohon / Pegawai / Admin).' },
+        { icon:'📝', label:'Isi Borang Pinjaman',   detail:'Pemohon isi 5 langkah borang pinjaman bercagar — maklumat peribadi, aset cagaran, jumlah, tempoh & penjamin.' },
+        { icon:'📄', label:'Muat Naik Dokumen',     detail:'Sistem terima upload IC, slip gaji, geran tanah & dokumen sokongan. Disimpan di Supabase Storage dengan nama unik.' },
+        { icon:'👔', label:'Semakan Pegawai',        detail:'Pegawai kaunter semak permohonan, sahkan dokumen & kemaskini status. Dashboard realtime tunjuk semua permohonan aktif.' },
+        { icon:'🏛️', label:'Kelulusan Admin',        detail:'Admin terima atau tolak permohonan dengan sebab. Audit trail direkod untuk setiap tindakan — siapa, bila, apa status.' },
+        { icon:'📧', label:'Notifikasi Email',       detail:'Sistem hantar email automatik kepada pemohon (lulus/tolak/dokumen kurang). Templat HTML profesional via email SMTP.' },
+        { icon:'✅', label:'Pinjaman Diproses',      detail:'Permohonan lulus → data disimpan untuk rekod kewangan. PDF surat kelulusan dijana automatik untuk pemohon.' },
+      ],
+      architecture: 'SvelteKit (SSR/CSR) → Supabase PostgreSQL + Row Level Security → Vercel Edge deployment → GoDaddy custom domain. 17 halaman: Dashboard, Borang Pinjaman (5 langkah), Muat Naik Dokumen, Semakan Pegawai, Panel Admin, Pengurusan Pengguna, Jana Laporan PDF.',
+      security: 'RLS di peringkat database — setiap SQL query disaring mengikut user_id secara automatik. JWT token divalidate pada setiap request. Role-based access: Pemohon / Pegawai / Admin — akses berbeza untuk setiap role. Audit trail untuk semua transaksi pinjaman. HTTPS enforced via Vercel.',
+      impact: 'Sistem pengeluaran sebenar mengendalikan aliran kerja pinjaman bercagar yang kompleks. Menggantikan proses manual kertas — menjimatkan masa pemprosesan ~60% dan mengurangkan ralat manusia dalam pengurusan dokumen dan kelulusan.'
     },
     infinity: {
       icon:'🌐', accent:'#6B9FD4', context:'Nova Bitara Development Sdn Bhd',
       tags:['SvelteKit','TypeScript','Vercel','Redis','Resend API','GoDaddy'],
-      architecture: 'SvelteKit SSR → Vercel Edge Functions → Redis (Upstash) untuk caching subscriber data → Resend API untuk email transaksional → GoDaddy domain management. i18n: Svelte store-based dengan 3 locale (ms/en/zh).',
-      security: 'Redis data expiry untuk session caching. Resend API untuk email verification. HTTPS enforced via Vercel. Cloudflare-ready DNS setup. Input sanitization pada form subscriber.',
-      impact: 'Laman web korporat berbilang bahasa dengan prestasi tinggi. Blog subscriber dengan notifikasi e-mel automatik. Menyokong pasaran tempatan (BM), antarabangsa (EN) dan Cina (ZH).'
+      flow: [
+        { icon:'🌍', label:'Pelawat Tiba',          detail:'Pelawat dari seluruh dunia akses laman. Vercel Edge CDN serve halaman dari node terdekat — laju walaupun dari luar negara.' },
+        { icon:'🏠', label:'Halaman Utama (SSR)',    detail:'SvelteKit SSR jana HTML di server — SEO-friendly, loading pantas. Kandungan bertukar automatik ikut bahasa (BM/EN/ZH).' },
+        { icon:'📰', label:'Blog & Kandungan',       detail:'Artikel korporat dalam 3 bahasa. Content stored dalam format JSON, dinamik dipapar. Editor boleh tukar bahasa dengan 1 klik.' },
+        { icon:'✉️', label:'Subscribe Email',        detail:'Pelawat masuk email untuk subscribe newsletter. Form validate format email. Data dihantar ke API endpoint.' },
+        { icon:'⚡', label:'Redis Cache (Upstash)',  detail:'Email subscriber disimpan di Redis Upstash — in-memory, super pantas. TTL set untuk buang data lama. Rate limiting prevent spam.' },
+        { icon:'📨', label:'Resend API → Email',     detail:'Apabila ada artikel baru, sistem trigger Resend API untuk hantar email broadcast ke semua subscriber. Templat HTML responsive.' },
+      ],
+      architecture: 'SvelteKit SSR → Vercel Edge Functions → Redis Upstash (subscriber caching + rate limiting) → Resend API (email transaksional) → GoDaddy domain. i18n: Svelte store-based dengan 3 locale (ms/en/zh) — switch instant tanpa reload.',
+      security: 'Redis TTL untuk data expiry. Resend API key disimpan sebagai environment variable (bukan expose ke client). HTTPS enforced via Vercel. Input sanitization pada form subscriber — cegah XSS. Rate limiting pada API endpoint untuk prevent email spam.',
+      impact: 'Laman web korporat premium berbilang bahasa dengan prestasi tinggi. Menyokong pasaran tempatan (BM), antarabangsa (EN) dan Cina (ZH). Blog subscriber dengan notifikasi email automatik — zero manual work untuk marketing.'
     },
     ecommerce: {
       icon:'🛒', accent:'#F97316', context:'Nova Bitara Development Sdn Bhd',
       tags:['Laravel 11','PHP 8','MySQL','DirectAdmin','Cloudflare','IP Serveron'],
-      architecture: 'Laravel MVC (PHP 8) → MySQL database → DirectAdmin hosting → IP Serveron domain → Cloudflare CDN & DNS. Modules: Product Catalogue, Cart, Checkout, Order Management, User Auth, Admin Dashboard.',
-      security: 'Laravel Sanctum authentication. CSRF protection built-in. Cloudflare DDoS protection & WAF. HTTPS SSL/TLS enforced. MySQL prepared statements — SQL injection prevention. Input validation pada semua form.',
-      impact: 'Platform e-dagang penuh untuk jualan produk syarikat. Cloudflare meningkatkan kelajuan loading & melindungi daripada serangan. Admin dashboard untuk pengurusan inventori dan pesanan.'
+      flow: [
+        { icon:'🏪', label:'Pelanggan Layar',        detail:'Pelanggan buka laman, lihat katalog produk dengan gambar, harga & stok. Cloudflare CDN serve aset statik dengan laju.' },
+        { icon:'🛒', label:'Tambah ke Troli',        detail:'Produk dipilih → masuk session cart. Kuantiti, variasi & harga dikira secara realtime. Cart kekal walaupun logout (session DB).' },
+        { icon:'💳', label:'Checkout & Bayar',       detail:'Pelanggan isi alamat penghantaran, pilih kaedah bayar. Form divalidate client & server-side. CSRF token protect setiap request.' },
+        { icon:'📋', label:'Jana Pesanan',            detail:'Laravel cipta rekod pesanan di MySQL, kurangkan stok produk, hantar email resit kepada pelanggan automatik.' },
+        { icon:'👨‍💼', label:'Admin Proses',           detail:'Admin login ke dashboard, lihat semua pesanan masuk, kemaskini status (Diproses/Dihantar/Selesai). Export laporan CSV.' },
+        { icon:'🛡️', label:'Cloudflare Protect',     detail:'Cloudflare WAF tapis trafik berbahaya. DDoS protection. CDN cache halaman produk untuk loading 5x lebih laju.' },
+        { icon:'📦', label:'Fulfillment',             detail:'Pesanan confirmed → pasukan hantar barang. Pelanggan terima tracking number via email. Status dikemaskini dalam sistem.' },
+      ],
+      architecture: 'Laravel MVC (PHP 8) → MySQL database → DirectAdmin cPanel hosting → IP Serveron domain → Cloudflare CDN & DNS & WAF. Modul: Katalog Produk, Cart (session), Checkout, Pengurusan Pesanan, Auth Pengguna, Dashboard Admin, Laporan Jualan.',
+      security: 'Laravel Sanctum authentication + CSRF protection built-in. Cloudflare DDoS protection & WAF (Web Application Firewall). HTTPS SSL/TLS enforced. MySQL prepared statements — cegah SQL injection. Input validation & sanitization pada semua form. Password hashing dengan bcrypt.',
+      impact: 'Platform e-dagang penuh untuk jualan produk syarikat dalam tempoh singkat. Cloudflare meningkatkan kelajuan loading 5x & melindungi dari serangan. Admin dashboard mengurangkan kerja manual pengurusan pesanan dan inventori.'
     },
     onboardx: {
       icon:'⚡', accent:'#22C55E', context:'Tenaga Nasional Berhad (TNB)',
       tags:['Flutter','Dart','JavaScript','Firebase','MongoDB','Supabase','MySQL','Azure','Jenkins','Kubernetes'],
-      architecture: 'Flutter cross-platform app (Web/Mobile) → Multi-database: Firebase (realtime), MongoDB (documents), Supabase (structured), MySQL (legacy) → Microsoft Azure Ubuntu server → Jenkins CI/CD pipeline → Kubernetes container orchestration.',
-      security: 'Firebase Auth untuk pengesahan pengguna. Role-based access untuk pekerja/HR/admin. Supabase RLS untuk data isolation. Azure Network Security Groups (NSG) untuk firewall. CI/CD pipeline dengan automated testing sebelum deployment.',
-      impact: 'Memperkemas proses onboarding pekerja baharu TNB. Mengurangkan paperwork manual. Centralised dashboard untuk HR memantau status onboarding. Dibangunkan dalam persekitaran perusahaan sebenar TNB.'
+      flow: [
+        { icon:'👤', label:'Pekerja Baharu Masuk',  detail:'Pekerja baharu terima emel jemputan dari HR. Klik link → download app atau buka web app. Daftar akaun dengan email TNB rasmi.' },
+        { icon:'📋', label:'Isi Profil & Data',      detail:'Pekerja isi maklumat peribadi, kemahiran, pengalaman & pilihan jabatan. Data disimpan ke Supabase (structured) & MongoDB (documents).' },
+        { icon:'📄', label:'Muat Naik Dokumen',     detail:'Upload IC, sijil, resume, dokumen berkaitan. Firebase Storage simpan fail. Firebase Realtime DB sync status upload secara masa nyata.' },
+        { icon:'🏢', label:'Semakan HR Dashboard',  detail:'HR login ke dashboard → lihat semua pekerja baru dalam proses. Filter by status, jabatan, tarikh. Semak & approve dokumen.' },
+        { icon:'📚', label:'Tugasan Latihan',        detail:'Sistem assign modul latihan wajib ikut jabatan (Keselamatan, IT, HR Policy). Pekerja complete latihan dalam app. Progress tracked.' },
+        { icon:'✅', label:'Onboarding Selesai',     detail:'Semua checklist complete → status "Onboarded". HR terima notifikasi. Pekerja dapat email selamat datang rasmi & akses sistem TNB.' },
+        { icon:'☁️', label:'Azure + CI/CD',          detail:'App dihost di Ubuntu server Azure. Jenkins pipeline auto-build & deploy setiap ada push ke main branch. Kubernetes manage scaling.' },
+      ],
+      architecture: 'Flutter cross-platform app (Web + Mobile) → Multi-database: Firebase Realtime DB (sync), MongoDB (dokumen), Supabase PostgreSQL (berstruktur), MySQL (sistem legacy TNB) → Microsoft Azure Ubuntu server → Jenkins CI/CD pipeline → Kubernetes container orchestration. UI direka Figma → kod Flutter.',
+      security: 'Firebase Auth untuk pengesahan pengguna TNB. Role-based access: Pekerja / HR / Admin dengan level akses berbeza. Supabase RLS untuk isolasi data — setiap pekerja nampak data sendiri sahaja. Azure Network Security Groups (NSG) sebagai firewall. CI/CD dengan automated test sebelum setiap deployment ke production.',
+      impact: 'Memperkemas proses onboarding pekerja baharu TNB dari proses manual berhari-hari kepada sistem digital. Mengurangkan paperwork, centralised dashboard untuk HR, dan meningkatkan pengalaman pekerja baharu. Dibangunkan dalam persekitaran perusahaan sebenar TNB dengan ramai pengguna.'
     },
     fyp: {
       icon:'🗺️', accent:'#A78BFA', context:'Universiti Teknologi Malaysia (UTM)',
       tags:['SvelteKit','TypeScript','Tailwind CSS','Supabase','Google Maps API','Figma'],
-      architecture: 'SvelteKit SSR → Supabase PostgreSQL (RLS) → Google Maps JavaScript API (marker clustering, geofencing) → Vercel deployment. Features: Report submission form, interactive map view, admin dashboard, status tracking, email notifications.',
-      security: 'Supabase Auth dengan email verification. RLS — pengguna hanya nampak laporan sendiri kecuali admin. Google Maps API key restriction (HTTP referrer). Input validation & file upload sanitization untuk report attachments.',
-      impact: 'Menggantikan sistem pelaporan manual UTM. Pengguna boleh submit laporan dengan lokasi GPS tepat. Admin boleh lihat semua laporan pada peta interaktif. Markah FYP: Cemerlang. Diiktiraf oleh panel penyelia UTM.'
+      flow: [
+        { icon:'🔐', label:'Log Masuk',              detail:'Pengguna log masuk dengan email UTM. Supabase Auth hantar OTP verification. Selepas sahkan email, akses sistem dibenarkan.' },
+        { icon:'📝', label:'Hantar Laporan',         detail:'Pengguna isi borang laporan (jenis isu, penerangan, foto). Sistem detect lokasi GPS automatik menggunakan browser Geolocation API.' },
+        { icon:'📍', label:'Simpan + Geomark',       detail:'Laporan disimpan ke Supabase PostgreSQL dengan koordinat GPS. RLS pastikan setiap pengguna nampak laporan sendiri sahaja.' },
+        { icon:'🗺️', label:'Peta Interaktif',        detail:'Google Maps API papar semua laporan sebagai marker pada peta UTM. Marker clustering group laporan berdekatan. Klik marker → detail.' },
+        { icon:'👨‍💼', label:'Admin Semak',            detail:'Admin login → dashboard tunjuk semua laporan dari semua pengguna. Filter by status, tarikh, kategori. Kemaskini status laporan.' },
+        { icon:'📧', label:'Notifikasi Status',       detail:'Bila admin kemaskini status laporan, sistem trigger email automatik kepada pelapor — "Laporan anda sedang diproses / selesai".' },
+        { icon:'📊', label:'Laporan & Analitik',     detail:'Admin boleh lihat statistik laporan (heatmap, trend bulanan, jenis isu paling kerap). Export data CSV untuk analisis lanjut.' },
+      ],
+      architecture: 'SvelteKit SSR → Supabase PostgreSQL + RLS (auth + database) → Google Maps JavaScript API (marker clustering, geofencing, heatmap) → Vercel deployment. Figma wireframe → SvelteKit + Tailwind CSS implementation. Features: Borang laporan, peta interaktif, dashboard admin, status tracking, notifikasi email.',
+      security: 'Supabase Auth dengan email verification (OTP). RLS — pengguna hanya nampak & edit laporan sendiri, admin nampak semua. Google Maps API key restricted ke HTTP referrer domain sahaja. Input validation & file upload sanitization untuk lampiran foto laporan. HTTPS enforced via Vercel.',
+      impact: 'Menggantikan sistem pelaporan manual UTM (email/hardcopy) kepada sistem digital berpusat. Pengguna boleh submit laporan dengan lokasi GPS tepat dari mana-mana. Admin nampak semua laporan pada peta interaktif — jimat masa pengurusan. Markah FYP: Cemerlang. Diiktiraf panel penyelia UTM.'
     }
+  };
+
+  // ── Tech info for clickable skills ──────────────────────────────────────────
+  const techInfo: Record<string, { what: string; where: string[] }> = {
+    'SvelteKit':         { what: 'Framework web full-stack (SSR + CSR) berasaskan Svelte. Rendering hibrid, file-based routing, TypeScript-first. Sangat pantas & lightweight.', where: ['IWA001 Loan System — 17 halaman + Admin Panel penuh', 'Infinity World — laman korporat + blog i18n 3 bahasa', 'UTM FYP — Sistem Pengurusan Pelaporan', 'Portfolio ini'] },
+    'Vue.js':            { what: 'Framework JavaScript progresif menggunakan Composition API & Options API. Reactive data binding, component-based, mudah integrasi.', where: ['YHCM — sistem eMesys (frontend utama)', 'YHCM — sistem Sutera & ADIMS', 'YHCM — Laravel Filament frontend components'] },
+    'Flutter (Dart)':    { what: 'UI toolkit cross-platform Google menggunakan bahasa Dart. Satu codebase untuk iOS, Android, Web & Desktop. Hot reload, widget-based UI.', where: ['OnboardX TNB — aplikasi onboarding pekerja (Mobile + Web dari 1 codebase)'] },
+    'React.js':          { what: 'Library UI Facebook menggunakan Virtual DOM, JSX & hooks. Ecosystem besar, component reusable, state management dengan Context/Redux.', where: ['Projek peribadi & pembelajaran', 'Eksplorasi dalam persekitaran kerja'] },
+    'HTML / CSS':        { what: 'Asas pembangunan web. HTML5 semantik, CSS3 (Flexbox, Grid, animations), Tailwind CSS utility-first, responsive design & mobile-first.', where: ['Semua projek web — IWA001, Infinity, E-Commerce, FYP, Portfolio', 'YHCM — UI maintenance & improvements'] },
+    'JavaScript / TS':   { what: 'TypeScript = JavaScript + static typing. Mengurangkan runtime bug, IntelliSense lebih baik, lebih mudah di-maintain dalam projek besar.', where: ['IWA001, Infinity World, UTM FYP, Portfolio — TypeScript penuh', 'E-Commerce (JavaScript), YHCM Vue.js (JavaScript/TypeScript)'] },
+    'Laravel (PHP)':     { what: 'Framework PHP MVC dengan Eloquent ORM, Sanctum Auth, Artisan CLI, Blade templating. Standard industri untuk backend PHP.', where: ['Nova Bitara E-Commerce — full platform e-dagang (Laravel 11)', 'YHCM — Laravel Filament admin panel & API backend'] },
+    'Node.js':           { what: 'JavaScript runtime untuk server-side. Event-driven, non-blocking I/O. Sesuai untuk API, microservices & real-time apps.', where: ['API utility scripts & server-side helpers', 'Vercel Serverless Functions (Node.js runtime)'] },
+    'C# / .NET':         { what: 'Bahasa Microsoft berorientasi objek untuk enterprise apps. Strongly typed, LINQ, Entity Framework, Windows Server environment.', where: ['Kursus Pengaturcaraan Berorientasi Objek — UTM', 'Projek akademik desktop & console application'] },
+    'Supabase':          { what: 'Firebase alternatif open-source — PostgreSQL + Auth + Storage + Realtime + Edge Functions. BaaS yang powerful dengan Row Level Security.', where: ['IWA001 — database utama + RLS penuh + Supabase Auth', 'OnboardX TNB — structured data storage untuk data pekerja', 'UTM FYP — auth, database laporan + RLS isolation'] },
+    'Docker':            { what: 'Platform containerization — isolate application dalam container. "Build once, run anywhere". Mudah deploy & scale, consistent environment.', where: ['YHCM — deployment & maintenance aplikasi syarikat dalam containers', 'OnboardX TNB — Azure container deployment', 'TNB Cybersecurity — Vulhub Docker environment untuk CVE testing'] },
+    'Azure / Vercel':    { what: 'Azure = Microsoft cloud (VMs, AKS, NSG, storage). Vercel = edge deployment platform untuk Next.js/SvelteKit dengan CDN global.', where: ['OnboardX TNB — Ubuntu server di Microsoft Azure (setup, config, maintain)', 'IWA001, Infinity World, UTM FYP, Portfolio — Vercel Edge deployment'] },
+    'Splunk SIEM':       { what: 'Platform log management + Security Information & Event Management (SIEM). Collect, index, search & alert dari semua log sistem untuk threat detection.', where: ['TNB Platinum Cybersecurity Internship — pantau aktiviti web TNB daily', 'Bina custom dashboard, set alert rules, detect anomali trafik rangkaian'] },
+    'Wireshark':         { what: 'Network packet analyzer — capture dan analisis trafik rangkaian secara mendalam. Decode protocol (TCP/IP, HTTP, DNS, TLS) untuk forensik.', where: ['TNB Cybersecurity — analisis trafik mencurigakan & packet forensics', 'UTM coursework — Network Security & ethical hacking labs'] },
+    'Pen Testing':       { what: 'Penetration testing — simulate serangan hacker untuk kenal pasti & exploit kerentanan sistem sebelum penyerang sebenar menemuinya.', where: ['TNB Red Team — Vulhub CVE reproduction & exploitation dalam persekitaran lab', 'UTM — Ethical Hacking & Penetration Testing coursework'] },
+    'VPN / Firewall':    { what: 'Virtual Private Network untuk enkripsi trafik & akses selamat ke rangkaian korporat. Firewall rules untuk kawalan akses masuk/keluar.', where: ['TNB — konfigurasi & maintenance VPN & firewall rules enterprise', 'YHCM — network security maintenance & troubleshooting'] },
+    'ISO 27001 / NIST':  { what: 'ISO 27001 = piawaian antarabangsa pengurusan keselamatan maklumat (ISMS). NIST = framework keselamatan siber US. Panduan untuk security policy.', where: ['TNB Cybersecurity — implementasi framework dalam persekitaran SOC', 'UTM — Cyber Security Governance & Compliance coursework'] },
+    'Network Troubleshoot': { what: 'Diagnosis & penyelesaian masalah rangkaian: TCP/IP stack, DNS lookup, DHCP, routing, switching, WiFi interference, packet loss.', where: ['YHCM — sokongan IT harian untuk semua staf syarikat', 'TNB — pentadbiran & troubleshoot rangkaian perusahaan berskala besar', 'Nova Bitara — sokongan rangkaian & infrastruktur syarikat'] },
+    'MySQL':             { what: 'RDBMS popular untuk web apps. SQL queries, indexing, foreign keys, transactions, stored procedures. Percuma & reliable untuk production.', where: ['Nova Bitara E-Commerce — database utama semua data produk & pesanan', 'OnboardX TNB — integrasi sistem legacy TNB', 'YHCM — pengurusan database & optimisasi query harian'] },
+    'PostgreSQL':        { what: 'Advanced open-source RDBMS — lebih powerful dari MySQL. JSON/JSONB support, advanced indexing, full-text search, Row Level Security.', where: ['IWA001 via Supabase — semua data pinjaman & pengguna', 'UTM FYP via Supabase — data laporan & koordinat GPS'] },
+    'MongoDB':           { what: 'NoSQL document database — schema flexible, JSON-like BSON. Ideal untuk data tidak berstruktur, cepat untuk read/write operasi besar.', where: ['OnboardX TNB — storan dokumen pekerja (CV, sijil, borang)'] },
+    'Firebase':          { what: 'Google BaaS — Realtime Database, Firestore, Auth, Cloud Functions, Storage, Push Notifications. Ideal untuk mobile apps dengan sync realtime.', where: ['OnboardX TNB — realtime data sync status onboarding & push notifications kepada pekerja'] },
+    'Redis':             { what: 'In-memory data store — super pantas (microseconds). Ideal untuk caching, session management, rate limiting, pub/sub messaging, queue.', where: ['Infinity World — Upstash Redis untuk cache data subscriber blog & rate limiting form subscribe'] },
+    'Jenkins':           { what: 'Open-source CI/CD automation server — automate build, test & deploy pipeline. Plugins untuk integrasi dengan Git, Docker, Kubernetes.', where: ['OnboardX TNB — setup & explore Jenkins CI/CD pipeline untuk auto-deploy ke Azure'] },
+    'Kubernetes':        { what: 'Container orchestration platform — auto-scaling, load balancing, self-healing, rolling deployment. Manage Docker containers dalam cluster.', where: ['OnboardX TNB — explore & setup Kubernetes orchestration untuk containers di Azure'] },
+    'Cloudflare':        { what: 'CDN + DDoS protection + WAF + DNS management + SSL. Protect & accelerate website. 200+ global edge nodes untuk deliver content pantas.', where: ['Nova Bitara E-Commerce — CDN, DDoS shield, WAF & DNS management', 'Infinity World — DNS management & proxy protection'] },
+    'Kali Linux':        { what: 'Linux distribution khusus untuk penetration testing & digital forensics. 600+ security tools built-in: Metasploit, Nmap, Burp Suite, Aircrack-ng.', where: ['TNB Cybersecurity Internship — pen testing environment & CVE analysis', 'UTM — Ethical Hacking labs & security research'] },
+    'Git':               { what: 'Distributed version control system — track perubahan kod, branching strategy (Git Flow), merging, conflict resolution. GitHub untuk remote collaboration.', where: ['Semua projek profesional: IWA001, Infinity, E-Commerce, OnboardX, FYP', 'YHCM & semua workplace projects'] },
+    'Figma':             { what: 'UI/UX design tool berbasiskan cloud — wireframing, prototyping, component system, auto-layout, design tokens & developer handoff.', where: ['OnboardX TNB — reka bentuk UI/UX keseluruhan app dari scratch ke handoff', 'UTM FYP — wireframe & high-fidelity prototype sebelum code'] },
+    'Power BI':          { what: 'Microsoft data visualization & BI tool. Bina dashboard interaktif, connect ke pelbagai data source (SQL, Excel, API), share insights.', where: ['TNB — data reporting & analytics dashboard untuk pengurusan', 'Sijil Microsoft Power BI Data Analysis — Cisco Networking Academy'] },
+    'MariaDB':           { what: 'Fork MySQL yang 100% compatible — lebih pantas, lebih stabil untuk workload tinggi. Same SQL syntax, better performance & more features.', where: ['YHCM — database utama sistem eMesys, Sutera & ADIMS (MariaDB server)'] },
   };
 </script>
 
@@ -218,7 +298,38 @@
       </div>
       <p class="slide-desc">{tx.desc}</p>
 
-      <div class="detail-grid">
+      <!-- Flow pipeline -->
+      <div class="flow-section">
+        <div class="detail-section-title" style="margin-bottom:0.75rem">🔄 Aliran Sistem</div>
+        <div class="flow-pipe">
+          {#each meta.flow as step, i}
+            <!-- svelte-ignore a11y_click_events_have_key_events -->
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div
+              class="flow-step"
+              class:flow-step-active={selectedTech === `flow-${key}-${i}`}
+              style="--ac:{meta.accent}"
+              onclick={() => selectedTech = selectedTech === `flow-${key}-${i}` ? null : `flow-${key}-${i}`}
+              title={step.detail}
+            >
+              <span class="flow-icon">{step.icon}</span>
+              <span class="flow-label">{step.label}</span>
+            </div>
+            {#if i < meta.flow.length - 1}
+              <span class="flow-arrow" style="color:{meta.accent}">→</span>
+            {/if}
+          {/each}
+        </div>
+        {#if selectedTech?.startsWith(`flow-${key}-`)}
+          {@const idx = parseInt(selectedTech.split('-').at(-1) ?? '0')}
+          <div class="flow-detail-box" style="border-color:{meta.accent}40;background:{meta.accent}08">
+            <strong style="color:{meta.accent}">{meta.flow[idx].icon} {meta.flow[idx].label}</strong>
+            <p>{meta.flow[idx].detail}</p>
+          </div>
+        {/if}
+      </div>
+
+      <div class="detail-grid" style="margin-top:0.75rem">
         <div class="detail-col">
           <div class="detail-section-title">✅ Ciri-ciri Utama</div>
           {#each tx.features as f}
@@ -247,33 +358,48 @@
     <div class="slide slide-skills">
       <div class="slide-label">{$t.skills.label}</div>
       <h2 class="slide-title">{$t.skills.title}</h2>
-      <p class="slide-desc">{$t.skills.desc}</p>
+      <p class="slide-desc">{$t.skills.desc} <span class="skills-hint">— klik mana-mana teknologi untuk maklumat lanjut</span></p>
       <div class="skills-3col">
         <div class="skill-block">
           <div class="skill-block-title" style="color:#61DAFB">🎨 {$t.skills.frontend}</div>
           {#each [{n:'SvelteKit',v:90},{n:'Vue.js',v:85},{n:'Flutter (Dart)',v:82},{n:'React.js',v:70},{n:'HTML / CSS',v:88},{n:'JavaScript / TS',v:85}] as s}
-            <div class="skill-row-bar">
+            <button
+              class="skill-row-bar skill-clickable"
+              class:skill-selected={selectedTech === s.n}
+              onclick={() => selectedTech = selectedTech === s.n ? null : s.n}
+              aria-pressed={selectedTech === s.n}
+            >
               <div class="srb-label"><span>{s.n}</span><span style="color:#61DAFB">{s.v}%</span></div>
               <div class="srb-track"><div class="srb-fill" style="width:{s.v}%;background:#61DAFB"></div></div>
-            </div>
+            </button>
           {/each}
         </div>
         <div class="skill-block">
           <div class="skill-block-title" style="color:#FF6B6B">☁️ {$t.skills.backend}</div>
           {#each [{n:'Laravel (PHP)',v:85},{n:'Node.js',v:72},{n:'C# / .NET',v:65},{n:'Supabase',v:88},{n:'Docker',v:80},{n:'Azure / Vercel',v:75}] as s}
-            <div class="skill-row-bar">
+            <button
+              class="skill-row-bar skill-clickable"
+              class:skill-selected={selectedTech === s.n}
+              onclick={() => selectedTech = selectedTech === s.n ? null : s.n}
+              aria-pressed={selectedTech === s.n}
+            >
               <div class="srb-label"><span>{s.n}</span><span style="color:#FF6B6B">{s.v}%</span></div>
               <div class="srb-track"><div class="srb-fill" style="width:{s.v}%;background:#FF6B6B"></div></div>
-            </div>
+            </button>
           {/each}
         </div>
         <div class="skill-block">
           <div class="skill-block-title" style="color:#D4AF37">🛡️ {$t.skills.security}</div>
           {#each [{n:'Splunk SIEM',v:75},{n:'Wireshark',v:78},{n:'Pen Testing',v:68},{n:'VPN / Firewall',v:80},{n:'ISO 27001 / NIST',v:70},{n:'Network Troubleshoot',v:85}] as s}
-            <div class="skill-row-bar">
+            <button
+              class="skill-row-bar skill-clickable"
+              class:skill-selected={selectedTech === s.n}
+              onclick={() => selectedTech = selectedTech === s.n ? null : s.n}
+              aria-pressed={selectedTech === s.n}
+            >
               <div class="srb-label"><span>{s.n}</span><span style="color:#D4AF37">{s.v}%</span></div>
               <div class="srb-track"><div class="srb-fill" style="width:{s.v}%;background:#D4AF37"></div></div>
-            </div>
+            </button>
           {/each}
         </div>
       </div>
@@ -289,12 +415,35 @@
         <div class="skill-extra-block">
           <div class="extra-label">🛠️ {$t.skills.tools_label}</div>
           <div class="extra-chips">
-            {#each ['MySQL','PostgreSQL','MongoDB','Firebase','Redis','Jenkins','Kubernetes','Cloudflare','Kali Linux','Git','Figma','Power BI'] as s}
-              <span class="chip">{s}</span>
+            {#each ['MySQL','MariaDB','PostgreSQL','MongoDB','Firebase','Redis','Jenkins','Kubernetes','Cloudflare','Kali Linux','Git','Figma','Power BI'] as s}
+              <button
+                class="chip chip-btn"
+                class:chip-active={selectedTech === s}
+                onclick={() => selectedTech = selectedTech === s ? null : s}
+                aria-pressed={selectedTech === s}
+              >{s}</button>
             {/each}
           </div>
         </div>
       </div>
+
+      <!-- Tech detail panel -->
+      {#if selectedTech && techInfo[selectedTech]}
+        {@const info = techInfo[selectedTech]}
+        <div class="tech-panel" role="region" aria-label="Maklumat teknologi">
+          <div class="tech-panel-header">
+            <span class="tech-panel-name">{selectedTech}</span>
+            <button class="tech-panel-close" onclick={() => selectedTech = null} aria-label="Tutup">✕</button>
+          </div>
+          <p class="tech-panel-what">{info.what}</p>
+          <div class="tech-panel-where-label">📍 Digunakan dalam:</div>
+          <ul class="tech-panel-where">
+            {#each info.where as w}
+              <li>{w}</li>
+            {/each}
+          </ul>
+        </div>
+      {/if}
     </div>
 
     {:else if slides[currentSlide].type === 'edu'}
@@ -613,14 +762,100 @@
   }
   .nav-btn.primary:hover:not(:disabled) { box-shadow: 0 4px 20px rgba(212,175,55,0.4); }
 
+  /* ── Flow pipeline ──────────────────────────────────────────────────────── */
+  .flow-section { margin-bottom: 0.5rem; }
+  .flow-pipe {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem;
+    padding: 0.75rem 0;
+  }
+  .flow-step {
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 0.55rem 0.75rem;
+    cursor: pointer; transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    min-width: 80px; text-align: center;
+  }
+  .flow-step:hover { border-color: var(--ac, #D4AF37); background: rgba(212,175,55,0.06); transform: translateY(-2px); }
+  .flow-step-active { border-color: var(--ac, #D4AF37) !important; background: rgba(212,175,55,0.1) !important; }
+  .flow-icon  { font-size: 1.2rem; line-height: 1; }
+  .flow-label { font-size: 0.68rem; font-weight: 600; color: #9baec8; line-height: 1.2; letter-spacing: 0.02em; }
+  .flow-arrow { font-size: 1.1rem; opacity: 0.4; flex-shrink: 0; }
+  .flow-detail-box {
+    border: 1px solid; border-radius: 8px; padding: 0.85rem 1rem;
+    margin-top: 0.5rem; animation: fadeIn 0.2s ease;
+  }
+  .flow-detail-box strong { display: block; font-size: 0.85rem; margin-bottom: 0.4rem; }
+  .flow-detail-box p { font-size: 0.82rem; color: #9baec8; line-height: 1.65; margin: 0; }
+
+  /* ── Clickable skills ────────────────────────────────────────────────────── */
+  .skill-clickable {
+    width: 100%; background: none; border: none; padding: 0; cursor: pointer;
+    text-align: left; border-radius: 6px;
+    transition: background 0.15s; margin-bottom: 0.65rem;
+  }
+  .skill-clickable:hover { background: rgba(255,255,255,0.04); }
+  .skill-selected { background: rgba(212,175,55,0.08) !important; border-radius: 6px; }
+  .skills-hint { font-size: 0.78rem; color: #4a6080; font-style: italic; }
+
+  .chip-btn {
+    cursor: pointer; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .chip-btn:hover { border-color: rgba(212,175,55,0.5); color: #D4AF37; background: rgba(212,175,55,0.08); }
+  .chip-active { background: rgba(212,175,55,0.15) !important; border-color: rgba(212,175,55,0.5) !important; color: #D4AF37 !important; }
+
+  /* ── Tech detail panel ───────────────────────────────────────────────────── */
+  .tech-panel {
+    margin-top: 1rem;
+    background: linear-gradient(135deg, rgba(212,175,55,0.08), rgba(212,175,55,0.04));
+    border: 1px solid rgba(212,175,55,0.3); border-radius: 12px; padding: 1.25rem 1.5rem;
+    animation: slideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes slideUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+  .tech-panel-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;
+  }
+  .tech-panel-name {
+    font-size: 1rem; font-weight: 700; color: #D4AF37; letter-spacing: 0.04em;
+  }
+  .tech-panel-close {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px; color: #6b82a0; cursor: pointer; font-size: 0.8rem;
+    width: 26px; height: 26px; display:flex; align-items:center; justify-content:center;
+    transition: background 0.15s, color 0.15s;
+  }
+  .tech-panel-close:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .tech-panel-what {
+    font-size: 0.87rem; color: #c8d5e6; line-height: 1.7; margin: 0 0 1rem;
+  }
+  .tech-panel-where-label {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #D4AF37; margin-bottom: 0.5rem;
+  }
+  .tech-panel-where {
+    list-style: none; display: flex; flex-direction: column; gap: 0.35rem; margin: 0; padding: 0;
+  }
+  .tech-panel-where li {
+    display: flex; align-items: flex-start; gap: 0.5rem;
+    font-size: 0.82rem; color: #9baec8; line-height: 1.5;
+  }
+  .tech-panel-where li::before {
+    content: '→'; color: #D4AF37; flex-shrink: 0; font-weight: 700;
+  }
+
   @media (max-width: 768px) {
     .pres-main { padding: 1.5rem; }
     .skills-3col, .detail-grid { grid-template-columns: 1fr; }
     .exp-header-row, .proj-header-row { flex-direction: column; gap: 0.75rem; }
     .edu-card-slide { flex-direction: column; }
+    .flow-pipe { gap: 0.25rem; }
+    .flow-step { min-width: 64px; padding: 0.4rem 0.5rem; }
+    .flow-label { font-size: 0.6rem; }
+    .flow-icon  { font-size: 1rem; }
   }
   @media (max-width: 600px) {
-    /* Footer: 13 dots + 2 nav-buttons exceed ~326px available — shrink everything */
+    /* Footer: dots + 2 nav-buttons exceed ~326px available — shrink everything */
     .pres-footer { padding: 0.75rem 1rem; gap: 0.5rem; flex-wrap: wrap; }
     .dot { width: 6px; height: 6px; }
     .dot.active { width: 16px; }
@@ -628,5 +863,7 @@
     .pres-header { padding: 0.75rem 1rem; }
     .slide-counter { font-size: 0.75rem; }
     .close-btn { padding: 0.4rem 0.75rem; font-size: 0.78rem; }
+    .flow-arrow { display: none; }
+    .flow-step { min-width: 58px; }
   }
 </style>
