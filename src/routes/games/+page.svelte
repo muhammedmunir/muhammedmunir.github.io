@@ -496,6 +496,9 @@
       <a href="/" class="btn-terminal">
         <span class="hud-blink"></span> ESC // MAIN_PORTAL
       </a>
+      <a href="/city" class="btn-terminal" style="color: #A78BFA; border-color: rgba(167,139,250,0.4);">
+        🏙️ CITY
+      </a>
       <button class="btn-terminal" onclick={toggleLang} style="cursor: pointer; display: flex; align-items: center; gap: 0.3rem;">
         🌐 {$lang.toUpperCase()}
       </button>

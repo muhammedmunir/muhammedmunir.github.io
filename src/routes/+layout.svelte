@@ -34,7 +34,7 @@
   <title>Muhammed Munir | Full-Stack Developer & IT Professional</title>
 </svelte:head>
 
-{#if !$page.url.pathname.startsWith('/games')}
+{#if !$page.url.pathname.startsWith('/games') && !$page.url.pathname.startsWith('/city')}
 <!-- NAV -->
 <nav class="nav" class:scrolled={navScrolled} aria-label="Main navigation">
   <div class="nav-inner">
@@ -69,6 +69,9 @@
       <a href="/games" class="btn btn-games nav-games" id="nav-games-btn">
         🎮 Games
       </a>
+      <a href="/city" class="btn btn-games nav-city" id="nav-city-btn">
+        🏙️ City
+      </a>
       {#if !$page.url.pathname.startsWith('/games')}
       <a href="#contact" class="btn btn-primary nav-cta" id="nav-hire-btn">
         {$t.nav.hire}
@@ -100,6 +103,7 @@
       {/each}
       <div class="mobile-menu-divider"></div>
       <a href="/games" class="mobile-nav-link mobile-games-link" onclick={() => mobileOpen = false}>🎮 Games</a>
+      <a href="/city" class="mobile-nav-link mobile-city-link" onclick={() => mobileOpen = false}>🏙️ City Explorer</a>
       <a href="#contact" class="btn btn-primary mobile-cta" onclick={() => mobileOpen = false} id="mobile-hire-btn">
         {$t.nav.hire}
       </a>
@@ -112,7 +116,7 @@
   {@render children()}
 </main>
 
-{#if !$page.url.pathname.startsWith('/games')}
+{#if !$page.url.pathname.startsWith('/games') && !$page.url.pathname.startsWith('/city')}
 <!-- Footer -->
 <footer class="footer">
   <div class="footer-inner">
@@ -327,6 +331,7 @@
   }
   .mobile-nav-link:hover { color: var(--gold); background: rgba(212,175,55,0.07); }
   .mobile-games-link { color: var(--gold); }
+  .mobile-city-link { color: #A78BFA; }
   .mobile-menu-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 0.25rem 0; }
   .mobile-cta { margin-top: 0.5rem; justify-content: center; }
 
@@ -348,9 +353,20 @@
       -webkit-backdrop-filter: none;
     }
   }
+  .nav-city {
+    background: rgba(167,139,250,0.08);
+    border: 1px solid rgba(167,139,250,0.3);
+    color: #A78BFA;
+  }
+  .nav-city:hover {
+    background: rgba(167,139,250,0.18);
+    transform: none;
+  }
+
   @media (max-width: 540px) {
-    /* Hide standalone Games button on very small screens — accessible via hamburger */
+    /* Hide standalone Games/City buttons on very small screens — accessible via hamburger */
     .btn-games { display: none; }
+    .nav-city  { display: none; }
     .nav-logo { font-size: 1.2rem; }
     .lang-opt { padding: 0.4rem 0.55rem; font-size: 0.72rem; }
   }
