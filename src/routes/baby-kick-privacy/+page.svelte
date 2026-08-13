@@ -1,7 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     
-    let lang = 'en'; // 'en' or 'ms'
+    let lang = $state('en'); // 'en' or 'ms'
 
     function toggleLang(l) {
         lang = l;
@@ -56,8 +56,8 @@
                 <p class="app-subtitle">{lang === 'en' ? 'Privacy Policy' : 'Dasar Privasi'}</p>
                 
                 <div class="lang-toggle">
-                    <button class:active={lang === 'en'} on:click={() => toggleLang('en')}>English</button>
-                    <button class:active={lang === 'ms'} on:click={() => toggleLang('ms')}>Bahasa Melayu</button>
+                    <button class:active={lang === 'en'} onclick={() => toggleLang('en')}>English</button>
+                    <button class:active={lang === 'ms'} onclick={() => toggleLang('ms')}>Bahasa Melayu</button>
                 </div>
             </div>
             
