@@ -16,6 +16,9 @@ const config = {
 		// User site = empty base → https://muhammedmunir.github.io
 		paths: {
 			base: ''
+		},
+		prerender: {
+			handleMissingId: 'ignore'
 		}
 	}
 };
