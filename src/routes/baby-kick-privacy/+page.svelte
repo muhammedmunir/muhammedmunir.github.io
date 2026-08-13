@@ -226,6 +226,12 @@
         text-decoration: none !important;
         font-weight: 500;
         transition: color 0.2s;
+        /* Fix mobile overflow issue for long URLs */
+        word-wrap: break-word !important;
+        overflow-wrap: anywhere !important;
+        word-break: break-word !important;
+        display: inline-block;
+        max-width: 100%;
     }
 
     .privacy-container a:hover {
@@ -323,14 +329,17 @@
     }
 
     @media (max-width: 640px) {
+        .privacy-container {
+            padding: 1.5rem 0.5rem;
+        }
         .privacy-content {
-            padding: 2rem 1.5rem;
+            padding: 1.5rem 1rem;
         }
         .privacy-header {
-            padding: 2.5rem 1.5rem;
+            padding: 2rem 1rem;
         }
         .privacy-container h1.app-title {
-            font-size: 2rem !important;
+            font-size: 1.8rem !important;
         }
         .developer-info strong {
             width: 100%;
