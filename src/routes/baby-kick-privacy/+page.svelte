@@ -10,7 +10,7 @@
 </svelte:head>
 
 <!-- We use a fixed positioned full-screen overlay approach to hide the portfolio's default navigation and dark theme, ensuring this page looks like a standalone document -->
-<div class="fixed inset-0 z-[9999] overflow-y-auto bg-[#FFF0F5] text-gray-800 font-sans selection:bg-pink-300">
+<div id="hero" class="fixed inset-0 z-[9999] overflow-y-auto bg-[#FFF0F5] text-gray-800 font-sans selection:bg-pink-300">
     <div class="min-h-screen py-12 px-4 sm:px-6">
         <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-pink-100">
             <!-- Header Section -->
