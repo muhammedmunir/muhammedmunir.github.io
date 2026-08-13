@@ -34,7 +34,7 @@
   <title>Muhammed Munir | Full-Stack Developer & IT Professional</title>
 </svelte:head>
 
-{#if !$page.url.pathname.startsWith('/games') && !$page.url.pathname.startsWith('/city')}
+{#if !$page.url.pathname.startsWith('/games') && !$page.url.pathname.startsWith('/city') && !$page.url.pathname.startsWith('/baby-kick-privacy')}
 <!-- NAV -->
 <nav class="nav" class:scrolled={navScrolled} aria-label="Main navigation">
   <div class="nav-inner">
@@ -116,7 +116,7 @@
   {@render children()}
 </main>
 
-{#if !$page.url.pathname.startsWith('/games') && !$page.url.pathname.startsWith('/city')}
+{#if !$page.url.pathname.startsWith('/games') && !$page.url.pathname.startsWith('/city') && !$page.url.pathname.startsWith('/baby-kick-privacy')}
 <!-- Footer -->
 <footer class="footer">
   <div class="footer-inner">
