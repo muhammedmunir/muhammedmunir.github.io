@@ -1,14 +1,35 @@
 <script>
-    import { onMount, onDestroy } from 'svelte';
+    import { onMount } from 'svelte';
     
     // SvelteKit layouts might set a global dark background on the body tag.
     // We override it here when this page mounts to ensure the entire screen uses our app theme.
     onMount(() => {
         const originalBg = document.body.style.backgroundColor;
         document.body.style.backgroundColor = '#FFF0F5';
+
+        // Override the favicon dynamically
+        let originalFaviconHref = '';
+        const faviconLink = document.querySelector('link[rel="icon"]') || document.querySelector('link[rel="shortcut icon"]');
+        if (faviconLink) {
+            originalFaviconHref = faviconLink.href;
+            faviconLink.href = '/Logo_BiK.png';
+        } else {
+            // If no favicon exists, create one
+            const newFavicon = document.createElement('link');
+            newFavicon.rel = 'icon';
+            newFavicon.href = '/Logo_BiK.png';
+            document.head.appendChild(newFavicon);
+        }
         
         return () => {
             document.body.style.backgroundColor = originalBg;
+            // Restore original favicon
+            if (faviconLink && originalFaviconHref) {
+                faviconLink.href = originalFaviconHref;
+            } else if (!faviconLink) {
+                const addedFavicon = document.querySelector('link[href="/Logo_BiK.png"]');
+                if (addedFavicon) addedFavicon.remove();
+            }
         };
     });
 </script>
@@ -16,6 +37,7 @@
 <svelte:head>
     <title>Baby Kick Tracker - Privacy Policy</title>
     <meta name="robots" content="noindex" />
+    <link rel="icon" href="/Logo_BiK.png" />
 </svelte:head>
 
 <div id="hero" class="privacy-container">
