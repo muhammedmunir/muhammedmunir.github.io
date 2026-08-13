@@ -1,42 +1,33 @@
-# sv
+# Personal Portfolio Website
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Laman web ini adalah sebuah portfolio peribadi premium yang dibina menggunakan [SvelteKit](https://kit.svelte.dev/) dan TailwindCSS. Ia direka bentuk secara dinamik dengan pelbagai mod interaktif yang unik.
 
-## Creating a project
+## Ciri-ciri Utama
 
-If you're seeing this, you've probably already done this step. Congrats!
+- **Bilingual Support**: Sokongan dwibahasa untuk capaian yang lebih meluas.
+- **Presentation Mode**: Mod persembahan khas untuk memaparkan maklumat, kemahiran (skills) dan profil secara interaktif.
+- **Cyberpunk RPG Explorer Game**: Permainan RPG berkonsepkan Cyberpunk dengan grafik resolusi tinggi (high-fidelity) yang membolehkan pelawat meneroka portfolio secara interaktif.
+- **City Explorer Route**: Antara muka penerokaan (Explorer) berasaskan susun atur bandar.
+- **Web3Forms Integration**: Borang hubungan yang bersepadu sepenuhnya untuk penghantaran e-mel sebenar.
+- **Responsif Sepenuhnya**: Reka letak yang dioptimumkan untuk setiap peranti mudah alih dengan sokongan untuk kawalan permainan (D-pad) pada telefon pintar.
 
-```sh
-# create a new project
-npx sv create my-app
-```
+## Pembangunan
 
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.15.3 create --template minimal --types ts --add tailwindcss="plugins:none" prettier --no-download-check --no-install portfolio
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Setelah memuat turun projek ini dan memasang semua pakej keperluan menggunakan `npm install` (atau `pnpm install` / `yarn`), mulakan pelayan pembangunan tempatan (development server):
 
 ```sh
 npm run dev
 
-# or start the server and open the app in a new browser tab
+# atau mulakan pelayan dan buka laman web secara terus di pelayar
 npm run dev -- --open
 ```
 
-## Building
+## Pembinaan (Building)
 
-To create a production version of your app:
+Untuk memulakan versi pengeluaran (production) aplikasi anda, jalankan perintah berikut:
 
 ```sh
 npm run build
 ```
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+Anda boleh melihat pratonton binaan pengeluaran menggunakan `npm run preview`.
