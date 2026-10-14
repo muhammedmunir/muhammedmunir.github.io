@@ -21,6 +21,7 @@
 		badgeKey: 'enterprise' | 'production' | 'innovation' | 'academic';
 		accent: string;
 		icon: string;
+		image?: string;
 		docHref?: string;
 		demoHref?: string;
 		gradient: string;
@@ -120,6 +121,7 @@
 			badgeKey: 'innovation',
 			accent: '#818CF8',
 			icon: '🏢',
+			image: '/images/9router_office_3d.png',
 			gradient: 'linear-gradient(135deg, rgba(129,140,248,0.14) 0%, rgba(15,18,48,0.7) 100%)',
 			tags: [
 				'Node.js 22+',
@@ -155,6 +157,7 @@
 			badgeKey: 'production',
 			accent: '#F43F5E',
 			icon: '👶',
+			image: '/images/baby_kicking_logo.png',
 			gradient: 'linear-gradient(135deg, rgba(244,63,94,0.14) 0%, rgba(35,10,20,0.7) 100%)',
 			tags: [
 				'Flutter Cross-Platform',
@@ -572,7 +575,11 @@
 					<!-- Header: Icon & Category Badge -->
 					<div class="card-header-row">
 						<div class="card-icon-avatar" style="border-color: {project.accent};">
-							<span>{project.icon}</span>
+							{#if project.image}
+								<img src={project.image} alt="" class="card-avatar-img" />
+							{:else}
+								<span>{project.icon}</span>
+							{/if}
 						</div>
 						<div class="card-badges">
 							{#if project.isGov}
@@ -685,6 +692,18 @@
 				<span class="dim">Organisasi / Konteks:</span>
 				<strong>{selectedProject.context}</strong>
 			</div>
+
+			<!-- System Visual Preview (if available) -->
+			{#if selectedProject.image}
+				<div class="modal-preview-box">
+					<img
+						src={selectedProject.image}
+						alt={modalData.title}
+						class="modal-preview-img"
+						loading="lazy"
+					/>
+				</div>
+			{/if}
 
 			<!-- System Description -->
 			<div class="modal-section">
@@ -957,6 +976,14 @@
 		justify-content: center;
 		font-size: 1.4rem;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		overflow: hidden;
+	}
+	.card-avatar-img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+		padding: 4px;
+		border-radius: 10px;
 	}
 	.card-badges {
 		display: flex;
@@ -1290,6 +1317,25 @@
 	.modal-context-strip .dim {
 		color: #94a3b8;
 		margin-right: 0.4rem;
+	}
+
+	.modal-preview-box {
+		width: 100%;
+		border-radius: 12px;
+		overflow: hidden;
+		background: radial-gradient(circle, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1.25rem;
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+	}
+	.modal-preview-img {
+		max-height: 220px;
+		max-width: 100%;
+		object-fit: contain;
+		border-radius: 8px;
 	}
 
 	.modal-section-title {
