@@ -45,10 +45,10 @@
 </script>
 
 <svelte:head>
-	<title>Muhammed Munir Bin Mohd Azmi | Full-Stack Developer & IT Professional</title>
+	<title>Muhammed Munir Bin Mohd Azmi | Full-Stack Software Engineer & Solutions Architect</title>
 	<meta
 		name="description"
-		content="Portfolio of Muhammed Munir Bin Mohd Azmi — IT Professional, Full-Stack Developer specializing in secure, scalable applications with Vue.js, Laravel, SvelteKit, and Flutter."
+		content="Official portfolio of Muhammed Munir Bin Mohd Azmi — Full-Stack Software Engineer & Solutions Architect at YHCM Sdn Bhd, based in Bandar Puteri, Puchong, Selangor. Specializing in Vue.js 3, Laravel 12, SvelteKit, Flutter, Docker Swarm, and Cloud Architecture."
 	/>
 </svelte:head>
 

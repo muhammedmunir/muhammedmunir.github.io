@@ -1,3 +1,5 @@
-# allow crawling everything by default
 User-agent: *
-Disallow:
+Allow: /
+
+# Sitemap
+Sitemap: https://muhammedmunir.github.io/sitemap.xml
