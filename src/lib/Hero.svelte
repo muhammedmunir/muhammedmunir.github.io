@@ -4,7 +4,7 @@
 	import { lang } from '$lib/i18n';
 	import { translations } from '$lib/translations';
 	import { derived } from 'svelte/store';
-	import { playBlip } from '$lib/sound';
+	import { playBlip, playConfirm } from '$lib/sound';
 
 	let heroRef: HTMLElement;
 	let parallaxLayer: HTMLElement;
@@ -126,6 +126,21 @@
 		</p>
 
 		<div id="hero-cta" class="hero-cta" style="opacity:0">
+			<!-- J.A.R.V.I.S Neural Assistant Button -->
+			<button
+				type="button"
+				class="btn btn-cyber-jarvis"
+				id="cta-jarvis"
+				onclick={() => {
+					playConfirm();
+					window.dispatchEvent(new CustomEvent('open-jarvis'));
+				}}
+				onmouseenter={() => playBlip(750, 0.03)}
+			>
+				<span class="jarvis-pulse-orb"></span>
+				{$t.cta_jarvis}
+			</button>
+
 			<a
 				href="#projects"
 				class="btn btn-primary"
@@ -201,7 +216,7 @@
 	</div>
 
 	<div class="hero-stats">
-		{#each [{ num: '4+', key: 'exp' as const }, { num: '7+', key: 'projects' as const }, { num: '18+', key: 'tech' as const }, { num: 'B.Sc.', key: 'degree' as const }] as stat}
+		{#each [{ num: '4+', key: 'exp' as const }, { num: '19+', key: 'projects' as const }, { num: '18+', key: 'tech' as const }, { num: 'B.Sc.', key: 'degree' as const }] as stat}
 			<div class="stat-item">
 				<span class="stat-num">{stat.num}</span>
 				<span class="stat-label">{$t.stats[stat.key]}</span>
@@ -418,6 +433,49 @@
 		color: #020712;
 		box-shadow: 0 0 35px rgba(0, 240, 255, 0.6);
 		transform: translateY(-2px);
+	}
+
+	/* Cyber JARVIS Button */
+	.btn-cyber-jarvis {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6rem;
+		background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(14, 165, 233, 0.08));
+		border: 1.5px solid #38bdf8;
+		color: #f0f9ff;
+		padding: 0.85rem 1.8rem;
+		border-radius: 8px;
+		font-family: var(--font-body);
+		font-weight: 700;
+		font-size: 0.95rem;
+		cursor: pointer;
+		box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+		transition: all 0.25s ease;
+		outline: none;
+	}
+	.btn-cyber-jarvis:hover {
+		background: #38bdf8;
+		color: #030712;
+		box-shadow: 0 0 40px rgba(56, 189, 248, 0.8);
+		transform: translateY(-2px);
+	}
+	.jarvis-pulse-orb {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: #00f0ff;
+		box-shadow: 0 0 10px #00f0ff;
+		animation: orbBlink 1.5s infinite alternate;
+	}
+	@keyframes orbBlink {
+		from {
+			opacity: 0.4;
+			transform: scale(0.8);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1.2);
+		}
 	}
 
 	.scroll-hint {

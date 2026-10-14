@@ -7,7 +7,7 @@
 	import { derived, get } from 'svelte/store';
 	import { page } from '$app/stores';
 	import JarvisHUD from '$lib/JarvisHUD.svelte';
-	import { playBlip } from '$lib/sound';
+	import { playBlip, playConfirm } from '$lib/sound';
 
 	let { children }: { children: Snippet } = $props();
 	let navScrolled = $state(false);
@@ -81,6 +81,21 @@
 					<span class="lang-opt" class:active={$lang === 'ms'}>BM</span>
 					<span class="lang-divider" aria-hidden="true">|</span>
 					<span class="lang-opt" class:active={$lang === 'en'}>EN</span>
+				</button>
+
+				<!-- JARVIS AI Button in Navbar -->
+				<button
+					type="button"
+					class="btn nav-jarvis"
+					id="nav-jarvis-btn"
+					onclick={() => {
+						playConfirm();
+						window.dispatchEvent(new CustomEvent('open-jarvis'));
+					}}
+					onmouseenter={() => playBlip(680, 0.03)}
+					title="Buka J.A.R.V.I.S AI Assistant (Ctrl + J)"
+				>
+					🤖 JARVIS
 				</button>
 
 				<!-- Direct Resume Download Button in Navbar -->
@@ -336,6 +351,24 @@
 		line-height: 1;
 		pointer-events: none;
 		user-select: none;
+	}
+
+	.nav-jarvis {
+		background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(14, 165, 233, 0.05));
+		border: 1px solid rgba(56, 189, 248, 0.6);
+		color: #38bdf8;
+		border-radius: 8px;
+		padding: 0.5rem 0.95rem;
+		font-size: 0.82rem;
+		font-weight: 800;
+		cursor: pointer;
+		transition: all 0.2s;
+		box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+	}
+	.nav-jarvis:hover {
+		background: #38bdf8;
+		color: #030712;
+		box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
 	}
 
 	.nav-cta {

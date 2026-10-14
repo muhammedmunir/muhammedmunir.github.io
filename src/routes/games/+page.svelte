@@ -232,12 +232,12 @@
 					y: 12,
 					w: 12,
 					h: 18,
-					label: 'Loan System',
-					icon: '🏦',
+					label: 'EMESYS (Gov)',
+					icon: '🛡️',
 					content: {
-						title: t.projects.iwa001.title,
-						body: `${t.projects.iwa001.desc}\n\n${$lang === 'ms' ? 'Ciri-Ciri Utama:' : 'Key Features:'}\n${t.projects.iwa001.features.map((f: string) => `• ${f}`).join('\n')}`,
-						tags: ['Supabase RLS', 'JWT', 'Admin Panel', 'Vercel']
+						title: t.projects.emesys.title,
+						body: `${t.projects.emesys.desc}\n\n${$lang === 'ms' ? 'Modul Teras:' : 'Core Modules:'}\n${t.projects.emesys.features.map((f: string) => `• ${f}`).join('\n')}`,
+						tags: ['Laravel 11', 'Vue.js 3', 'Docker Swarm', 'SSO SAKTI TD']
 					}
 				},
 				{
@@ -245,12 +245,12 @@
 					y: 12,
 					w: 12,
 					h: 18,
-					label: 'Infinity World',
-					icon: '🌍',
+					label: 'SUTERA (Gov)',
+					icon: '⚙️',
 					content: {
-						title: t.projects.infinity.title,
-						body: `${t.projects.infinity.desc}\n\n${$lang === 'ms' ? 'Ciri-Ciri Utama:' : 'Key Features:'}\n${t.projects.infinity.features.map((f: string) => `• ${f}`).join('\n')}`,
-						tags: ['Svelte Store i18n', 'Redis', 'Resend API', 'Vercel']
+						title: t.projects.sutera.title,
+						body: `${t.projects.sutera.desc}\n\n${$lang === 'ms' ? 'Modul Teras:' : 'Core Modules:'}\n${t.projects.sutera.features.map((f: string) => `• ${f}`).join('\n')}`,
+						tags: ['Laravel 11', 'Vue 3', 'PostgreSQL 17', 'Sync SPATD']
 					}
 				},
 				{
@@ -258,7 +258,20 @@
 					y: 46,
 					w: 12,
 					h: 18,
-					label: 'TINDAK & AI',
+					label: 'ADIMS (Gov)',
+					icon: '📦',
+					content: {
+						title: t.projects.adims.title,
+						body: `${t.projects.adims.desc}\n\n${$lang === 'ms' ? 'Ciri-Ciri Utama:' : 'Key Features:'}\n${t.projects.adims.features.map((f: string) => `• ${f}`).join('\n')}`,
+						tags: ['Laravel 12', 'Bacon/Endroid QR', 'AWS S3', 'Horizon']
+					}
+				},
+				{
+					x: 82,
+					y: 46,
+					w: 12,
+					h: 18,
+					label: 'TINDAK AI',
 					icon: '⚡',
 					content: {
 						title: t.projects.tindak.title,
@@ -267,16 +280,16 @@
 					}
 				},
 				{
-					x: 82,
-					y: 46,
+					x: 44,
+					y: 34,
 					w: 12,
 					h: 18,
-					label: 'FYP UTM',
-					icon: '🎓',
+					label: 'Baby Kicking',
+					icon: '👶',
 					content: {
-						title: t.projects.fyp.title,
-						body: `${t.projects.fyp.desc}\n\n${$lang === 'ms' ? 'Ciri-Ciri Utama:' : 'Key Features:'}\n${t.projects.fyp.features.map((f: string) => `• ${f}`).join('\n')}`,
-						tags: ['Google Maps API', 'SvelteKit', 'Supabase PostgreSQL']
+						title: t.projects.baby_kicking.title,
+						body: `${t.projects.baby_kicking.desc}\n\n${$lang === 'ms' ? 'Ciri-Ciri Utama:' : 'Key Features:'}\n${t.projects.baby_kicking.features.map((f: string) => `• ${f}`).join('\n')}`,
+						tags: ['Flutter Cross-Platform', 'Firebase Firestore', 'PDF Export']
 					}
 				}
 			],
