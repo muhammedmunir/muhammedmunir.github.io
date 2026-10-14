@@ -35,7 +35,7 @@
 </script>
 
 <svelte:head>
-	<title>Muhammed Munir | Full-Stack Developer & IT Professional</title>
+	<title>Muhammed Munir Bin Mohd Azmi | Full-Stack Software Engineer & Solutions Architect</title>
 </svelte:head>
 
 {#if !$page.url.pathname.startsWith('/games') && !$page.url.pathname.startsWith('/city')}

@@ -137,8 +137,14 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 		{
 			icon: '💼',
 			label: 'LinkedIn',
-			value: 'linkedin.com/in/muhammed-munir',
-			href: 'https://linkedin.com/in/muhammed-munir'
+			value: 'linkedin.com/in/muhammed-munir-bin-mohd-azmi',
+			href: 'https://www.linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271'
+		},
+		{
+			icon: '🐙',
+			label: 'GitHub',
+			value: 'github.com/muhammedmunir',
+			href: 'https://github.com/muhammedmunir'
 		},
 		{
 			icon: '📍',
@@ -175,8 +181,10 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 								{#if detail.href}
 									<a
 										href={detail.href}
+										target="_blank"
+										rel="me noopener noreferrer"
 										class="detail-value"
-										id="contact-{detail.label.toLowerCase().replace(' ', '-')}">{detail.value}</a
+										id="contact-{detail.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}">{detail.value}</a
 									>
 								{:else}
 									<span class="detail-value">{detail.value}</span>
