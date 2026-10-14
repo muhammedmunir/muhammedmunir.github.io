@@ -460,7 +460,7 @@ export const translations = {
 
 		// JARVIS AI System
 		jarvis: {
-			hud_badge: 'J.A.R.V.I.S // NEURAL ASSISTANT',
+			hud_badge: 'J.A.R.V.I.S · NEURAL ASSISTANT',
 			status_title: 'JARVIS CORE AKTIF · FASIH BAHASA MELAYU',
 			telemetry: 'SISTEM: OPTIMAL · TELEMETRI: 18+ PROJEK · LOKASI: PUCHONG, SELANGOR',
 			greeting:
@@ -937,7 +937,7 @@ export const translations = {
 
 		// JARVIS AI System
 		jarvis: {
-			hud_badge: 'J.A.R.V.I.S // NEURAL ASSISTANT',
+			hud_badge: 'J.A.R.V.I.S · NEURAL ASSISTANT',
 			status_title: 'JARVIS CORE ACTIVE · BILINGUAL ENG & MALAY',
 			telemetry: 'SYSTEM: OPTIMAL · TELEMETRY: 18+ SYSTEMS · LOCATION: PUCHONG, SELANGOR',
 			greeting:
