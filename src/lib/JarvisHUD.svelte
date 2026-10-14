@@ -215,10 +215,195 @@
 			q.includes('boleh bahasa')
 		) {
 			reply = isMalay
-				? 'Tentu sekali! Saya J.A.R.V.I.S, dan saya fasih berbahasa Melayu sepenuhnya. Anda boleh bertanya tentang statistik sistem, jumlah projek kerajaan (eMesys, Sutera, ADIMS), aplikasi mobile seperti TINDAK dan Baby Kicking, pengalaman kerja Munir di YHCM & TNB, atau memuat turun resume ATS. Apa yang anda ingin semak?'
-				: 'Absolutely! I am fully fluent in Bahasa Melayu and English. Feel free to ask about ecosystem stats, Munir’s 3 public sector systems at YHCM (eMesys, Sutera, ADIMS), his mobile & AI tools, or request his ATS Resume.';
+				? 'Tentu sekali! Saya J.A.R.V.I.S, dan saya fasih berbahasa Melayu sepenuhnya. Anda boleh bertanya tentang lokasi kediaman Munir, kelayakan universiti UTM, statistik sistem, jumlah projek kerajaan (eMesys, Sutera, ADIMS), aplikasi mobile Flutter & AI, pengalaman kerja di YHCM & TNB, atau memuat turun resume ATS. Apa yang anda ingin semak?'
+				: 'Absolutely! I am fully fluent in Bahasa Melayu and English. Feel free to ask about Munir\'s location, UTM degree, ecosystem stats, public sector systems, mobile & AI apps, or request his ATS Resume.';
 		}
-		// 2. Statistics, Telemetry & Analytics ("statistik", "statstik", "stats", "telemetri", "metrics", "analitik")
+		// 2. Location & Residence ("di tinggal mana", "dia tinggal mana", "tinggal mana", "kat mana", "tempat tinggal", "asal", "lokasi", "location", "address", "alamat", "puchong", "selangor", "where live", "where does he live")
+		else if (
+			q.includes('tinggal') ||
+			q.includes('lokasi') ||
+			q.includes('location') ||
+			q.includes('berpangkalan') ||
+			q.includes('asal') ||
+			q.includes('alamat') ||
+			q.includes('address') ||
+			q.includes('puchong') ||
+			q.includes('selangor') ||
+			q.includes('where live') ||
+			q.includes('where does he live') ||
+			q.includes('where do you live')
+		) {
+			reply = isMalay
+				? '📍 **Lokasi & Kediaman Muhammed Munir:**\n\n' +
+				  'Beliau menetap dan berpangkalan di **Bandar Puteri, Puchong, Selangor, Malaysia**.\n\n' +
+				  'Ketersediaan mod kerja:\n' +
+				  '• 🏢 **Sepenuh Masa / On-site / Hibrid** di sekitar Lembah Klang, Kuala Lumpur, Putrajaya, Cyberjaya & Selangor.\n' +
+				  '• 🌐 **Kerja Jarak Jauh (Remote)** untuk seluruh Malaysia atau antarabangsa.\n\n' +
+				  'Sedia untuk dihubungi bagi sebarang peluang pekerjaan atau perbincangan projek.'
+				: '📍 **Muhammed Munir\'s Location & Work Base:**\n\n' +
+				  'He resides and is based in **Bandar Puteri, Puchong, Selangor, Malaysia**.\n\n' +
+				  'Work mode availability:\n' +
+				  '• 🏢 **Full-time / On-site / Hybrid roles** in Klang Valley, Kuala Lumpur, Putrajaya, Cyberjaya & Selangor.\n' +
+				  '• 🌐 **Remote positions** nationwide or worldwide.\n\n' +
+				  'Feel free to reach out to schedule an interview or discuss potential collaborations.';
+			action = {
+				label: isMalay ? '📞 Hubungi Munir' : '📞 Contact Munir',
+				callback: () => {
+					isOpen = false;
+					window.location.hash = '#contact';
+				}
+			};
+		}
+		// 3. Education, University & Degree ("belajar mana", "universiti", "utm", "degree", "ijazah", "cgpa", "pngk", "pendidikan", "education")
+		else if (
+			q.includes('belajar') ||
+			q.includes('universiti') ||
+			q.includes('university') ||
+			q.includes('utm') ||
+			q.includes('degree') ||
+			q.includes('ijazah') ||
+			q.includes('cgpa') ||
+			q.includes('pngk') ||
+			q.includes('pendidikan') ||
+			q.includes('education') ||
+			q.includes('kelulusan') ||
+			q.includes('akademik') ||
+			q.includes('gpa') ||
+			q.includes('graduan') ||
+			q.includes('graduate') ||
+			q.includes('study')
+		) {
+			reply = isMalay
+				? '🎓 **Kelayakan Akademik & Pendidikan Muhammed Munir:**\n\n' +
+				  '• 🏛️ **Universiti**: Universiti Teknologi Malaysia (UTM Skudai, Johor)\n' +
+				  '• 📜 **Ijazah**: Ijazah Sarjana Muda Sains Komputer (Keselamatan Rangkaian) / *B.Sc. Computer Science (Network Security)*\n' +
+				  '• 🎖️ **Keputusan (PNGK / CGPA)**: **3.17** (Kepujian Kelas Kedua Atas)\n' +
+				  '• 🗺️ **Projek Tahun Akhir (FYP)**: Sistem Pemetaan & Analitik Kluster Jenayah menggunakan Google Maps API, SvelteKit, dan Supabase PostgreSQL.\n' +
+				  '• 🛡️ **Latihan & Pensijilan**: Pemantauan SOC Splunk SIEM, Simulasi Eksploitasi Vulhub CVE, dan Cisco CCNA.'
+				: '🎓 **Muhammed Munir\'s Academic Credentials:**\n\n' +
+				  '• 🏛️ **University**: Universiti Teknologi Malaysia (UTM Skudai, Johor)\n' +
+				  '• 📜 **Degree**: Bachelor of Science in Computer Science (Network Security)\n' +
+				  '• 🎖️ **CGPA**: **3.17** (Second Class Upper Honours)\n' +
+				  '• 🗺️ **Final Year Project (FYP)**: Spatial Crime Mapping & Clustering Engine with Google Maps API, SvelteKit, and Supabase PostgreSQL.\n' +
+				  '• 🛡️ **Professional Training**: Splunk SOC Threat Monitoring, Vulhub CVE Labs, and Cisco CCNA Fundamentals.';
+			action = {
+				label: isMalay ? '🗺️ Lihat Projek FYP' : '🗺️ View FYP Project',
+				callback: () => {
+					isOpen = false;
+					window.location.hash = '#projects';
+				}
+			};
+		}
+		// 4. Contact, Phone, WhatsApp, Email, LinkedIn, GitHub
+		else if (
+			q.includes('nombor') ||
+			q.includes('telefon') ||
+			q.includes('phone') ||
+			q.includes('whatsapp') ||
+			q.includes('wasap') ||
+			q.includes('email') ||
+			q.includes('emel') ||
+			q.includes('linkedin') ||
+			q.includes('github') ||
+			q.includes('contact') ||
+			q.includes('hubungi') ||
+			q.includes('cara hubungi') ||
+			q.includes('reach')
+		) {
+			reply = isMalay
+				? '📞 **Saluran Komunikasi Terus Muhammed Munir:**\n\n' +
+				  '• 📱 **Telefon / WhatsApp**: +6013-5636124\n' +
+				  '• 📧 **E-mel**: muhammed.munir97.mm@gmail.com\n' +
+				  '• 💼 **LinkedIn**: linkedin.com/in/muhammed-munir\n' +
+				  '• 🐙 **GitHub**: github.com/muhammedmunir\n' +
+				  '• 📍 **Lokasi**: Bandar Puteri, Puchong, Selangor\n\n' +
+				  'Beliau sedia membalas sebarang pertanyaan dalam masa kurang daripada 24 jam.'
+				: '📞 **Direct Communications for Muhammed Munir:**\n\n' +
+				  '• 📱 **Phone / WhatsApp**: +6013-5636124\n' +
+				  '• 📧 **Email**: muhammed.munir97.mm@gmail.com\n' +
+				  '• 💼 **LinkedIn**: linkedin.com/in/muhammed-munir\n' +
+				  '• 🐙 **GitHub**: github.com/muhammedmunir\n' +
+				  '• 📍 **Location**: Bandar Puteri, Puchong, Selangor\n\n' +
+				  'He responds promptly to all professional opportunities within 24 hours.';
+			action = {
+				label: isMalay ? '💬 Buka Borang Hubungi' : '💬 Open Contact Form',
+				callback: () => {
+					isOpen = false;
+					window.location.hash = '#contact';
+				}
+			};
+		}
+		// 5. Age & Birth Year ("umur", "berapa umur", "lahir", "tahun lahir", "age", "birthday", "birth")
+		else if (
+			q.includes('umur') ||
+			q.includes('age') ||
+			q.includes('lahir') ||
+			q.includes('birthday') ||
+			q.includes('how old')
+		) {
+			reply = isMalay
+				? '👤 **Profil Peribadi Muhammed Munir:**\n\n' +
+				  '• **Tahun Lahir**: 1997 (berumur sekitar 28 tahun)\n' +
+				  '• **Warganegara**: Malaysia\n' +
+				  '• **Status Kerjaya**: Tersedia segera untuk sebarang penempatan kerja profesional.\n' +
+				  '• **Pengalaman**: 4+ tahun dalam pembangunan perisian full-stack & keselamatan rangkaian.'
+				: '👤 **Personal Profile of Muhammed Munir:**\n\n' +
+				  '• **Birth Year**: 1997 (approx. 28 years old)\n' +
+				  '• **Nationality**: Malaysian\n' +
+				  '• **Status**: Single, immediately available for professional engineering roles.\n' +
+				  '• **Experience**: 4+ years in enterprise full-stack development & network security.';
+		}
+		// 6. Career Availability, Notice Period & Hiring ("available", "tersedia", "ambil kerja", "hire", "kerja kosong", "bila boleh", "interview", "gaji", "salary")
+		else if (
+			q.includes('available') ||
+			q.includes('tersedia') ||
+			q.includes('hire') ||
+			q.includes('ambil kerja') ||
+			q.includes('kerja kosong') ||
+			q.includes('bila boleh') ||
+			q.includes('start bila') ||
+			q.includes('temuduga') ||
+			q.includes('interview') ||
+			q.includes('gaji') ||
+			q.includes('salary') ||
+			q.includes('notice') ||
+			q.includes('notis')
+		) {
+			reply = isMalay
+				? '💼 **Status Ketersediaan Kerjaya Muhammed Munir:**\n\n' +
+				  'Munir kini **Tersedia Segera (Available Immediately)** untuk:\n' +
+				  '• 🏢 Jawatan **Sepenuh Masa (Full-Time)** sebagai Full-Stack / Frontend / Mobile Software Engineer.\n' +
+				  '• 🤝 Kontrak Kejuruteraan Sistem Perusahaan atau Perundingan Kanan.\n' +
+				  '• 📅 Tempoh notis beliau adalah fleksibel dan beliau sedia menghadiri sesi temuduga bila-bila masa.\n\n' +
+				  'Sila hubungi beliau terus di talian WhatsApp +6013-5636124 atau melalui borang perhubungan.'
+				: '💼 **Muhammed Munir\'s Career Availability:**\n\n' +
+				  'Munir is **Immediately Available** for:\n' +
+				  '• 🏢 **Full-Time positions** as Full-Stack / Frontend / Mobile Software Engineer.\n' +
+				  '• 🤝 Enterprise software contracts or senior technical consultation.\n' +
+				  '• 📅 Notice period is flexible and he is open for interviews anytime.\n\n' +
+				  'You can contact him directly at +6013-5636124 or via the contact form.';
+			action = {
+				label: isMalay ? '💼 Ambil Munir Bekerja' : '💼 Hire Munir',
+				callback: () => {
+					isOpen = false;
+					window.location.hash = '#contact';
+				}
+			};
+		}
+		// 7. Languages Spoken ("bahasa apa", "cakap bahasa", "languages spoken", "pertuturan")
+		else if (
+			(q.includes('bahasa') && (q.includes('apa') || q.includes('cakap') || q.includes('pertuturan') || q.includes('tahu'))) ||
+			q.includes('languages spoken')
+		) {
+			reply = isMalay
+				? '🗣️ **Penguasaan Bahasa Pertuturan Muhammed Munir:**\n\n' +
+				  '• 🇲🇾 **Bahasa Melayu**: Bahasa Ibunda (Native Proficiency) — fasih sepenuhnya dalam pertuturan dan penulisan.\n' +
+				  '• 🇬🇧 **Bahasa Inggeris**: Tahap Profesional (Full Professional Working Proficiency) — selesa dalam perbincangan teknikal antarabangsa, dokumentasi sistem, dan kerjasama berpasukan.'
+				: '🗣️ **Languages Spoken by Muhammed Munir:**\n\n' +
+				  '• 🇲🇾 **Bahasa Melayu**: Native proficiency — fluent in speech and professional writing.\n' +
+				  '• 🇬🇧 **English**: Full professional working proficiency — comfortable leading technical presentations, system documentation, and global team collaboration.';
+		}
+		// 8. Statistics, Telemetry & Analytics ("statistik", "statstik", "stats", "telemetri", "metrics", "analitik")
 		else if (
 			q.includes('statistik') ||
 			q.includes('statstik') ||
@@ -262,7 +447,7 @@
 				}
 			};
 		}
-		// 3. Count for Government / Public Sector Projects ("berapa projek kerajaan ada?", "berapa projek kerjaan ada?", "jumlah projek kerajaan")
+		// 9. Count for Government / Public Sector Projects ("berapa projek kerajaan ada?", "berapa projek kerjaan ada?", "jumlah projek kerajaan")
 		else if (
 			(q.includes('berapa') || q.includes('jumlah') || q.includes('bilangan') || q.includes('how many') || q.includes('total')) &&
 			(q.includes('kerajaan') || q.includes('kerjaan') || q.includes('gov') || q.includes('sektor awam') || q.includes('public sector'))
@@ -286,7 +471,7 @@
 				}
 			};
 		}
-		// 4. General Count for All Projects ("berapa projek ada", "jumlah projek", "ada berapa projek", "how many projects")
+		// 10. General Count for All Projects ("berapa projek ada", "jumlah projek", "ada berapa projek", "how many projects")
 		else if (
 			(q.includes('berapa') || q.includes('jumlah') || q.includes('bilangan') || q.includes('how many')) &&
 			(q.includes('projek') || q.includes('sistem') || q.includes('app') || q.includes('aplikasi') || q.includes('project') || q.includes('system'))
@@ -314,7 +499,109 @@
 				}
 			};
 		}
-		// 5. Greetings
+		// 11. Individual Specific Project Lookups
+		else if (q.includes('tindak')) {
+			reply = isMalay
+				? '⚡ **TINDAK — Enjin Tindakan Pintar Android:**\nAplikasi tindakan pantas ("Jumpa sesuatu. Tindak terus") yang menangkap teks perkongsian (Share Intent), memproses entiti secara tempatan (Local-First parser) dengan fallback Gemini AI, dan storan awan selamat Supabase Edge Functions berdasar RLS.'
+				: '⚡ **TINDAK — Smart Android Action Engine:**\nRapid-action layer capturing Android Share Intents, parsing data locally with Gemini AI fallback and Supabase RLS security harness.';
+			action = { label: isMalay ? 'Lihat Spesifikasi TINDAK' : 'View TINDAK Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('baby') || q.includes('kicking')) {
+			reply = isMalay
+				? '👶 **Baby Kicking Suite — Aplikasi Kesihatan Fetal Mudah Alih:**\nAplikasi mudah alih Flutter rentas platform (Android, iOS, Web) untuk ibu mengandung merekod tendangan janin secara tepat dengan Firebase Cloud Firestore, graf analitik pergerakan, dan eksport laporan PDF untuk doktor.'
+				: '👶 **Baby Kicking Suite — Fetal Health Mobile Tracker:**\nCross-platform Flutter mobile application with Firebase Firestore, activity trend analytics, and structured clinical PDF doctor exports.';
+			action = { label: isMalay ? 'Lihat Spesifikasi Baby Kicking' : 'View Baby Kicking Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('9router') || q.includes('nine router')) {
+			reply = isMalay
+				? '🏢 **9Router Office — Pejabat Maya 3D Ejen AI Autonomi:**\nPersekitaran maya 3D Three.js dan pelayan orkestrasi berbilang ejen AI autonomi memanfaatkan Model Context Protocol (MCP SDK), jambatan suara masa nyata, dan automasi ujian E2E Playwright.'
+				: '🏢 **9Router Office — Autonomous AI Agent 3D Workspace:**\nInteractive 3D Three.js virtual office orchestrating multi-agent AI teams via Model Context Protocol (MCP SDK) and live voice bridges.';
+			action = { label: isMalay ? 'Lihat Spesifikasi 9Router' : 'View 9Router Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('cv bot') || (q.includes('computer vision') && !q.includes('apa'))) {
+			reply = isMalay
+				? '👁️ **Computer Vision & Win32 Automation Suite:**\nSistem automasi desktop Python menggunakan OpenCV (pemadanan templat piramid SIFT homography, segmentasi warna CIELAB, OCR dinamik, & perimeter tetingkap selamat Win32).'
+				: '👁️ **Computer Vision & Win32 Automation Suite:**\nPython desktop automation with OpenCV multi-scale SIFT homography, CIELAB color space tracking, and native Win32 window containment.';
+			action = { label: isMalay ? 'Lihat Spesifikasi CV Bot' : 'View CV Bot Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('tax relief') || (q.includes('cukai') && !q.includes('berapa'))) {
+			reply = isMalay
+				? '📊 **Tax Relief Malaysia — Pengoptimum Pelepasan Cukai LHDN:**\nAplikasi web pintar Node.js/TypeScript untuk mengira dan memaksimumkan pelepasan cukai pendapatan individu LHDN dengan simulasi penjimatan bersih dan jaminan tanpa simpanan data sensitif.'
+				: '📊 **Tax Relief Malaysia — Personal Income Tax Optimizer:**\nFull-stack Node.js/TypeScript interactive tax calculator simulating maximum allowable LHDN deductions with zero sensitive data persistence.';
+			action = { label: isMalay ? 'Lihat Spesifikasi Tax Relief' : 'View Tax Relief Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('jiofarm')) {
+			reply = isMalay
+				? '🌱 **JioFarm — Telemetri Pertanian Pintar IoT:**\nSistem pemantauan sensor IoT berasaskan Python (kelembapan tanah, suhu, pH) dengan amaran automatik dan papan pemuka analitik kesihatan tanaman.'
+				: '🌱 **JioFarm — Smart Agriculture IoT Crop Monitoring:**\nPython FastAPI IoT telemetry monitoring soil moisture and environmental metrics with automated critical irrigation triggers.';
+			action = { label: isMalay ? 'Lihat Spesifikasi JioFarm' : 'View JioFarm Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('lumina')) {
+			reply = isMalay
+				? '🪞 **Lumina Glass Studio & Cermin Pintar LED:**\nPlatform e-dagang dan visualizer interaktif 2D/3D cermin LED (suhu Kelvin 3000K-6500K) dibina dengan SvelteKit dan RESTful API Laravel 11.'
+				: '🪞 **Lumina Glass Studio & Smart Mirror Visualizer:**\nSvelteKit + Laravel 11 API smart mirror e-commerce platform with real-time 2D/3D Kelvin LED light visualizer.';
+			action = { label: isMalay ? 'Lihat Spesifikasi Lumina' : 'View Lumina Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('iwa001') || q.includes('pinjaman')) {
+			reply = isMalay
+				? '🔐 **Sistem Pinjaman Bercagar (IWA001):**\nSistem pengurusan pinjaman gred kewangan dengan 17 halaman pentadbir, kawalan akses Supabase RLS, pengesahan JWT, dan deployment Edge Vercel di Nova Bitara.'
+				: '🔐 **Collateralized Loan Management System (IWA001):**\nEnterprise financial platform with 17 admin screens, Supabase RLS, JWT auth, deployed on Vercel Edge at Nova Bitara.';
+			action = { label: isMalay ? 'Lihat Spesifikasi IWA001' : 'View IWA001 Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('onboardx')) {
+			reply = isMalay
+				? '⚡ **Onboardx TNB — Penyelesaian Mobiliti Pekerja Baharu:**\nAplikasi mudah alih dan web Flutter rentas platform untuk Tenaga Nasional Berhad yang memperkemas proses onboarding dengan pelayan Azure, MongoDB, dan CI/CD Jenkins.'
+				: '⚡ **Onboardx TNB — Enterprise Mobility Onboarding:**\nCross-platform Flutter application built for Tenaga Nasional Berhad deployed on Azure Ubuntu with Jenkins CI/CD automation.';
+			action = { label: isMalay ? 'Lihat Spesifikasi Onboardx' : 'View Onboardx Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		else if (q.includes('infinity')) {
+			reply = isMalay
+				? '🌐 **Portal Korporat Infinity World:**\nLaman web korporat pelbagai bahasa (3 bahasa) berprestasi tinggi dibina dengan SvelteKit, caching Redis, dan integrasi emel Resend API di Nova Bitara.'
+				: '🌐 **Infinity World Corporate Portal:**\nMultilingual corporate web platform engineered in SvelteKit with Redis caching and Resend API at Nova Bitara.';
+			action = { label: isMalay ? 'Lihat Spesifikasi Infinity' : 'View Infinity Specs', callback: () => { isOpen = false; window.location.hash = '#projects'; } };
+		}
+		// 12. Specific Framework & Skill Inquiries
+		else if (q.includes('laravel')) {
+			reply = isMalay
+				? '🛠️ **Kepakaran Laravel Munir:**\nMunir sangat berpengalaman dalam **Laravel 11 & 12**: membina backend API perusahaan, panel pentadbiran Laravel Filament, pemprosesan giliran tak segerak (Laravel Horizon), integrasi 2FA, dan pengujian PHPUnit (digunakan dalam eMesys, Sutera, ADIMS, dan Lumina).'
+				: '🛠️ **Munir\'s Laravel Expertise:**\nHighly proficient in **Laravel 11 & 12**: RESTful APIs, Laravel Filament admin panels, queue workers (Laravel Horizon), 2FA, and PHPUnit suites across eMesys, Sutera, ADIMS, and Lumina.';
+		}
+		else if (q.includes('vue') || q.includes('vuejs')) {
+			reply = isMalay
+				? '💚 **Kepakaran Vue.js 3 Munir:**\nPengalaman luas membina antaramuka web berskala tinggi menggunakan **Vue.js 3** (Composition API, Pinia, Vue Router, Tailwind CSS 3) untuk sistem sektor awam eMesys dan Sutera di YHCM.'
+				: '💚 **Munir\'s Vue.js Expertise:**\nExtensive frontend production experience in **Vue.js 3** (Composition API, Pinia state, Tailwind CSS) powering mission-critical government platforms eMesys and Sutera at YHCM.';
+		}
+		else if (q.includes('svelte') || q.includes('sveltekit')) {
+			reply = isMalay
+				? '🧡 **Kepakaran Svelte & SvelteKit Munir:**\nMunir menguasai **SvelteKit 2 & Svelte 5 (Runes)**: membina portfolio ini sendiri, sistem kewangan IWA001, portal Infinity World, visualizer Lumina, dan projek FYP UTM.'
+				: '🧡 **Munir\'s SvelteKit Expertise:**\nMastery in **SvelteKit 2 & Svelte 5 (Runes)**: engineered this reactive portfolio, IWA001 loan platform, Infinity World portal, and UTM FYP mapping system.';
+		}
+		else if (q.includes('flutter') || q.includes('dart')) {
+			reply = isMalay
+				? '💙 **Kepakaran Flutter & Dart Munir:**\nMembangunkan aplikasi mudah alih Android & iOS rentas platform: aplikasi mobiliti korporat Onboardx untuk TNB dan aplikasi kesihatan janin Baby Kicking Suite.'
+				: '💙 **Munir\'s Flutter Expertise:**\nCross-platform mobile development with Flutter & Dart: TNB Onboardx enterprise mobile solution and the Baby Kicking fetal telemetry suite.';
+		}
+		else if (q.includes('docker') || q.includes('swarm') || q.includes('kontena')) {
+			reply = isMalay
+				? '🐳 **Kepakaran Docker & Kontena:**\nMunir mentadbir kluster kontena **Docker Swarm**, penulisan fail docker-compose berbilang perkhidmatan, pengurusan imej produksi, konfigurasi proksi Nginx, dan kestabilan servis di YHCM.'
+				: '🐳 **Docker & Containerization:**\nAdministers **Docker Swarm** container clusters, multi-service compose stacks, production image deployments, and Nginx reverse proxies at YHCM.';
+		}
+		else if (q.includes('python')) {
+			reply = isMalay
+				? '🐍 **Kepakaran Python Munir:**\nPython digunakan dalam kejuruteraan Visi Komputer (OpenCV, SIFT homography, CIELAB segmentation) pada CV Bot, serta backend API IoT telemetri pantas pada JioFarm (FastAPI).'
+				: '🐍 **Munir\'s Python Expertise:**\nApplied Python across Computer Vision engineering (OpenCV, SIFT, CIELAB) for desktop automation, and FastAPI for real-time IoT crop telemetry.';
+		}
+		else if (q.includes('pangkalan data') || q.includes('database') || q.includes('sql') || q.includes('postgres') || q.includes('mysql') || q.includes('redis')) {
+			reply = isMalay
+				? '🗄️ **Kepakaran Pangkalan Data Munir:**\n• **Relational**: PostgreSQL 17, MariaDB, MySQL (skema ternormalisasi, pengoptimuman indeks & kueri kompleks)\n• **Awan & BaaS**: Supabase PostgreSQL dengan dasar keselamatan baris (Row-Level Security RLS)\n• **NoSQL & Realtime**: Firebase Firestore, Firebase Realtime DB, MongoDB\n• **Cache Memory**: Redis 8 (caching berprestasi tinggi & pub/sub).'
+				: '🗄️ **Munir\'s Database Arsenal:**\n• **Relational**: PostgreSQL 17, MariaDB, MySQL (schema optimization, indexing, complex query tuning)\n• **Cloud / BaaS**: Supabase PostgreSQL with strict Row-Level Security (RLS)\n• **NoSQL**: Firebase Firestore, Realtime DB, MongoDB\n• **In-Memory Cache**: Redis 8 for low-latency session caching and message queues.';
+		}
+		else if (q.includes('security') || q.includes('keselamatan') || q.includes('splunk') || q.includes('soc') || q.includes('cyber')) {
+			reply = isMalay
+				? '🛡️ **Asas Keselamatan Siber & Rangkaian Munir:**\nBerkelulusan B.Sc. Keselamatan Rangkaian UTM, berpengalaman memantau papan pemuka Splunk SIEM di bilik SOC Tenaga Nasional Berhad, simulasi CVE di makmal Vulhub, penguatkuasaan RBAC, pengesahan 2FA/SSO, dan Cisco CCNA.'
+				: '🛡️ **Cybersecurity & Network Security Foundation:**\nHolds a B.Sc. in Network Security from UTM, hands-on SOC monitoring via Splunk SIEM at TNB, Vulhub CVE exploitation labs, RBAC governance, 2FA/SSO protocols, and Cisco CCNA.';
+		}
+		// 13. Greetings
 		else if (
 			q === 'hai' ||
 			q === 'halo' ||
@@ -328,10 +615,10 @@
 			q.includes('apa khabar')
 		) {
 			reply = isMalay
-				? 'Salam sejahtera! Selamat datang ke portfolio Muhammed Munir. Sistem berada dalam keadaan 100% optimum. Sila beritahu apa yang anda ingin semak — statistik projek, 3 sistem kerajaan, aplikasi AI/mobile, kemahiran teknikal, atau resume ATS?'
-				: "Greetings! Welcome to Muhammed Munir's portfolio. All telemetry systems are operational. Let me know what you would like to explore — ecosystem statistics, 3 government platforms, AI/mobile apps, technical skills, or ATS resume?";
+				? 'Salam sejahtera! Selamat datang ke portfolio Muhammed Munir. Sistem berada dalam keadaan 100% optimum. Sila beritahu apa yang anda ingin semak — lokasi Munir, pendidikan UTM, statistik projek, 3 sistem kerajaan, aplikasi AI/mobile, kemahiran teknikal, atau resume ATS?'
+				: "Greetings! Welcome to Muhammed Munir's portfolio. All telemetry systems are operational. Let me know what you would like to explore — Munir's location, UTM degree, ecosystem statistics, 3 government platforms, AI/mobile apps, technical skills, or ATS resume?";
 		}
-		// 6. Government / Sektor Awam Overview (non-count)
+		// 14. Government / Sektor Awam Overview (non-count)
 		else if (
 			q.includes('kerajaan') ||
 			q.includes('kerjaan') ||
@@ -362,16 +649,11 @@
 				}
 			};
 		}
-		// 7. Mobile & Health Apps (TINDAK, Baby Kicking, JioFarm, Tax Relief)
+		// 15. Mobile & Health Apps
 		else if (
 			q.includes('mobile') ||
 			q.includes('aplikasi') ||
-			q.includes('app') ||
-			q.includes('baby') ||
-			q.includes('kicking') ||
-			q.includes('tax') ||
-			q.includes('cukai') ||
-			q.includes('jiofarm')
+			q.includes('app')
 		) {
 			reply = isMalay
 				? 'Aplikasi mudah alih dan produk pintar Munir merangkumi: (1) Baby Kicking Suite — Aplikasi Flutter rentas platform (Android, iOS, Web) dengan Firebase Firestore & Cloud Functions untuk pemantauan pergerakan bayi dan eksport laporan klinikal PDF. (2) TINDAK — Enjin tindakan pintar Android (Share Intent, Local-First parsing, Gemini AI & Supabase RLS). (3) Tax Relief Malaysia — Pengoptimum pelepasan cukai pendapatan LHDN interaktif. (4) JioFarm — Platform telemetri IoT pertanian pintar berasaskan Python.'
@@ -384,15 +666,12 @@
 				}
 			};
 		}
-		// 8. AI, Computer Vision & Agents (9Router, CV Bot, Gemini)
+		// 16. AI, Computer Vision & Agents
 		else if (
 			q.includes('ai') ||
 			q.includes('agent') ||
 			q.includes('ejen') ||
-			q.includes('9router') ||
-			q.includes('cv bot') ||
 			q.includes('vision') ||
-			q.includes('opencv') ||
 			q.includes('gemini') ||
 			q.includes('mcp')
 		) {
@@ -407,7 +686,7 @@
 				}
 			};
 		}
-		// 9. Summary / Profile / Bio
+		// 17. Summary / Profile / Bio
 		else if (
 			q === 'summary' ||
 			q.includes('ringkasan') ||
@@ -421,7 +700,7 @@
 				? 'Muhammed Munir Bin Mohd Azmi adalah Pembangun Full-Stack & Profesional IT berpangkalan di Bandar Puteri Puchong, Selangor. Berkelulusan B.Sc. Sains Komputer (Keselamatan Rangkaian) UTM (PNGK 3.17). Beliau mempunyai rekod pencapaian terbukti dalam membina sistem berskala besar sektor awam kerajaan (eMesys, Sutera, ADIMS) menggunakan Vue.js 3 dan Laravel, aplikasi Flutter pintar, ejen AI 3D, serta pemantauan keselamatan siber Splunk SIEM.'
 				: 'Muhammed Munir Bin Mohd Azmi is a Full-Stack Developer & IT Professional based in Puchong, Selangor. Holds a B.Sc. in Computer Science (Network Security) from UTM (CGPA 3.17). Proven track record engineering public-sector government platforms (eMesys, Sutera, ADIMS) with Vue.js 3 and Laravel, smart Flutter applications, 3D AI agent environments, and Splunk SIEM cybersecurity operations.';
 		}
-		// 10. Tech Stack & Skills
+		// 18. Tech Stack & Skills
 		else if (
 			q === 'skills' ||
 			q.includes('tech') ||
@@ -441,7 +720,7 @@
 				}
 			};
 		}
-		// 11. Work Experience (Strict match: avoids false match with "kerjaan" or general words)
+		// 19. Work Experience (Strict match)
 		else if (
 			q.includes('pengalaman') ||
 			q.includes('experience') ||
@@ -464,7 +743,7 @@
 				}
 			};
 		}
-		// 12. Games, Simulators & Physics (NO AeroCar X)
+		// 20. Games, Simulators & Physics (NO AeroCar X)
 		else if (
 			q === 'game' ||
 			q.includes('game') ||
@@ -486,7 +765,7 @@
 				}
 			};
 		}
-		// 13. Resume / ATS CV
+		// 21. Resume / ATS CV
 		else if (
 			q === 'resume' ||
 			q.includes('cv') ||
@@ -502,37 +781,21 @@
 				href: '/resume.pdf'
 			};
 		}
-		// 14. Contact
-		else if (
-			q.includes('contact') ||
-			q.includes('hubungi') ||
-			q.includes('telefon') ||
-			q.includes('phone') ||
-			q.includes('email') ||
-			q.includes('emel')
-		) {
-			reply = isMalay
-				? 'Saluran Komunikasi Terus Muhammed Munir: E-mel: muhammed.munir97.mm@gmail.com | Telefon / WhatsApp: +6013-5636124 | Lokasi: Bandar Puteri, Puchong, Selangor. Beliau terbuka untuk peluang sepenuh masa, kontrak gred perusahaan, atau perundingan teknikal.'
-				: 'Direct Communications for Muhammed Munir: Email: muhammed.munir97.mm@gmail.com | Phone / WhatsApp: +6013-5636124 | Location: Puchong, Selangor. He is available for full-time senior engineering, enterprise contracts, or technical consultations.';
-			action = {
-				label: isMalay ? '📞 Buka Borang Mesej Terus' : '📞 Open Direct Message Form',
-				callback: () => {
-					isOpen = false;
-					window.location.hash = '#contact';
-				}
-			};
-		}
-		// 15. Diagnostics
+		// 22. Diagnostics
 		else if (q === 'diag' || q.includes('diagnostik') || q.includes('test')) {
 			reply = isMalay
 				? 'DIAGNOSTIK SISTEM SELESAI: [✓] Core SvelteKit 5: RUNES AKTIF [✓] Sektor Awam: 3 SISTEM TERSEDIA (eMesys, Sutera, ADIMS) [✓] Aplikasi Inovasi: 15 SISTEM AKTIF (Jumlah: 18 Projek) [✓] Pangkalan Data: RLS & RBAC ENFORCED [✓] Keselamatan: SOC COMPLIANT [✓] Status Munir: TERSEDIA UNTUK TEMUDUGA.'
 				: 'SYSTEM DIAGNOSTICS COMPLETE: [✓] Core SvelteKit 5: RUNES ACTIVE [✓] Public Sector: 3 PLATFORMS ONLINE (eMesys, Sutera, ADIMS) [✓] Innovation Apps: 15 SYSTEMS ACTIVE (Total: 18 Projects) [✓] Database: RLS & RBAC ENFORCED [✓] Security: SOC COMPLIANT [✓] Candidate Status: AVAILABLE FOR HIRE.';
 		}
-		// 16. Fallback with smart guidance
+		// 23. Intelligent Fallback (Provides core facts instead of generic unhelpful text)
 		else {
 			reply = isMalay
-				? `Perintah "${rawQuery}" diterima. Saya boleh menerangkan statistik sistem, jumlah projek kerajaan (eMesys, Sutera, ADIMS), aplikasi mobile Flutter & AI, kemahiran teknikal Munir, atau memuat turun resume ATS beliau. Sila klik salah satu cadangan di bawah!`
-				: `Query "${rawQuery}" acknowledged. I can explain ecosystem statistics, public sector project counts, mobile & AI innovations, Munir's core skills, or download his ATS resume. Select one of the quick prompts below!`;
+				? `Maklumat Muhammed Munir bagi carian "${rawQuery}":\n\n` +
+				  `Beliau adalah Pembangun Full-Stack & Profesional IT yang menetap di Bandar Puteri, Puchong, Selangor. Berkelulusan B.Sc. Sains Komputer (Keselamatan Rangkaian) dari UTM (PNGK 3.17) dan mempunyai 4+ tahun pengalaman menghasilkan 18 sistem produksi (YHCM, TNB, Nova Bitara).\n\n` +
+				  `Anda boleh bertanya tentang: tempat tinggal, universiti/kelulusan, statistik sistem, 3 sistem sektor awam, aplikasi mudah alih Flutter, kemahiran teknologi, atau muat turun resume ATS.`
+				: `Information on Muhammed Munir for "${rawQuery}":\n\n` +
+				  `He is a Full-Stack Developer & IT Professional based in Bandar Puteri, Puchong, Selangor. Holds a B.Sc. in Computer Science (Network Security) from UTM (CGPA 3.17) with 4+ years of industry track record shipping 18 production systems (YHCM, TNB, Nova Bitara).\n\n` +
+				  `Feel free to ask about his location, education/degree, ecosystem statistics, 3 public sector systems, mobile Flutter apps, tech stack, or download his ATS resume.`;
 		}
 
 		const jarvisMsg: ChatMessage = {
