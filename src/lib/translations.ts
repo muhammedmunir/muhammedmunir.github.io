@@ -18,7 +18,7 @@ export const translations = {
 			tagline2: 'Pembangun Full-Stack',
 			tagline3: 'Sistem Selamat & AI',
 			bio: 'Membangunkan <strong>aplikasi gred perusahaan & sistem berkeselamatan tinggi</strong> merentasi sektor awam/kerajaan, AI automasi mudah alih, dan SaaS moden. Berpengalaman luas dalam <span class="highlight">Vue.js</span>, <span class="highlight">Laravel 11/12</span>, <span class="highlight">SvelteKit</span>, <span class="highlight">Flutter</span>, <span class="highlight">Three.js</span>, dan <span class="highlight">Python Computer Vision</span> — disokong kepakaran kukuh dalam <strong>Keselamatan Rangkaian, Splunk SIEM</strong>, orkestrasi kontena <span class="highlight">Docker Swarm</span>, dan awan <span class="highlight">Azure & Vercel</span>.',
-			cta_projects: 'Jelajah 19+ Projek',
+			cta_projects: 'Jelajah 18+ Projek',
 			cta_resume: 'Muat Turun CV (ATS)',
 			cta_contact: 'Hubungi Saya',
 			cta_jarvis: 'Buka J.A.R.V.I.S HUD',
@@ -92,7 +92,7 @@ export const translations = {
 		projects: {
 			label: 'Portfolio Sistem & Aplikasi',
 			title: 'Koleksi Projek & Inovasi Perisian',
-			desc: '19+ sistem produksi merangkumi platform sektor awam berimpak tinggi, ejen autonomi AI, aplikasi mudah alih Flutter, dan enjin simulasi web.',
+			desc: '18+ sistem produksi merangkumi platform sektor awam berimpak tinggi, ejen autonomi AI, aplikasi mudah alih Flutter, dan enjin simulasi web.',
 			context_label: 'Organisasi / Konteks',
 			cta: 'Berminat untuk melihat demonstrasi sistem atau bekerjasama?',
 			cta_btn: 'Hubungi Munir',
@@ -316,18 +316,6 @@ export const translations = {
 					'Dibina sepenuhnya mengikut piawaian keselamatan Chromium Extension Manifest V3'
 				]
 			},
-			aerocar: {
-				title: 'AeroCar X — Kereta Terbang Telemetry Simulator',
-				subtitle: 'Simulator Kereta Futuristik 2.5D Canvas & Telemetri Penerbangan',
-				desc: 'Aplikasi demonstrasi kenderaan futuristik dengan simulasi aerodinamik Canvas 2.5D, pemilihan mod kenderaan (Cruising, VTOL, Hyperspeed), pemantauan telemetri tujahan & altitud masa nyata, serta sistem tempahan lokal berstruktur.',
-				features: [
-					'Animasi dinamik Canvas 2.5D dengan simulasi fizik graviti dan tujahan enjin',
-					'Pemilihan pelbagai mod operasi: Jelajah Rendah, VTOL Berlepas, & Kelajuan Hipersonik',
-					'Papan pemuka telemetri sensor altitud, kuasa bateri ion, dan kestabilan aerodinamik',
-					'Backend Node.js 24 berprestasi tinggi dengan validasi API selamat',
-					'Borang tempahan interaktif dengan sistem pengesahan data lokal'
-				]
-			},
 			orbit_pulse: {
 				title: 'Orbit Pulse — Server Infrastructure Monitor',
 				subtitle: 'Papan Pemuka Kesihatan Pelayan & Telemetri Rangkaian Masa Nyata',
@@ -474,9 +462,9 @@ export const translations = {
 		jarvis: {
 			hud_badge: 'J.A.R.V.I.S // NEURAL ASSISTANT',
 			status_title: 'JARVIS CORE AKTIF · FASIH BAHASA MELAYU',
-			telemetry: 'SISTEM: OPTIMAL · TELEMETRI: 19+ PROJEK · LOKASI: PUCHONG, SELANGOR',
+			telemetry: 'SISTEM: OPTIMAL · TELEMETRI: 18+ PROJEK · LOKASI: PUCHONG, SELANGOR',
 			greeting:
-				'Salam perkenalan! Saya J.A.R.V.I.S, pembantu kecerdasan portfolio Muhammed Munir. Saya fasih berbahasa Melayu dan sedia membantu anda meneliti rekod kepakaran, 3 sistem sektor kerajaan, 16+ aplikasi inovasi, atau memuat turun resume ATS. Apa yang boleh saya bantu anda hari ini?',
+				'Salam perkenalan! Saya J.A.R.V.I.S, pembantu kecerdasan portfolio Muhammed Munir. Saya fasih berbahasa Melayu dan sedia membantu anda meneliti rekod kepakaran, 3 sistem sektor kerajaan, 15+ aplikasi inovasi, statistik ekosistem, atau memuat turun resume ATS. Apa yang boleh saya bantu anda hari ini?',
 			input_placeholder: 'Tanya apa sahaja dalam Bahasa Melayu atau klik cadangan...',
 			sound_on: 'Audio: AKTIF',
 			sound_off: 'Audio: SENYAP',
@@ -485,13 +473,13 @@ export const translations = {
 			listen_btn: '🔊 Dengar Suara',
 			close_btn: 'Tutup HUD [ESC]',
 			chips: [
-				{ label: '🇲🇾 Boleh cakap Melayu?', query: 'cakap melayu' },
-				{ label: '🏛️ Terangkan Sistem Kerajaan', query: 'projek kerajaan' },
+				{ label: '📊 Statistik & Metrik', query: 'statistik' },
+				{ label: '🏛️ Jumlah Projek Kerajaan', query: 'berapa projek kerajaan ada' },
 				{ label: '📱 Aplikasi Mobile & Web', query: 'aplikasi' },
 				{ label: '🤖 AI & Ejen Autonomi', query: 'ai' },
 				{ label: '📄 Muat Turun Resume ATS', query: 'resume' },
 				{ label: '🎯 Kemahiran & Stack', query: 'skills' },
-				{ label: '🎮 Main Simulator & Game', query: 'game' },
+				{ label: '💼 Pengalaman Kerja', query: 'pengalaman' },
 				{ label: '📞 Hubungi Munir', query: 'hubungi' }
 			]
 		}
@@ -513,7 +501,7 @@ export const translations = {
 			tagline2: 'Full-Stack Developer',
 			tagline3: 'Secure Systems & AI',
 			bio: 'Engineering <strong>enterprise-grade applications & high-security platforms</strong> across the public/government sector, autonomous AI mobile tools, and modern SaaS. Highly experienced in <span class="highlight">Vue.js</span>, <span class="highlight">Laravel 11/12</span>, <span class="highlight">SvelteKit</span>, <span class="highlight">Flutter</span>, <span class="highlight">Three.js</span>, and <span class="highlight">Python Computer Vision</span> — backed by strong foundations in <strong>Network Security, Splunk SIEM</strong>, <span class="highlight">Docker Swarm</span> container orchestration, and <span class="highlight">Azure & Vercel</span> cloud infrastructure.',
-			cta_projects: 'Explore 19+ Projects',
+			cta_projects: 'Explore 18+ Projects',
 			cta_resume: 'Download CV (ATS)',
 			cta_contact: 'Get In Touch',
 			cta_jarvis: 'Launch J.A.R.V.I.S HUD',
@@ -581,7 +569,7 @@ export const translations = {
 		projects: {
 			label: 'Featured Systems & Applications',
 			title: 'Featured Systems & Engineering Projects',
-			desc: '19+ production systems spanning public sector platforms, autonomous AI agents, Flutter mobile solutions, and web simulation engines.',
+			desc: '18+ production systems spanning public sector platforms, autonomous AI agents, Flutter mobile solutions, and web simulation engines.',
 			context_label: 'Organization / Context',
 			cta: 'Interested in collaborating or scheduling a live walkthrough?',
 			cta_btn: 'Contact Munir',
@@ -804,18 +792,6 @@ export const translations = {
 					'Complies strictly with Chromium Extension Manifest V3 security standards'
 				]
 			},
-			aerocar: {
-				title: 'AeroCar X — Kereta Terbang Telemetry Simulator',
-				subtitle: 'Futuristic 2.5D Canvas Vehicle & Flight Telemetry Simulator',
-				desc: 'A futuristic flying car demonstration web application with 2.5D HTML5 Canvas aerodynamic simulation, drive mode selector (Cruising, VTOL, Hyperspeed), real-time thrust and altitude telemetry monitoring, and structured local booking management.',
-				features: [
-					'Interactive 2.5D Canvas animation engine with simulated gravitational aerodynamics',
-					'Multi-mode drive selector: Low Cruising, VTOL Lift, and Hypersonic Velocity',
-					'Telemetry dashboard streaming altitude, ion battery capacity, and aerodynamic drag',
-					'High-performance Node.js 24 server backend with robust API validation',
-					'Interactive booking portal with structured local data persistence'
-				]
-			},
 			orbit_pulse: {
 				title: 'Orbit Pulse — Server Infrastructure Monitor',
 				subtitle: 'Real-Time Server Health & Network Telemetry Dashboard',
@@ -962,9 +938,9 @@ export const translations = {
 		jarvis: {
 			hud_badge: 'J.A.R.V.I.S // NEURAL ASSISTANT',
 			status_title: 'JARVIS CORE ACTIVE · BILINGUAL ENG & MALAY',
-			telemetry: 'SYSTEM: OPTIMAL · TELEMETRY: 19+ SYSTEMS · LOCATION: PUCHONG, SELANGOR',
+			telemetry: 'SYSTEM: OPTIMAL · TELEMETRY: 18+ SYSTEMS · LOCATION: PUCHONG, SELANGOR',
 			greeting:
-				"Greetings! I am J.A.R.V.I.S — the neural interface for Muhammed Munir's portfolio. I am fully fluent in both Bahasa Melayu and English. I am ready to walk you through Munir's 3 government enterprise systems, 16+ innovation apps, technical credentials, or download his ATS Resume. How may I assist you today?",
+				"Greetings! I am J.A.R.V.I.S — the neural interface for Muhammed Munir's portfolio. I am fully fluent in both Bahasa Melayu and English. I am ready to walk you through Munir's 3 government enterprise systems, 15+ innovation apps, ecosystem telemetry, or download his ATS Resume. How may I assist you today?",
 			input_placeholder: 'Ask me anything in English or Malay, or choose a prompt...',
 			sound_on: 'Audio: ON',
 			sound_off: 'Audio: MUTED',
@@ -973,13 +949,13 @@ export const translations = {
 			listen_btn: '🔊 Listen to Voice',
 			close_btn: 'Close HUD [ESC]',
 			chips: [
-				{ label: '⚡ Executive Summary', query: 'summary' },
-				{ label: '🏛️ Explain Government Systems', query: 'projek kerajaan' },
+				{ label: '📊 System Telemetry & Stats', query: 'statistics' },
+				{ label: '🏛️ Public Sector Projects Count', query: 'how many government projects' },
 				{ label: '📱 Mobile & Web Apps', query: 'aplikasi' },
 				{ label: '🤖 AI & Autonomous Agents', query: 'ai' },
 				{ label: '📄 Download ATS Resume', query: 'resume' },
 				{ label: '🎯 Full-Stack Weaponry', query: 'skills' },
-				{ label: '🎮 Play Games & Simulators', query: 'game' },
+				{ label: '💼 Career Trajectory', query: 'pengalaman' },
 				{ label: '📞 Contact Munir', query: 'hubungi' }
 			]
 		}

@@ -233,23 +233,6 @@
 			]
 		},
 		{
-			id: 'aerocar',
-			key: 'aerocar',
-			context: 'Simulator Aerodinamik Kereta Futuristik',
-			category: 'sim',
-			badgeKey: 'innovation',
-			accent: '#06B6D4',
-			icon: '🛸',
-			gradient: 'linear-gradient(135deg, rgba(6,182,212,0.14) 0%, rgba(5,25,35,0.7) 100%)',
-			tags: [
-				'Node.js 24',
-				'Canvas 2.5D',
-				'Flight Aerodynamics',
-				'VTOL Telemetry',
-				'Booking System'
-			]
-		},
-		{
 			id: 'iwa001',
 			key: 'iwa001',
 			context: 'Nova Bitara Development Sdn Bhd',
@@ -555,7 +538,7 @@
 		</div>
 	</div>
 
-	<!-- 📦 PROJECTS GRID (19+ ALL PROJECTS) -->
+	<!-- 📦 PROJECTS GRID (18+ ALL PROJECTS) -->
 	<div class="projects-grid">
 		{#if filteredProjects.length === 0}
 			<div class="empty-state">
