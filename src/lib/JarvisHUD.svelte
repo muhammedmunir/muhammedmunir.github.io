@@ -198,10 +198,10 @@
 		) {
 			reply =
 				$lang === 'ms'
-					? 'Bagi YHCM Enterprise, Munir menggalas tanggungjawab membangunkan dan menyelenggara 3 sistem kritikal sektor awam & pertahanan: (1) EMESYS — Sistem Pengurusan Aset & Pembaikan Pertahanan merangkumi 5 modul (Aset 7 Kategori, Job Woksyop S1/S2/S3, Pembaikan Tempatan PT/PO, Penyata S1/S2, & Dashboard Servisibiliti). (2) SUTERA — Platform Kesiapsiagaan Aset Kejuruteraan dengan 5 modul (KJC, B3/B4, PKJ disegerakkan ke SPATD, laporan PDF, & Dashboard Kesiagaan). (3) ADIMS — Sistem Pengurusan Aset Digital dengan Kod QR, log audit Spatie, storan AWS S3, Google 2FA, dan baris giliran Laravel Horizon. Semua sistem dibina dengan Docker Swarm, Linux, dan kawalan RBAC ketat.'
-					: 'At YHCM Enterprise, Munir builds and maintains 3 mission-critical public sector & defense platforms: (1) EMESYS — 5-module defense asset and workshop repair management system (Assets, S1/S2/S3 jobs, local contracts, statements, serviceability dashboard). (2) SUTERA — 5-module engineering asset readiness system synchronized with SPATD (KJC, B3/B4 repair directives, PKJ, defense readiness dashboard). (3) ADIMS — Digital asset management system featuring physical QR tracking, Spatie audit logging, AWS S3 storage, Google 2FA, and Laravel Horizon queues. Deployed via Docker Swarm on hardened Linux.';
+					? 'Bagi YHCM Enterprise, Munir bertanggungjawab membangunkan dan menyelenggara 3 sistem web sektor awam & perusahaan: (1) eMesys — Platform Pengurusan Aset & Logistik (rekod aset, kelulusan pelupusan, penjadualan penyelenggaraan berkala, dan laporan statistik). (2) Sutera — Sistem Operasi & Penyelenggaraan Kejuruteraan (pemantauan peralatan teknikal dan pengurusan arahan kerja). (3) ADIMS — Sistem Rekod & Verifikasi Digital dengan kod QR pintar, storan awan selamat, dan log audit keselamatan. Semua sistem dibina berasaskan Vue 3, Laravel, Docker, dan kawalan akses (RBAC) ketat.'
+					: 'At YHCM Enterprise, Munir develops and maintains 3 public-sector and enterprise platforms: (1) eMesys — Enterprise Asset & Logistics Platform (asset records, disposal workflows, maintenance scheduling, and reporting). (2) Sutera — Operations & Maintenance Management System (technical equipment monitoring and work orders). (3) ADIMS — Digital Records & QR Verification System with secure cloud storage and audit logging. Built with Vue 3, Laravel, Docker, and strict RBAC controls.';
 			action = {
-				label: $lang === 'ms' ? '🏛️ Lihat Bilik Kebal Kerajaan' : '🏛️ View Government Vault',
+				label: $lang === 'ms' ? '🏛️ Lihat Sistem Sektor Awam' : '🏛️ View Public Sector Systems',
 				callback: () => {
 					isOpen = false;
 					window.location.hash = '#projects';
@@ -461,35 +461,19 @@
 	});
 </script>
 
-<!-- Floating JARVIS Arc-Reactor Core Trigger -->
+<!-- Floating JARVIS Launcher Pill -->
 <div class="jarvis-launcher">
 	<button
-		class="sfx-toggle"
-		onclick={toggleSfx}
-		title={$sfxEnabled ? 'Matikan kesan audio' : 'Hidupkan kesan audio'}
-		aria-label="Toggle SFX Audio"
-	>
-		{#if $sfxEnabled}
-			<span class="icon">🔊</span>
-		{:else}
-			<span class="icon">🔇</span>
-		{/if}
-	</button>
-
-	<button
-		class="arc-reactor-trigger"
+		type="button"
+		class="jarvis-pill-btn"
 		class:active={isOpen}
 		onclick={toggleOpen}
 		title="Buka J.A.R.V.I.S AI Assistant (Ctrl + J)"
 		aria-label="Toggle JARVIS AI Interface"
 	>
-		<div class="reactor-outer-ring"></div>
-		<div class="reactor-inner-ring"></div>
-		<div class="reactor-core">
-			<span class="core-glyph">AI</span>
-		</div>
-		<span class="reactor-ping"></span>
-		<span class="reactor-label">J.A.R.V.I.S</span>
+		<span class="pill-dot"></span>
+		<span class="pill-icon">🤖</span>
+		<span class="pill-text">J.A.R.V.I.S</span>
 	</button>
 </div>
 
@@ -663,142 +647,69 @@
 	/* Trigger container */
 	.jarvis-launcher {
 		position: fixed;
-		bottom: 2rem;
-		right: 2rem;
+		bottom: 1.5rem;
+		right: 1.5rem;
 		z-index: 990;
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
 	}
 
-	.sfx-toggle {
-		width: 44px;
-		height: 44px;
-		border-radius: 50%;
-		background: rgba(11, 23, 42, 0.85);
-		border: 1px solid rgba(0, 240, 255, 0.35);
-		color: #e2e8f0;
-		display: flex;
+	.jarvis-pill-btn {
+		display: inline-flex;
 		align-items: center;
-		justify-content: center;
+		gap: 0.6rem;
+		background: rgba(11, 23, 42, 0.94);
+		border: 1.5px solid rgba(0, 240, 255, 0.5);
+		color: #f8fafc;
+		padding: 0.75rem 1.35rem;
+		border-radius: 100px;
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+		font-weight: 700;
+		font-size: 0.88rem;
+		letter-spacing: 0.05em;
 		cursor: pointer;
-		backdrop-filter: blur(12px);
-		box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
-		transition: all 0.25s ease;
-		font-size: 1.15rem;
-	}
-	.sfx-toggle:hover {
-		transform: scale(1.08);
-		border-color: #00f0ff;
-		box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
-	}
-
-	/* Arc Reactor Trigger */
-	.arc-reactor-trigger {
-		position: relative;
-		width: 66px;
-		height: 66px;
-		border-radius: 50%;
-		background: radial-gradient(circle, #0a1f33 0%, #030a14 100%);
-		border: 2px solid rgba(0, 240, 255, 0.6);
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		backdrop-filter: blur(16px);
 		box-shadow:
-			0 0 25px rgba(0, 240, 255, 0.35),
-			inset 0 0 15px rgba(0, 240, 255, 0.2);
-		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+			0 10px 30px rgba(0, 0, 0, 0.5),
+			0 0 20px rgba(0, 240, 255, 0.25);
+		transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 		outline: none;
 	}
-	.arc-reactor-trigger:hover,
-	.arc-reactor-trigger.active {
-		transform: scale(1.08);
+	.jarvis-pill-btn:hover,
+	.jarvis-pill-btn.active {
+		transform: translateY(-2px);
 		border-color: #00f0ff;
 		box-shadow:
-			0 0 35px rgba(0, 240, 255, 0.6),
-			inset 0 0 20px rgba(0, 240, 255, 0.4);
-	}
-
-	.reactor-outer-ring {
-		position: absolute;
-		inset: 3px;
-		border-radius: 50%;
-		border: 2px dashed rgba(0, 240, 255, 0.5);
-		animation: spinClockwise 12s linear infinite;
-	}
-	.reactor-inner-ring {
-		position: absolute;
-		inset: 8px;
-		border-radius: 50%;
-		border: 1.5px dotted rgba(212, 175, 55, 0.6);
-		animation: spinCounter 7s linear infinite;
-	}
-	.reactor-core {
-		position: relative;
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		background: radial-gradient(circle, #00f0ff 0%, #0284c7 70%, #082f49 100%);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 0 16px #00f0ff;
-	}
-	.core-glyph {
-		font-family: 'Courier New', monospace;
-		font-weight: 900;
-		font-size: 0.72rem;
-		color: #030712;
-		letter-spacing: 0.05em;
-	}
-
-	.reactor-ping {
-		position: absolute;
-		inset: -6px;
-		border-radius: 50%;
-		border: 2px solid rgba(0, 240, 255, 0.5);
-		animation: pingReactor 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-		pointer-events: none;
-	}
-	.reactor-label {
-		position: absolute;
-		bottom: -20px;
-		font-family: 'Courier New', monospace;
-		font-size: 0.65rem;
-		font-weight: 800;
-		letter-spacing: 0.15em;
+			0 14px 40px rgba(0, 0, 0, 0.6),
+			0 0 30px rgba(0, 240, 255, 0.5);
+		background: rgba(15, 31, 56, 0.98);
 		color: #00f0ff;
-		text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
-		white-space: nowrap;
 	}
-
-	@keyframes spinClockwise {
+	.pill-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		background: #10b981;
+		box-shadow: 0 0 10px #10b981;
+		animation: pulseDot 2s infinite alternate;
+	}
+	@keyframes pulseDot {
 		from {
-			transform: rotate(0deg);
+			opacity: 0.5;
+			transform: scale(0.9);
 		}
 		to {
-			transform: rotate(360deg);
+			opacity: 1;
+			transform: scale(1.15);
 		}
 	}
-	@keyframes spinCounter {
-		from {
-			transform: rotate(360deg);
-		}
-		to {
-			transform: rotate(0deg);
-		}
+	.pill-icon {
+		font-size: 1.15rem;
+		line-height: 1;
 	}
-	@keyframes pingReactor {
-		0% {
-			transform: scale(0.95);
-			opacity: 0.8;
-		}
-		70%,
-		100% {
-			transform: scale(1.4);
-			opacity: 0;
-		}
+	.pill-text {
+		color: #f8fafc;
+		font-weight: 800;
 	}
 
 	/* Backdrop */
