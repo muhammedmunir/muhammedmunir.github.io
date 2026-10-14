@@ -51,7 +51,7 @@ export const translations = {
 					'Pengoptimuman skema & prestasi pangkalan data MySQL, MariaDB, dan PostgreSQL 17',
 					'Pengurusan deployment kontena Docker Swarm dan orkestrasi perkhidmatan',
 					'Pentadbiran pelayan Linux & Windows: pemantauan, keselamatan & penyelesaian masalah',
-					'Kawalan akses berasaskan peranan (RBAC), SSO SAKTI TD, dan pematuhan integriti data kerajaan'
+					'Kawalan akses berasaskan peranan (RBAC), SSO Enterprise, dan pematuhan integriti data kerajaan'
 				]
 			},
 			nova: {
@@ -91,8 +91,8 @@ export const translations = {
 		// Projects
 		projects: {
 			label: 'Portfolio Sistem & Aplikasi',
-			title: 'Bilik Kebal Projek & Inovasi Produksi',
-			desc: '19+ sistem pengeluaran merangkumi platform sektor awam berimpak tinggi, ejen autonomi AI, aplikasi mudah alih Flutter, dan enjin simulasi fizik.',
+			title: 'Koleksi Projek & Inovasi Perisian',
+			desc: '19+ sistem produksi merangkumi platform sektor awam berimpak tinggi, ejen autonomi AI, aplikasi mudah alih Flutter, dan enjin simulasi web.',
 			context_label: 'Organisasi / Konteks',
 			cta: 'Berminat untuk melihat demonstrasi sistem atau bekerjasama?',
 			cta_btn: 'Hubungi Munir',
@@ -107,65 +107,60 @@ export const translations = {
 				'Cari sistem, framework atau kata kunci (cth: Laravel, Flutter, Docker, AI, Kerajaan)...',
 
 			// Gov Vault Banner
-			gov_vault_badge: 'SEKTOR AWAM & PERTAHANAN',
-			gov_vault_title: 'Bilik Kebal Sistem Kerajaan (YHCM Enterprise)',
+			gov_vault_badge: 'SEKTOR AWAM & PERUSAHAAN',
+			gov_vault_title: 'Sistem Sektor Awam & Korporat (YHCM)',
 			gov_vault_desc:
-				'Tiga platform gred pertahanan berskala besar yang menyokong kesiagaan aset, logistik pembaikan, dan audit data sektor awam Malaysia. Diterangkan secara profesional mengikut piawaian integriti kerajaan tanpa mendedahkan data sulit.',
+				'Aplikasi web gred perusahaan yang dibangunkan untuk menyokong operasi, pengurusan aset dan arkib digital sektor awam dengan pematuhan keselamatan data ketat.',
 
 			// Filter Categories
-			filter_all: 'Semua Projek',
-			filter_gov: '🏛️ Kerajaan & Pertahanan',
-			filter_ai: '🤖 AI & Ejen Autonomi',
-			filter_mobile: '📱 Mobile & Kesihatan',
-			filter_web: '🌐 Web, SaaS & Korporat',
-			filter_sim: '🎮 Simulasi & Fizik',
+			filter_all: 'Semua',
+			filter_gov: 'Sektor Awam',
+			filter_ai: 'AI & Automasi',
+			filter_mobile: 'Mobile',
+			filter_web: 'Web & SaaS',
+			filter_sim: 'Simulasi & Game',
 
 			// Badges
-			enterprise: 'Gred Kerajaan / Perusahaan',
+			enterprise: 'Sektor Awam / Perusahaan',
 			production: 'Produksi Langsung',
-			academic: 'Akademik / Penyelidikan',
-			innovation: 'Inovasi / AI R&D',
+			academic: 'Akademik',
+			innovation: 'Inovasi',
 
 			// Government Projects (YHCM)
 			emesys: {
-				title: 'EMESYS — Enterprise Military Equipment & Services System',
-				subtitle: 'Sistem Pengurusan Aset & Pembaikan Pertahanan (5 Modul)',
-				desc: 'Platform komprehensif peringkat nasional yang menguruskan kitaran hayat penuh peralatan dan perkhidmatan sektor pertahanan awam. Menyediakan 5 modul teras: Pengurusan Aset (7 kategori aset, kelulusan & pelupusan), Pembaikan Woksyop (permohonan job S1/S2/S3 & inventori alat ganti), Pembaikan Tempatan & Kontrak (kumpulan PT, tapisan kelulusan, PO & invois pembayaran), Pelaporan Rasmi (Penyata S1/S2 PDF/Excel), serta Dashboard Kesiagaan & Servisibiliti masa nyata.',
+				title: 'eMesys — Platform Pengurusan Aset & Logistik',
+				subtitle: 'Sistem Pengurusan Aset Sektor Awam',
+				desc: 'Platform web berskala perusahaan untuk pengurusan kitaran hayat aset sektor awam. Mengendalikan pendaftaran aset, aliran kelulusan pelupusan, penjadualan penyelenggaraan, serta papan pemuka pemantauan servisibiliti.',
 				features: [
-					'Modul 1: Pengurusan 7 kategori aset, aliran kerja kelulusan & tatacara pelupusan rasmi',
-					'Modul 2: Pembaikan Woksyop dengan tiket permohonan job S1/S2/S3 & alat ganti',
-					'Modul 3: Pembaikan Tempatan & Kontrak merangkumi pengurusan PT, tapisan PO & pembayaran',
-					'Modul 4: Enjin Pelaporan automatik menjana Penyata S1/S2 dalam format PDF dan Excel',
-					'Modul 5: Dashboard Kesiagaan & Servisibiliti aset masa nyata dengan task list pegawai bertugas',
-					'Seni bina Docker Swarm di Linux dengan proksi terbalik Nginx dan integrasi SSO SAKTI TD',
-					'Pengesahan keselamatan Sanctum, pengesahan 2 faktor (2FA), RBAC ketat & pengelogan audit penuh'
+					'Pengurusan kitaran hayat dan rekod inventori aset berpusat',
+					'Aliran kerja kelulusan pelupusan dan pengesahan digital berperingkat',
+					'Papan pemuka pemantauan ketersediaan dan servisibiliti peralatan',
+					'Penjanaan laporan statistik dan lembaran data automatik',
+					'Kawalan akses berasaskan peranan (RBAC) dan log audit keselamatan'
 				]
 			},
 			sutera: {
-				title: 'SUTERA — Sistem Pengurusan & Kesiagaan Aset Kejuruteraan',
-				subtitle: 'Platform Kesiapsiagaan Aset Kejuruteraan & Integrasi SPATD (5 Modul)',
-				desc: 'Sistem gred pertahanan berprestasi tinggi yang memantau kesiapsiagaan peralatan kejuruteraan sektor awam. Merangkumi 5 modul kritikal: Pengurusan Aset KJC (perjawatan, pendaftaran aset, pinjaman sementara), Pembaikan KJC (permohonan B3/B4, arahan woksyop, status & sejarah rekod), Pengurusan Aset PKJ (15 kategori peralatan teknikal dengan penyegerakan data SPATD masa nyata), Pelaporan Rasmi KJC & PKJ (penjanaan dokumen keselamatan PDF), serta Dashboard Kesiagaan aset pertahanan.',
+				title: 'Sutera — Sistem Operasi & Penyelenggaraan',
+				subtitle: 'Platform Penyelenggaraan Teknikal',
+				desc: 'Sistem operasi berprestasi tinggi untuk pemantauan penyelenggaraan peralatan teknikal dan pengurusan arahan kerja dengan keselamatan data sektor awam.',
 				features: [
-					'Modul 1: Pengurusan Aset KJC merangkumi perjawatan, pendaftaran & pinjaman sementara',
-					'Modul 2: Pembaikan KJC mengendalikan aliran kerja B3/B4, direktif pembaikan & rekod arkib',
-					'Modul 3: Pengurusan Aset PKJ meliputi 15 kategori peralatan teknikal disegerakkan ke SPATD',
-					'Modul 4: Penjanaan laporan rasmi berformat keselamatan kerajaan dalam bentuk PDF',
-					'Modul 5: Dashboard Kesiagaan & Servisibiliti untuk pemantauan tahap keupayaan aset',
-					'Stack berprestasi tinggi: Laravel 11, Vue 3, pangkalan data PostgreSQL 17, dan caching Redis 8',
-					'Dihoskan di persekitaran kontena Docker pada pelayan korporat Ubuntu 24.04 LTS'
+					'Pengurusan rekod peralatan teknikal dan sejarah penyelenggaraan berkala',
+					'Penjejakan status tiket permohonan kerja pembaikan sehingga selesai',
+					'Papan pemuka penunjuk prestasi utama (KPI) ketersediaan operasi',
+					'Penjanaan dokumen laporan rasmi berformat keselamatan sektor awam',
+					'Seni bina pangkalan data optimum dengan caching berprestasi tinggi'
 				]
 			},
 			adims: {
-				title: 'ADIMS — Advanced Digital Asset & Information Management System',
-				subtitle: 'Sistem Pengurusan Aset Digital, Penjejakan Kod QR & Log Audit',
-				desc: 'Sistem pengurusan maklumat dan aset digital perusahaan generasi baharu berasaskan Laravel 12 dan PHP 8.5. Dilengkapi keupayaan penjejakan kod QR fizikal (Bacon & Endroid QR), integrasi storan awan berskala besar AWS S3 / MinIO, pengauditan keselamatan Spatie Activity Log bagi setiap aktiviti pengguna, pengesahan dua faktor Google 2FA, dan pemprosesan baris giliran tak segerak menggunakan Laravel Horizon.',
+				title: 'ADIMS — Sistem Rekod & Aset Digital',
+				subtitle: 'Platform Verifikasi Kod QR & Arkib Digital',
+				desc: 'Sistem pengurusan maklumat dan arkib aset digital dengan integrasi verifikasi kod QR, storan awan selamat, dan pemprosesan baris giliran tak segerak.',
 				features: [
-					'Penjejakan aset berasaskan kod QR berketepatan tinggi (Bacon QR & Endroid QR Code)',
-					'Penyimpanan dokumen & fail digital selamat menggunakan AWS S3 / MinIO Flysystem',
-					'Pengauditan keselamatan menyeluruh dengan Spatie Activity Log & sistem kebenaran peranan (RBAC)',
-					'Perlindungan akaun tahap perusahaan dengan pengesahan 2FA (Pragmarx Google2FA)',
-					'Pemprosesan kerja latar belakang berkelajuan tinggi melalui Laravel Horizon & Redis',
-					'Penjanaan laporan eksekutif dan lembaran data menggunakan Mpdf dan PhpSpreadsheet'
+					'Pengesahan dan penjejakan status fizikal menggunakan kod QR pintar',
+					'Penyimpanan fail digital dan dokumen sokongan berasaskan storan awan',
+					'Pengauditan menyeluruh aktiviti pengguna dengan pengesahan dua faktor (2FA)',
+					'Pemprosesan kerja latar belakang berkelajuan tinggi tanpa senggang',
+					'Penjanaan penyata dan dokumentasi digital automatik'
 				]
 			},
 
@@ -547,7 +542,7 @@ export const translations = {
 					'Enterprise database schema & query optimization for MySQL, MariaDB, and PostgreSQL 17',
 					'Docker Swarm containerization, image management & service deployment',
 					'Linux & Windows server administration: security hardening, monitoring & troubleshooting',
-					'Role-based access control (RBAC), SSO SAKTI TD, and government data integrity compliance'
+					'Role-based access control (RBAC), Enterprise SSO authentication, and government data integrity compliance'
 				]
 			},
 			nova: {
@@ -585,8 +580,8 @@ export const translations = {
 		},
 		projects: {
 			label: 'Featured Systems & Applications',
-			title: 'Production Systems & Innovation Vault',
-			desc: '19+ shipped production systems covering mission-critical public sector platforms, autonomous AI agents, Flutter mobile solutions, and physics engines.',
+			title: 'Featured Systems & Engineering Projects',
+			desc: '19+ production systems spanning public sector platforms, autonomous AI agents, Flutter mobile solutions, and web simulation engines.',
 			context_label: 'Organization / Context',
 			cta: 'Interested in collaborating or scheduling a live walkthrough?',
 			cta_btn: 'Contact Munir',
@@ -601,65 +596,60 @@ export const translations = {
 				'Search systems, frameworks, or keywords (e.g., Laravel, Flutter, Docker, AI, Government)...',
 
 			// Gov Vault Banner
-			gov_vault_badge: 'PUBLIC SECTOR & DEFENSE',
-			gov_vault_title: 'Government Enterprise Vault (YHCM Enterprise)',
+			gov_vault_badge: 'PUBLIC SECTOR & ENTERPRISE',
+			gov_vault_title: 'Public Sector & Enterprise Systems (YHCM)',
 			gov_vault_desc:
-				'Three large-scale defense-grade platforms powering readiness, maintenance logistics, and asset auditing for Malaysian public sector agencies. Described respectfully adhering to strict government compliance without disclosing sensitive data.',
+				'Enterprise-grade web platforms engineered to support operations, asset management, and digital records for public sector organizations with strict data governance.',
 
 			// Filter Categories
-			filter_all: 'All Projects',
-			filter_gov: '🏛️ Government & Enterprise',
-			filter_ai: '🤖 AI & Autonomous Agents',
-			filter_mobile: '📱 Mobile & Health',
-			filter_web: '🌐 Web, SaaS & Corporate',
-			filter_sim: '🎮 Simulation & Physics',
+			filter_all: 'All',
+			filter_gov: 'Public Sector',
+			filter_ai: 'AI & Automation',
+			filter_mobile: 'Mobile',
+			filter_web: 'Web & SaaS',
+			filter_sim: 'Simulation & Games',
 
 			// Badges
-			enterprise: 'Government / Enterprise Grade',
+			enterprise: 'Public Sector / Enterprise',
 			production: 'Live Production',
-			academic: 'Academic / Research',
-			innovation: 'Innovation / AI R&D',
+			academic: 'Academic',
+			innovation: 'Innovation',
 
 			// Government Projects (YHCM)
 			emesys: {
-				title: 'EMESYS — Enterprise Military Equipment & Services System',
-				subtitle: 'National Defense Asset Management & Maintenance Platform (5 Modules)',
-				desc: 'A comprehensive national-scale platform governing the entire lifecycle of defense and public-sector equipment and services. Features 5 core modules: Asset Management (7 asset categories, approval workflows & de-registration), Workshop Maintenance (S1/S2/S3 work order jobs & spare parts inventory), Local & Contract Repairs (PT groups, approval screening, PO & invoice processing), Statutory Reporting (S1/S2 statements in PDF & Excel), and a live Asset Readiness & Serviceability Dashboard.',
+				title: 'eMesys — Enterprise Asset & Logistics Platform',
+				subtitle: 'Public Sector Asset Management System',
+				desc: 'Enterprise-grade platform governing asset lifecycle management for public sector agencies. Features centralized registration, disposal approval hierarchies, and equipment serviceability monitoring.',
 				features: [
-					'Module 1: Management of 7 defense asset categories, approval hierarchies & formal disposal processes',
-					'Module 2: Workshop Maintenance tracking S1/S2/S3 service jobs and spare parts availability',
-					'Module 3: Local & Contract Repairs handling PT allocation, PO screening, and payment vouchers',
-					'Module 4: Automated Reporting Engine generating official S1/S2 statements in PDF and Excel',
-					'Module 5: Real-time Asset Readiness & Serviceability Dashboard with officer task assignment feeds',
-					'Docker Swarm architecture on Linux with Nginx reverse proxy and SSO SAKTI TD integration',
-					'Sanctum authentication, two-factor authentication (2FA), strict RBAC, and immutable audit logging'
+					'Comprehensive asset lifecycle tracking and inventory verification',
+					'Multi-tiered approval workflows for disposal and transfer requests',
+					'Executive dashboard displaying real-time equipment serviceability metrics',
+					'Automated statistical reports and data export capabilities',
+					'Role-based access control (RBAC) with audit logging compliance'
 				]
 			},
 			sutera: {
-				title: 'SUTERA — Engineering Asset Management & Readiness System',
-				subtitle: 'Defense Engineering Asset Readiness & SPATD Integration Platform (5 Modules)',
-				desc: 'A high-performance defense-grade system monitoring the operational readiness of public sector engineering assets. Encompasses 5 critical modules: KJC Asset Management (organizational posts, asset registration & temporary loan tracking), KJC Repairs (B3/B4 requests, workshop directives & maintenance history), PKJ Asset Management (15 technical equipment categories synced real-time with SPATD), Formal Reporting (defense-compliant PDF generation), and an executive Defense Readiness Dashboard.',
+				title: 'Sutera — Operations & Maintenance Management',
+				subtitle: 'Technical Maintenance Platform',
+				desc: 'High-performance operations system managing technical equipment servicing, work order directives, and operational readiness metrics with robust data governance.',
 				features: [
-					'Module 1: KJC Asset Management tracking post allocations, equipment registration & temporary transfers',
-					'Module 2: KJC Repairs automating B3/B4 job flows, repair directives, and longitudinal maintenance logs',
-					'Module 3: PKJ Asset Management overseeing 15 technical equipment categories synchronized with SPATD',
-					'Module 4: Executive and formal reporting generation producing secure PDF documentation',
-					'Module 5: Live Defense Readiness & Serviceability Dashboard evaluating operational availability',
-					'High-throughput stack: Laravel 11, Vue 3, PostgreSQL 17 relational store, and Redis 8 cache layer',
-					'Containerized Docker environment hosted on corporate Ubuntu 24.04 LTS servers'
+					'Technical equipment tracking and historical maintenance logging',
+					'End-to-end work order dispatch and service completion workflows',
+					'Real-time operational readiness and KPI monitoring dashboards',
+					'Automated generation of official service and status documentation',
+					'Optimized relational database store with high-throughput caching'
 				]
 			},
 			adims: {
-				title: 'ADIMS — Advanced Digital Asset & Information Management System',
-				subtitle: 'Digital Asset Management, QR Code Tracking & Spatie Audit Logging',
-				desc: 'A next-generation enterprise digital asset and information management platform built on Laravel 12 and PHP 8.5. Equipped with physical QR code tracking (Bacon & Endroid QR), scalable cloud storage integration with AWS S3 / MinIO, Spatie Activity Logging auditing every interaction, Google 2FA two-factor authentication, and asynchronous background queue processing powered by Laravel Horizon.',
+				title: 'ADIMS — Digital Records & Asset Management',
+				subtitle: 'Digital Archiving & QR Verification Platform',
+				desc: 'Enterprise digital documentation and asset verification platform featuring QR code tagging, secure object storage archiving, and asynchronous queue processing.',
 				features: [
-					'Physical asset tagging & verification utilizing high-precision QR codes (Bacon & Endroid QR)',
-					'Scalable, secure digital documentation archiving via AWS S3 / MinIO Flysystem',
-					'End-to-end security auditing powered by Spatie Activity Log and granular role permissions (RBAC)',
-					'Enterprise account hardening with two-factor authentication (Pragmarx Google2FA)',
-					'High-speed asynchronous background job execution managed via Laravel Horizon & Redis',
-					'Executive report and spreadsheet automation using Mpdf and PhpSpreadsheet'
+					'Physical asset tagging and validation utilizing smart QR codes',
+					'Centralized digital document archiving backed by secure cloud storage',
+					'Full user activity audit trails paired with two-factor authentication (2FA)',
+					'High-speed background queue processing for heavy workflows',
+					'Automated generation of digital records and executive summaries'
 				]
 			},
 

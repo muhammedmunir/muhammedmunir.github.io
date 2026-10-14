@@ -48,7 +48,7 @@
 				id="nav-logo"
 				onmouseenter={() => playBlip(500, 0.03)}
 			>
-				<span class="logo-port">Port</span><span class="logo-folio">folio</span>
+				<span class="logo-port">Munir</span><span class="logo-folio">.dev</span>
 			</a>
 
 			<ul class="nav-links" role="list">
@@ -64,6 +64,16 @@
 						</a>
 					</li>
 				{/each}
+				<li>
+					<a href="/games" class="nav-link" onmouseenter={() => playBlip(600, 0.02)}>
+						🎮 RPG
+					</a>
+				</li>
+				<li>
+					<a href="/city" class="nav-link" onmouseenter={() => playBlip(600, 0.02)}>
+						🏙️ City
+					</a>
+				</li>
 			</ul>
 
 			<div class="nav-actions">
@@ -83,21 +93,6 @@
 					<span class="lang-opt" class:active={$lang === 'en'}>EN</span>
 				</button>
 
-				<!-- JARVIS AI Button in Navbar -->
-				<button
-					type="button"
-					class="btn nav-jarvis"
-					id="nav-jarvis-btn"
-					onclick={() => {
-						playConfirm();
-						window.dispatchEvent(new CustomEvent('open-jarvis'));
-					}}
-					onmouseenter={() => playBlip(680, 0.03)}
-					title="Buka J.A.R.V.I.S AI Assistant (Ctrl + J)"
-				>
-					🤖 JARVIS
-				</button>
-
 				<!-- Direct Resume Download Button in Navbar -->
 				<a
 					href="/resume.pdf"
@@ -111,22 +106,6 @@
 					📄 {$t.nav.resume}
 				</a>
 
-				<a
-					href="/games"
-					class="btn btn-games nav-games"
-					id="nav-games-btn"
-					onmouseenter={() => playBlip(700, 0.03)}
-				>
-					🎮 Games
-				</a>
-				<a
-					href="/city"
-					class="btn btn-games nav-city"
-					id="nav-city-btn"
-					onmouseenter={() => playBlip(720, 0.03)}
-				>
-					🏙️ City
-				</a>
 				{#if !$page.url.pathname.startsWith('/games')}
 					<a
 						href="#contact"
@@ -353,23 +332,7 @@
 		user-select: none;
 	}
 
-	.nav-jarvis {
-		background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(14, 165, 233, 0.05));
-		border: 1px solid rgba(56, 189, 248, 0.6);
-		color: #38bdf8;
-		border-radius: 8px;
-		padding: 0.5rem 0.95rem;
-		font-size: 0.82rem;
-		font-weight: 800;
-		cursor: pointer;
-		transition: all 0.2s;
-		box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
-	}
-	.nav-jarvis:hover {
-		background: #38bdf8;
-		color: #030712;
-		box-shadow: 0 0 20px rgba(56, 189, 248, 0.6);
-	}
+
 
 	.nav-cta {
 		padding: 0.6rem 1.3rem;
@@ -395,20 +358,7 @@
 		font-weight: 700;
 		background: rgba(0, 240, 255, 0.06);
 	}
-	.btn-games {
-		background: rgba(212, 175, 55, 0.08);
-		border: 1px solid rgba(212, 175, 55, 0.3);
-		color: #d4af37;
-		border-radius: 8px;
-		padding: 0.5rem 1rem;
-		font-size: 0.85rem;
-		font-weight: 700;
-		transition: all 0.2s;
-	}
-	.btn-games:hover {
-		background: rgba(212, 175, 55, 0.18);
-		transform: none;
-	}
+
 
 	.footer {
 		background: var(--navy-dark);
@@ -551,25 +501,9 @@
 			-webkit-backdrop-filter: none;
 		}
 	}
-	.nav-city {
-		background: rgba(167, 139, 250, 0.08);
-		border: 1px solid rgba(167, 139, 250, 0.3);
-		color: #a78bfa;
-	}
-	.nav-city:hover {
-		background: rgba(167, 139, 250, 0.18);
-		transform: none;
-	}
-
 	@media (max-width: 540px) {
-		/* Hide standalone Games/City/Resume buttons on very small screens — accessible via hamburger */
+		/* Hide standalone Resume button on very small screens — accessible via hamburger */
 		.nav-resume {
-			display: none;
-		}
-		.btn-games {
-			display: none;
-		}
-		.nav-city {
 			display: none;
 		}
 		.nav-logo {

@@ -90,7 +90,7 @@
 	.fab-present {
 		position: fixed;
 		bottom: 2rem;
-		right: 2rem;
+		left: 2rem;
 		z-index: 500;
 		display: flex;
 		align-items: center;
