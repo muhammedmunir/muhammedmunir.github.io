@@ -39,11 +39,62 @@
 		}
 	}
 
+	function isMalayQuery(rawText: string): boolean {
+		if ($lang === 'ms') return true;
+		const lower = rawText.toLowerCase();
+		const malayKeywords = [
+			'berapa',
+			'jumlah',
+			'bilangan',
+			'projek',
+			'kerjaan',
+			'kerajaan',
+			'sektor',
+			'awam',
+			'ada',
+			'apa',
+			'siapa',
+			'mana',
+			'kenapa',
+			'bagaimana',
+			'macam',
+			'tolong',
+			'tunjuk',
+			'terang',
+			'senarai',
+			'boleh',
+			'nak',
+			'saya',
+			'dia',
+			'awak',
+			'kamu',
+			'statistik',
+			'statstik',
+			'pengalaman',
+			'kerja',
+			'kemahiran',
+			'tentang',
+			'salam',
+			'hai',
+			'selamat',
+			'pagi',
+			'petang',
+			'malam',
+			'terima',
+			'kasih',
+			'muat',
+			'turun',
+			'resume',
+			'cv'
+		];
+		return malayKeywords.some((w) => lower.includes(w));
+	}
+
 	function initWelcome() {
 		const greetingText =
 			$lang === 'ms'
-				? 'Protokol J.A.R.V.I.S diaktifkan. Salam sejahtera! Saya pembantu kecerdasan portfolio Muhammed Munir. Saya fasih berbahasa Melayu sepenuhnya. Telemetri sistem sedia untuk semakan: 3 platform sektor kerajaan, 16+ aplikasi inovasi, dan resume ATS. Sila pilih protokol atau taip apa sahaja pertanyaan anda.'
-				: "J.A.R.V.I.S Protocol initialized. Greetings! I am the neural assistant for Muhammed Munir's portfolio, fully bilingual in Malay and English. Systems telemetry is online: 3 government platforms, 16+ innovation apps, and ATS resume. Please choose a protocol or ask any inquiry.";
+				? 'Protokol J.A.R.V.I.S diaktifkan. Salam sejahtera! Saya pembantu kecerdasan portfolio Muhammed Munir. Saya fasih berbahasa Melayu sepenuhnya. Telemetri sistem sedia: 3 platform sektor awam, 15+ aplikasi inovasi, statistik ekosistem, dan resume ATS. Sila pilih protokol atau taip apa sahaja pertanyaan anda.'
+				: "J.A.R.V.I.S Protocol initialized. Greetings! I am the neural assistant for Muhammed Munir's portfolio, fully bilingual in Malay and English. Systems telemetry is online: 3 public-sector platforms, 15+ innovation apps, ecosystem telemetry, and ATS resume. Please choose a protocol or ask any inquiry.";
 
 		messages = [
 			{
@@ -101,7 +152,7 @@
 			const cleanText = text.replace(/[*_#`[\]()]/g, '');
 			const utterance = new SpeechSynthesisUtterance(cleanText);
 
-			const isMalay = $lang === 'ms';
+			const isMalay = isMalayQuery(text);
 			const chosenVoice = getPreferredVoice(isMalay);
 
 			if (chosenVoice) {
@@ -149,12 +200,13 @@
 
 	function executeProtocol(rawQuery: string) {
 		const q = rawQuery.toLowerCase().trim();
+		const isMalay = isMalayQuery(rawQuery);
 		let reply = '';
 		let action: ChatMessage['action'] = undefined;
 
 		playScan();
 
-		// 1. Language & Identity queries in Malay
+		// 1. Language & Identity queries
 		if (
 			q.includes('cakap melayu') ||
 			q.includes('bahasa melayu') ||
@@ -162,12 +214,107 @@
 			q.includes('melayu') ||
 			q.includes('boleh bahasa')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Tentu sekali! Saya J.A.R.V.I.S, dan saya fasih berbahasa Melayu sepenuhnya. Anda boleh bertanya tentang pengalaman kerja Munir di YHCM, perincian sistem kerajaan (eMesys, Sutera, ADIMS), aplikasi mobile seperti TINDAK dan Baby Kicking, ataupun memuat turun resume ATS beliau. Ada topik khusus yang anda ingin tahu?'
-					: 'Absolutely! I am fully fluent in Bahasa Melayu and English. Feel free to ask about Munir’s public sector work at YHCM (eMesys, Sutera, ADIMS), his mobile & AI applications like TINDAK and Baby Kicking, or request his ATS Resume.';
+			reply = isMalay
+				? 'Tentu sekali! Saya J.A.R.V.I.S, dan saya fasih berbahasa Melayu sepenuhnya. Anda boleh bertanya tentang statistik sistem, jumlah projek kerajaan (eMesys, Sutera, ADIMS), aplikasi mobile seperti TINDAK dan Baby Kicking, pengalaman kerja Munir di YHCM & TNB, atau memuat turun resume ATS. Apa yang anda ingin semak?'
+				: 'Absolutely! I am fully fluent in Bahasa Melayu and English. Feel free to ask about ecosystem stats, Munir’s 3 public sector systems at YHCM (eMesys, Sutera, ADIMS), his mobile & AI tools, or request his ATS Resume.';
 		}
-		// 2. Greetings
+		// 2. Statistics, Telemetry & Analytics ("statistik", "statstik", "stats", "telemetri", "metrics", "analitik")
+		else if (
+			q.includes('statistik') ||
+			q.includes('statstik') ||
+			q.includes('statistic') ||
+			q.includes('stats') ||
+			q.includes('telemetri') ||
+			q.includes('telemetry') ||
+			q.includes('metrik') ||
+			q.includes('metric') ||
+			q.includes('analitik') ||
+			q.includes('analytics')
+		) {
+			reply = isMalay
+				? '📊 RINGKASAN STATISTIK & TELEMETRI EKOSISTEM MUHAMMED MUNIR:\n\n' +
+				  '🔢 Jumlah Projek Siap: 18 Sistem Pengeluaran\n' +
+				  '• 🏛️ Sektor Awam / Kerajaan: 3 Sistem (eMesys, Sutera, ADIMS)\n' +
+				  '• ⚡ AI & Ejen Autonomi: 3 Sistem (9Router 3D, TINDAK, CV Bot)\n' +
+				  '• 📱 Aplikasi Mudah Alih: 2 Aplikasi (Baby Kicking, JioFarm IoT)\n' +
+				  '• 🌐 Web Enterprise & SaaS: 7 Platform (IWA001, Infinity, Onboardx, Lumina, Tax Relief, FocusBoard, UTM FYP)\n' +
+				  '• 🎮 Simulasi & Enjin: 3 Enjin (Foony 9-Ball, OrbitPulse, Sudoku Solver)\n\n' +
+				  '⏱️ Pengalaman Industri: 4+ Tahun Pengalaman Penuh (YHCM Enterprise, Nova Bitara, Tenaga Nasional Berhad)\n' +
+				  '💻 Senjata Teknologi: 18+ Teknologi Utama (Vue.js 3, Laravel 11/12, SvelteKit, Flutter/Dart, Docker Swarm, PostgreSQL 17, Redis, Splunk SOC)\n' +
+				  '🎓 Kelayakan Akademik: B.Sc. Sains Komputer (Keselamatan Rangkaian), UTM (PNGK: 3.17)\n' +
+				  '🌐 Integriti Sistem: 100% Responsif, Dwibahasa (BM/EN), & Resume Format ATS.'
+				: '📊 MUHAMMED MUNIR ECOSYSTEM TELEMETRY & STATS:\n\n' +
+				  '🔢 Total Shipped Systems: 18 Production Platforms\n' +
+				  '• 🏛️ Public Sector / Gov: 3 Systems (eMesys, Sutera, ADIMS)\n' +
+				  '• ⚡ AI & Autonomous Agents: 3 Systems (9Router 3D, TINDAK, CV Bot)\n' +
+				  '• 📱 Mobile Applications: 2 Apps (Baby Kicking, JioFarm IoT)\n' +
+				  '• 🌐 Enterprise Web & SaaS: 7 Platforms (IWA001, Infinity, Onboardx, Lumina, Tax Relief, FocusBoard, UTM FYP)\n' +
+				  '• 🎮 Simulation & Engine Tools: 3 Tools (Foony 9-Ball, OrbitPulse, Sudoku Solver)\n\n' +
+				  '⏱️ Industry Track Record: 4+ Years Experience (YHCM Enterprise, Nova Bitara, Tenaga Nasional Berhad)\n' +
+				  '💻 Core Arsenal: 18+ Modern Technologies (Vue 3, Laravel 11/12, SvelteKit, Flutter/Dart, Docker Swarm, PostgreSQL 17, Redis, Splunk SOC)\n' +
+				  '🎓 Education: B.Sc. Computer Science (Network Security), UTM (CGPA: 3.17)\n' +
+				  '🌐 System Quality: 100% Responsive, Bilingual BM/EN, & ATS-Compliant Resume.';
+			action = {
+				label: isMalay ? '📊 Buka Bahagian Projek & Statistik' : '📊 View Projects & Stats',
+				callback: () => {
+					isOpen = false;
+					window.location.hash = '#projects';
+				}
+			};
+		}
+		// 3. Count for Government / Public Sector Projects ("berapa projek kerajaan ada?", "berapa projek kerjaan ada?", "jumlah projek kerajaan")
+		else if (
+			(q.includes('berapa') || q.includes('jumlah') || q.includes('bilangan') || q.includes('how many') || q.includes('total')) &&
+			(q.includes('kerajaan') || q.includes('kerjaan') || q.includes('gov') || q.includes('sektor awam') || q.includes('public sector'))
+		) {
+			reply = isMalay
+				? 'Terdapat tepat 3 projek utama sektor awam / kerajaan yang dibangunkan dan diselenggara oleh Munir di YHCM Sdn Bhd:\n\n' +
+				  '1. 🛡️ eMesys — Platform Pengurusan Aset & Logistik Sektor Awam (Laravel 11, Vue 3, Docker Swarm, MariaDB, SSO Enterprise, RBAC Audit)\n' +
+				  '2. ⚙️ Sutera — Sistem Operasi & Penyelenggaraan Kejuruteraan (Laravel 11, Vue 3, PostgreSQL 17, Docker, Redis, RBAC Security)\n' +
+				  '3. 📦 ADIMS — Sistem Rekod & Aset Digital (Laravel 12, PHP 8.5, Horizon, Enjin Kod QR, Storan Awan S3/MinIO, Google 2FA)\n\n' +
+				  'Ketiga-tiga platform ini dibangunkan dengan pematuhan keselamatan data ketat dan kawalan capaian berasaskan peranan (RBAC).'
+				: 'There are exactly 3 core public sector / government systems developed and maintained by Munir at YHCM Sdn Bhd:\n\n' +
+				  '1. 🛡️ eMesys — Public Sector Asset & Logistics Management Platform (Laravel 11, Vue 3, Docker Swarm, MariaDB, SSO Enterprise, RBAC Audit)\n' +
+				  '2. ⚙️ Sutera — Engineering Operations & Maintenance Management System (Laravel 11, Vue 3, PostgreSQL 17, Docker, Redis, RBAC Security)\n' +
+				  '3. 📦 ADIMS — Digital Records & QR Verification System (Laravel 12, PHP 8.5, Horizon, QR Engine, S3/MinIO Storage, Google 2FA)\n\n' +
+				  'All 3 systems operate under strict enterprise data integrity standards with role-based access control (RBAC).';
+			action = {
+				label: isMalay ? '🏛️ Lihat 3 Sistem Sektor Awam' : '🏛️ View Public Sector Systems',
+				callback: () => {
+					isOpen = false;
+					window.location.hash = '#projects';
+				}
+			};
+		}
+		// 4. General Count for All Projects ("berapa projek ada", "jumlah projek", "ada berapa projek", "how many projects")
+		else if (
+			(q.includes('berapa') || q.includes('jumlah') || q.includes('bilangan') || q.includes('how many')) &&
+			(q.includes('projek') || q.includes('sistem') || q.includes('app') || q.includes('aplikasi') || q.includes('project') || q.includes('system'))
+		) {
+			reply = isMalay
+				? 'Munir telah membina sejumlah 18 sistem dan aplikasi produksi yang siap dihantar:\n\n' +
+				  '• 🏛️ 3 Sistem Sektor Awam / Kerajaan (eMesys, Sutera, ADIMS)\n' +
+				  '• ⚡ 3 Aplikasi AI & Ejen Autonomi (9Router 3D, TINDAK, CV Bot)\n' +
+				  '• 📱 2 Aplikasi Mudah Alih (Baby Kicking Suite, JioFarm IoT)\n' +
+				  '• 🌐 7 Platform Web Enterprise & SaaS (IWA001, Infinity, Onboardx, Lumina, Tax Relief, FocusBoard, UTM FYP)\n' +
+				  '• 🎮 3 Enjin Simulasi & Algoritma (Foony 9-Ball, OrbitPulse, Sudoku Solver)\n\n' +
+				  'Anda boleh melihat dan menapis semua 18 projek ini secara interaktif di bahagian projek!'
+				: 'Munir has shipped a total of 18 production systems and applications:\n\n' +
+				  '• 🏛️ 3 Public Sector Platforms (eMesys, Sutera, ADIMS)\n' +
+				  '• ⚡ 3 AI & Autonomous Agent Apps (9Router 3D, TINDAK, CV Bot)\n' +
+				  '• 📱 2 Mobile Applications (Baby Kicking Suite, JioFarm IoT)\n' +
+				  '• 🌐 7 Enterprise Web & SaaS Platforms (IWA001, Infinity, Onboardx, Lumina, Tax Relief, FocusBoard, UTM FYP)\n' +
+				  '• 🎮 3 Simulation & Engine Tools (Foony 9-Ball, OrbitPulse, Sudoku Solver)\n\n' +
+				  'You can explore and filter all 18 systems interactively in the projects section!';
+			action = {
+				label: isMalay ? '📦 Jelajah 18+ Projek' : '📦 Explore 18+ Projects',
+				callback: () => {
+					isOpen = false;
+					window.location.hash = '#projects';
+				}
+			};
+		}
+		// 5. Greetings
 		else if (
 			q === 'hai' ||
 			q === 'halo' ||
@@ -180,35 +327,42 @@
 			q.includes('assalamualaikum') ||
 			q.includes('apa khabar')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Salam sejahtera! Selamat datang ke portfolio Muhammed Munir. Sistem berada dalam keadaan 100% optimum. Sila beritahu apa yang anda ingin semak — sistem kerajaan, projek AI/mobile, kemahiran teknikal, atau resume ATS?'
-					: "Greetings! Welcome to Muhammed Munir's portfolio. All telemetry systems are operational. Let me know what you would like to explore — government platforms, AI/mobile apps, technical skills, or ATS resume?";
+			reply = isMalay
+				? 'Salam sejahtera! Selamat datang ke portfolio Muhammed Munir. Sistem berada dalam keadaan 100% optimum. Sila beritahu apa yang anda ingin semak — statistik projek, 3 sistem kerajaan, aplikasi AI/mobile, kemahiran teknikal, atau resume ATS?'
+				: "Greetings! Welcome to Muhammed Munir's portfolio. All telemetry systems are operational. Let me know what you would like to explore — ecosystem statistics, 3 government platforms, AI/mobile apps, technical skills, or ATS resume?";
 		}
-		// 3. Government / YHCM Systems (EMESYS, SUTERA, ADIMS)
+		// 6. Government / Sektor Awam Overview (non-count)
 		else if (
 			q.includes('kerajaan') ||
+			q.includes('kerjaan') ||
 			q.includes('gov') ||
 			q.includes('yhcm') ||
 			q.includes('emesys') ||
 			q.includes('sutera') ||
 			q.includes('adims') ||
-			q.includes('pertahanan') ||
-			q.includes('sektor awam')
+			q.includes('sektor awam') ||
+			q.includes('public sector')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Bagi YHCM Enterprise, Munir bertanggungjawab membangunkan dan menyelenggara 3 sistem web sektor awam & perusahaan: (1) eMesys — Platform Pengurusan Aset & Logistik (rekod aset, kelulusan pelupusan, penjadualan penyelenggaraan berkala, dan laporan statistik). (2) Sutera — Sistem Operasi & Penyelenggaraan Kejuruteraan (pemantauan peralatan teknikal dan pengurusan arahan kerja). (3) ADIMS — Sistem Rekod & Verifikasi Digital dengan kod QR pintar, storan awan selamat, dan log audit keselamatan. Semua sistem dibina berasaskan Vue 3, Laravel, Docker, dan kawalan akses (RBAC) ketat.'
-					: 'At YHCM Enterprise, Munir develops and maintains 3 public-sector and enterprise platforms: (1) eMesys — Enterprise Asset & Logistics Platform (asset records, disposal workflows, maintenance scheduling, and reporting). (2) Sutera — Operations & Maintenance Management System (technical equipment monitoring and work orders). (3) ADIMS — Digital Records & QR Verification System with secure cloud storage and audit logging. Built with Vue 3, Laravel, Docker, and strict RBAC controls.';
+			reply = isMalay
+				? 'Bagi YHCM Enterprise, Munir bertanggungjawab membangunkan dan menyelenggara 3 sistem web sektor awam & perusahaan:\n' +
+				  '1. eMesys — Platform Pengurusan Aset & Logistik (rekod aset, kelulusan pelupusan, penjadualan penyelenggaraan berkala, dan laporan statistik).\n' +
+				  '2. Sutera — Sistem Operasi & Penyelenggaraan Kejuruteraan (pemantauan peralatan teknikal dan pengurusan arahan kerja).\n' +
+				  '3. ADIMS — Sistem Rekod & Verifikasi Digital dengan kod QR pintar, storan awan selamat, dan log audit keselamatan.\n\n' +
+				  'Semua sistem dibina berasaskan Vue 3, Laravel, Docker, dan kawalan akses (RBAC) ketat.'
+				: 'At YHCM Enterprise, Munir develops and maintains 3 public-sector and enterprise platforms:\n' +
+				  '1. eMesys — Enterprise Asset & Logistics Platform (asset records, disposal workflows, maintenance scheduling, and reporting).\n' +
+				  '2. Sutera — Operations & Maintenance Management System (technical equipment monitoring and work orders).\n' +
+				  '3. ADIMS — Digital Records & QR Verification System with secure cloud storage and audit logging.\n\n' +
+				  'Built with Vue 3, Laravel, Docker, and strict RBAC controls.';
 			action = {
-				label: $lang === 'ms' ? '🏛️ Lihat Sistem Sektor Awam' : '🏛️ View Public Sector Systems',
+				label: isMalay ? '🏛️ Lihat Sistem Sektor Awam' : '🏛️ View Public Sector Systems',
 				callback: () => {
 					isOpen = false;
 					window.location.hash = '#projects';
 				}
 			};
 		}
-		// 4. Mobile & Health Apps (TINDAK, Baby Kicking, JioFarm, Tax Relief)
+		// 7. Mobile & Health Apps (TINDAK, Baby Kicking, JioFarm, Tax Relief)
 		else if (
 			q.includes('mobile') ||
 			q.includes('aplikasi') ||
@@ -219,19 +373,18 @@
 			q.includes('cukai') ||
 			q.includes('jiofarm')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Aplikasi mudah alih dan produk pintar Munir merangkumi: (1) Baby Kicking Suite — Aplikasi Flutter rentas platform (Android, iOS, Web) dengan Firebase Firestore & Cloud Functions untuk pemantauan pergerakan bayi dan eksport laporan klinikal PDF. (2) TINDAK — Enjin tindakan pintar Android (Share Intent, Local-First parsing, Gemini AI & Supabase RLS). (3) Tax Relief Malaysia — Pengoptimum pelepasan cukai pendapatan LHDN interaktif. (4) JioFarm — Platform telemetri IoT pertanian pintar berasaskan Python.'
-					: "Munir's mobile applications and smart tools include: (1) Baby Kicking Suite — Cross-platform Flutter mobile app (Android, iOS, Web) with Firebase Firestore & Cloud Functions tracking fetal movement and generating clinical PDF exports. (2) TINDAK — AI-powered Android action layer (Share Intent, Local-First parsing, Gemini AI & Supabase RLS). (3) Tax Relief Malaysia — Smart LHDN personal income tax deduction optimizer. (4) JioFarm — Python-powered smart agriculture IoT sensor telemetry platform.";
+			reply = isMalay
+				? 'Aplikasi mudah alih dan produk pintar Munir merangkumi: (1) Baby Kicking Suite — Aplikasi Flutter rentas platform (Android, iOS, Web) dengan Firebase Firestore & Cloud Functions untuk pemantauan pergerakan bayi dan eksport laporan klinikal PDF. (2) TINDAK — Enjin tindakan pintar Android (Share Intent, Local-First parsing, Gemini AI & Supabase RLS). (3) Tax Relief Malaysia — Pengoptimum pelepasan cukai pendapatan LHDN interaktif. (4) JioFarm — Platform telemetri IoT pertanian pintar berasaskan Python.'
+				: "Munir's mobile applications and smart tools include: (1) Baby Kicking Suite — Cross-platform Flutter mobile app (Android, iOS, Web) with Firebase Firestore & Cloud Functions tracking fetal movement and generating clinical PDF exports. (2) TINDAK — AI-powered Android action layer (Share Intent, Local-First parsing, Gemini AI & Supabase RLS). (3) Tax Relief Malaysia — Smart LHDN personal income tax deduction optimizer. (4) JioFarm — Python-powered smart agriculture IoT sensor telemetry platform.";
 			action = {
-				label: $lang === 'ms' ? '📱 Lihat Aplikasi Mobile' : '📱 View Mobile Apps',
+				label: isMalay ? '📱 Lihat Aplikasi Mobile' : '📱 View Mobile Apps',
 				callback: () => {
 					isOpen = false;
 					window.location.hash = '#projects';
 				}
 			};
 		}
-		// 5. AI, Computer Vision & Agents (9Router, CV Bot, Gemini)
+		// 8. AI, Computer Vision & Agents (9Router, CV Bot, Gemini)
 		else if (
 			q.includes('ai') ||
 			q.includes('agent') ||
@@ -243,19 +396,18 @@
 			q.includes('gemini') ||
 			q.includes('mcp')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Kejuruteraan AI & Automasi Munir: (1) 9Router Office — Persekitaran pejabat maya 3D Three.js dengan orkestrasi berbilang ejen AI autonomi, Model Context Protocol (MCP SDK), jambatan suara interaktif, dan ujian Playwright. (2) Computer Vision Bot — Automasi desktop Python memanfaatkan OpenCV (pemadanan templat SIFT homography, segmentasi warna CIELAB, OCR dinamik, & visual servoing Win32). (3) TINDAK Gemini AI Fallback — Integrasi kecerdasan buatan untuk pemahaman teks rumit tanpa membebankan peranti pengguna.'
-					: "Munir's AI & Autonomous Engineering: (1) 9Router Office — Interactive Three.js 3D virtual office orchestrating multi-agent AI teams via Model Context Protocol (MCP SDK), live voice services, and Playwright verification. (2) Computer Vision Bot — High-speed Python desktop automation utilizing OpenCV (SIFT homography, CIELAB segmentation, OCR, & closed-loop Win32 visual servoing). (3) TINDAK Gemini AI — Dynamic AI fallback for complex unstructured text understanding.";
+			reply = isMalay
+				? 'Kejuruteraan AI & Automasi Munir: (1) 9Router Office — Persekitaran pejabat maya 3D Three.js dengan orkestrasi berbilang ejen AI autonomi, Model Context Protocol (MCP SDK), jambatan suara interaktif, dan ujian Playwright. (2) Computer Vision Bot — Automasi desktop Python memanfaatkan OpenCV (pemadanan templat SIFT homography, segmentasi warna CIELAB, OCR dinamik, & visual servoing Win32). (3) TINDAK Gemini AI Fallback — Integrasi kecerdasan buatan untuk pemahaman teks rumit tanpa membebankan peranti pengguna.'
+				: "Munir's AI & Autonomous Engineering: (1) 9Router Office — Interactive Three.js 3D virtual office orchestrating multi-agent AI teams via Model Context Protocol (MCP SDK), live voice services, and Playwright verification. (2) Computer Vision Bot — High-speed Python desktop automation utilizing OpenCV (SIFT homography, CIELAB segmentation, OCR, & closed-loop Win32 visual servoing). (3) TINDAK Gemini AI — Dynamic AI fallback for complex unstructured text understanding.";
 			action = {
-				label: $lang === 'ms' ? '🤖 Lihat Projek AI' : '🤖 View AI Projects',
+				label: isMalay ? '🤖 Lihat Projek AI' : '🤖 View AI Projects',
 				callback: () => {
 					isOpen = false;
 					window.location.hash = '#projects';
 				}
 			};
 		}
-		// 6. Summary / Profile / Bio
+		// 9. Summary / Profile / Bio
 		else if (
 			q === 'summary' ||
 			q.includes('ringkasan') ||
@@ -265,70 +417,68 @@
 			q.includes('who') ||
 			q.includes('about')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Muhammed Munir Bin Mohd Azmi adalah Pembangun Full-Stack & Profesional IT berpangkalan di Bandar Puteri Puchong, Selangor. Berkelulusan B.Sc. Sains Komputer (Keselamatan Rangkaian) UTM (PNGK 3.17). Beliau mempunyai rekod pencapaian terbukti dalam membina sistem berskala besar sektor awam kerajaan (eMesys, Sutera, ADIMS) menggunakan Vue.js 3 dan Laravel, aplikasi Flutter pintar, ejen AI 3D, serta pemantauan keselamatan siber Splunk SIEM.'
-					: 'Muhammed Munir Bin Mohd Azmi is a Full-Stack Developer & IT Professional based in Puchong, Selangor. Holds a B.Sc. in Computer Science (Network Security) from UTM (CGPA 3.17). Proven track record engineering public-sector government platforms (eMesys, Sutera, ADIMS) with Vue.js 3 and Laravel, smart Flutter applications, 3D AI agent environments, and Splunk SIEM cybersecurity operations.';
+			reply = isMalay
+				? 'Muhammed Munir Bin Mohd Azmi adalah Pembangun Full-Stack & Profesional IT berpangkalan di Bandar Puteri Puchong, Selangor. Berkelulusan B.Sc. Sains Komputer (Keselamatan Rangkaian) UTM (PNGK 3.17). Beliau mempunyai rekod pencapaian terbukti dalam membina sistem berskala besar sektor awam kerajaan (eMesys, Sutera, ADIMS) menggunakan Vue.js 3 dan Laravel, aplikasi Flutter pintar, ejen AI 3D, serta pemantauan keselamatan siber Splunk SIEM.'
+				: 'Muhammed Munir Bin Mohd Azmi is a Full-Stack Developer & IT Professional based in Puchong, Selangor. Holds a B.Sc. in Computer Science (Network Security) from UTM (CGPA 3.17). Proven track record engineering public-sector government platforms (eMesys, Sutera, ADIMS) with Vue.js 3 and Laravel, smart Flutter applications, 3D AI agent environments, and Splunk SIEM cybersecurity operations.';
 		}
-		// 7. Tech Stack & Skills
+		// 10. Tech Stack & Skills
 		else if (
 			q === 'skills' ||
 			q.includes('tech') ||
 			q.includes('kemahiran') ||
 			q.includes('stack') ||
-			q.includes('bahasa') ||
+			q.includes('bahasa pengaturcaraan') ||
 			q.includes('framework')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Senjata Teknologi Utama: [Frontend & Mobile] Vue.js 3, SvelteKit 5, Flutter/Dart, React, Three.js 3D, Tailwind CSS. [Backend & Database] Laravel 11/12, PHP 8.4/8.5, Node.js, Python, PostgreSQL 17, MariaDB/MySQL, Supabase RLS, Redis 8. [Keselamatan & DevOps] Docker Swarm, Linux Ubuntu, Splunk SIEM, Vulhub CVE, Azure, Jenkins CI/CD, Git, Cisco CCNA.'
-					: 'Core Arsenal: [Frontend & Mobile] Vue.js 3, SvelteKit 5, Flutter/Dart, React, Three.js 3D, Tailwind CSS. [Backend & Database] Laravel 11/12, PHP 8.4/8.5, Node.js, Python, PostgreSQL 17, MariaDB/MySQL, Supabase RLS, Redis 8. [Security & DevOps] Docker Swarm, Linux Ubuntu, Splunk SIEM, Vulhub CVE, Microsoft Azure, Jenkins CI/CD, Cisco CCNA.';
+			reply = isMalay
+				? 'Senjata Teknologi Utama: [Frontend & Mobile] Vue.js 3, SvelteKit 5, Flutter/Dart, React, Three.js 3D, Tailwind CSS. [Backend & Database] Laravel 11/12, PHP 8.4/8.5, Node.js, Python, PostgreSQL 17, MariaDB/MySQL, Supabase RLS, Redis 8. [Keselamatan & DevOps] Docker Swarm, Linux Ubuntu, Splunk SIEM, Vulhub CVE, Azure, Jenkins CI/CD, Git, Cisco CCNA.'
+				: 'Core Arsenal: [Frontend & Mobile] Vue.js 3, SvelteKit 5, Flutter/Dart, React, Three.js 3D, Tailwind CSS. [Backend & Database] Laravel 11/12, PHP 8.4/8.5, Node.js, Python, PostgreSQL 17, MariaDB/MySQL, Supabase RLS, Redis 8. [Security & DevOps] Docker Swarm, Linux Ubuntu, Splunk SIEM, Vulhub CVE, Microsoft Azure, Jenkins CI/CD, Cisco CCNA.';
 			action = {
-				label: $lang === 'ms' ? '🎯 Lihat Matriks Kemahiran' : '🎯 View Skills Matrix',
+				label: isMalay ? '🎯 Lihat Matriks Kemahiran' : '🎯 View Skills Matrix',
 				callback: () => {
 					isOpen = false;
 					window.location.hash = '#skills';
 				}
 			};
 		}
-		// 8. Work Experience
+		// 11. Work Experience (Strict match: avoids false match with "kerjaan" or general words)
 		else if (
 			q.includes('pengalaman') ||
-			q.includes('kerja') ||
 			q.includes('experience') ||
+			q.includes('tempat kerja') ||
+			q.includes('sejarah kerja') ||
+			q.includes('syarikat') ||
+			q.includes('company') ||
 			q.includes('tnb') ||
-			q.includes('nova')
+			q.includes('nova bitara') ||
+			(q.includes('kerja') && !q.includes('projek') && !q.includes('berapa'))
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Perjalanan Kerjaya Munir: (1) YHCM Sdn Bhd — Full-Stack Enterprise Programmer bagi sistem sektor awam eMesys, Sutera, dan ADIMS (Vue 3, Laravel Filament, Docker, Linux). (2) Nova Bitara Development — Pembangun Web & IT Support membina sistem pinjaman IWA001 dan portal Infinity World. (3) Tenaga Nasional Berhad (TNB) — Pembangun full-stack aplikasi mobiliti Onboardx (Flutter/Azure) dan Operasi Keselamatan Siber (Splunk SIEM, Red/Blue team CVE testing).'
-					: "Munir's Career Trajectory: (1) YHCM Sdn Bhd — Full-Stack Enterprise Programmer supporting government platforms eMesys, Sutera, and ADIMS (Vue 3, Laravel, Docker, Linux). (2) Nova Bitara Development — IT Support & Web Developer engineering IWA001 loan platform and Infinity World corporate portal. (3) Tenaga Nasional Berhad (TNB) — Full-stack developer for Onboardx enterprise mobile app & Cybersecurity Operations analyst (Splunk SIEM, Vulhub CVE).";
+			reply = isMalay
+				? 'Perjalanan Kerjaya Munir: (1) YHCM Sdn Bhd — Full-Stack Enterprise Programmer bagi sistem sektor awam eMesys, Sutera, dan ADIMS (Vue 3, Laravel Filament, Docker, Linux). (2) Nova Bitara Development — Pembangun Web & IT Support membina sistem pinjaman IWA001 dan portal Infinity World. (3) Tenaga Nasional Berhad (TNB) — Pembangun full-stack aplikasi mobiliti Onboardx (Flutter/Azure) dan Operasi Keselamatan Siber (Splunk SIEM, Red/Blue team CVE testing).'
+				: "Munir's Career Trajectory: (1) YHCM Sdn Bhd — Full-Stack Enterprise Programmer supporting government platforms eMesys, Sutera, and ADIMS (Vue 3, Laravel, Docker, Linux). (2) Nova Bitara Development — IT Support & Web Developer engineering IWA001 loan platform and Infinity World corporate portal. (3) Tenaga Nasional Berhad (TNB) — Full-stack developer for Onboardx enterprise mobile app & Cybersecurity Operations analyst (Splunk SIEM, Vulhub CVE).";
 			action = {
-				label: $lang === 'ms' ? '💼 Lihat Garis Masa Pengalaman' : '💼 View Experience Timeline',
+				label: isMalay ? '💼 Lihat Garis Masa Pengalaman' : '💼 View Experience Timeline',
 				callback: () => {
 					isOpen = false;
 					window.location.hash = '#experience';
 				}
 			};
 		}
-		// 9. Games, Simulators & Physics (AeroCar X, 9Ball, RPG, City)
+		// 12. Games, Simulators & Physics (NO AeroCar X)
 		else if (
 			q === 'game' ||
 			q.includes('game') ||
 			q.includes('permainan') ||
 			q.includes('rpg') ||
 			q.includes('city') ||
-			q.includes('aerocar') ||
-			q.includes('kereta terbang') ||
 			q.includes('9ball') ||
 			q.includes('sudoku')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Munir telah membina pelbagai simulator dan enjin permainan: (1) Cyberpunk Spaceship RPG Explorer — Pengembaraan kapal angkasa interaktif dengan sistem bilik dan arkib rahsia. (2) Cyber City Explorer — Peta bandar isometrik Canvas 2.5D masa nyata. (3) AeroCar X — Simulator penerbangan kereta futuristik Canvas. (4) Foony 9-Ball Master — Enjin fizik biliard Chromium Extension. Mahu melancarkan Cyberpunk RPG sekarang?'
-					: 'Munir has engineered various simulation and physics interactive experiences: (1) Cyberpunk Spaceship RPG Explorer — Interactive spaceship with room terminals and encrypted data logs. (2) Cyber City Explorer — Real-time 2.5D canvas isometric city navigator. (3) AeroCar X — Futuristic Canvas flight simulator. (4) Foony 9-Ball Master — Real-time vector billiards physics extension. Would you like to teleport to the RPG now?';
+			reply = isMalay
+				? 'Munir telah membina pelbagai simulator dan enjin permainan: (1) Cyberpunk Spaceship RPG Explorer — Pengembaraan kapal angkasa interaktif dengan sistem bilik dan arkib rahsia. (2) Cyber City Explorer — Peta bandar isometrik Canvas 2.5D masa nyata. (3) Foony 9-Ball Master — Enjin fizik biliard Chromium Extension. (4) Sudoku Solver — Algoritma penjana papan berprosedur dan backtracking. Mahu melancarkan Cyberpunk RPG sekarang?'
+				: 'Munir has engineered various simulation and physics interactive experiences: (1) Cyberpunk Spaceship RPG Explorer — Interactive spaceship with room terminals and encrypted data logs. (2) Cyber City Explorer — Real-time 2.5D canvas isometric city navigator. (3) Foony 9-Ball Master — Real-time vector billiards physics extension. (4) Sudoku Solver — Procedural puzzle generator & recursive backtracking solver. Would you like to teleport to the RPG now?';
 			action = {
-				label: $lang === 'ms' ? '🚀 Lancarkan Cyberpunk RPG' : '🚀 Launch Cyberpunk RPG',
+				label: isMalay ? '🚀 Lancarkan Cyberpunk RPG' : '🚀 Launch Cyberpunk RPG',
 				callback: () => {
 					isOpen = false;
 					playWarp();
@@ -336,7 +486,7 @@
 				}
 			};
 		}
-		// 10. Resume / ATS CV
+		// 13. Resume / ATS CV
 		else if (
 			q === 'resume' ||
 			q.includes('cv') ||
@@ -344,16 +494,15 @@
 			q.includes('download') ||
 			q.includes('muat turun')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Dossier Resume ATS Muhammed Munir yang dioptimumkan untuk sistem pemprosesan pengambilan kerja sedia untuk dimuat turun dalam format PDF berstruktur tinggi.'
-					: "Muhammed Munir's ATS-optimized Resume dossier is ready for immediate download in structured PDF format.";
+			reply = isMalay
+				? 'Dossier Resume ATS Muhammed Munir yang dioptimumkan untuk sistem pemprosesan pengambilan kerja sedia untuk dimuat turun dalam format PDF berstruktur tinggi.'
+				: "Muhammed Munir's ATS-optimized Resume dossier is ready for immediate download in structured PDF format.";
 			action = {
-				label: $lang === 'ms' ? '📥 Muat Turun Resume ATS (PDF)' : '📥 Download ATS Resume (PDF)',
+				label: isMalay ? '📥 Muat Turun Resume ATS (PDF)' : '📥 Download ATS Resume (PDF)',
 				href: '/resume.pdf'
 			};
 		}
-		// 11. Contact
+		// 14. Contact
 		else if (
 			q.includes('contact') ||
 			q.includes('hubungi') ||
@@ -362,31 +511,28 @@
 			q.includes('email') ||
 			q.includes('emel')
 		) {
-			reply =
-				$lang === 'ms'
-					? 'Saluran Komunikasi Terus Muhammed Munir: E-mel: muhammed.munir97.mm@gmail.com | Telefon / WhatsApp: +6013-5636124 | Lokasi: Bandar Puteri, Puchong, Selangor. Beliau terbuka untuk peluang sepenuh masa, kontrak gred perusahaan, atau perundingan teknikal.'
-					: 'Direct Communications for Muhammed Munir: Email: muhammed.munir97.mm@gmail.com | Phone / WhatsApp: +6013-5636124 | Location: Puchong, Selangor. He is available for full-time senior engineering, enterprise contracts, or technical consultations.';
+			reply = isMalay
+				? 'Saluran Komunikasi Terus Muhammed Munir: E-mel: muhammed.munir97.mm@gmail.com | Telefon / WhatsApp: +6013-5636124 | Lokasi: Bandar Puteri, Puchong, Selangor. Beliau terbuka untuk peluang sepenuh masa, kontrak gred perusahaan, atau perundingan teknikal.'
+				: 'Direct Communications for Muhammed Munir: Email: muhammed.munir97.mm@gmail.com | Phone / WhatsApp: +6013-5636124 | Location: Puchong, Selangor. He is available for full-time senior engineering, enterprise contracts, or technical consultations.';
 			action = {
-				label: $lang === 'ms' ? '📞 Buka Borang Mesej Terus' : '📞 Open Direct Message Form',
+				label: isMalay ? '📞 Buka Borang Mesej Terus' : '📞 Open Direct Message Form',
 				callback: () => {
 					isOpen = false;
 					window.location.hash = '#contact';
 				}
 			};
 		}
-		// 12. Diagnostics
+		// 15. Diagnostics
 		else if (q === 'diag' || q.includes('diagnostik') || q.includes('test')) {
-			reply =
-				$lang === 'ms'
-					? 'DIAGNOSTIK SISTEM SELESAI: [✓] Core SvelteKit 5: RUNES AKTIF [✓] Bilik Kebal Kerajaan: 3 SISTEM TERSEDIA (eMesys, Sutera, ADIMS) [✓] Aplikasi Inovasi: 16 SISTEM AKTIF [✓] Pangkalan Data: RLS & RBAC ENFORCED [✓] Keselamatan: SOC COMPLIANT [✓] Status Munir: TERSEDIA UNTUK TEMUDUGA.'
-					: 'SYSTEM DIAGNOSTICS COMPLETE: [✓] Core SvelteKit 5: RUNES ACTIVE [✓] Gov Vault: 3 PLATFORMS ONLINE (eMesys, Sutera, ADIMS) [✓] Innovation Apps: 16 SYSTEMS ACTIVE [✓] Database: RLS & RBAC ENFORCED [✓] Security: SOC COMPLIANT [✓] Candidate Status: AVAILABLE FOR HIRE.';
+			reply = isMalay
+				? 'DIAGNOSTIK SISTEM SELESAI: [✓] Core SvelteKit 5: RUNES AKTIF [✓] Sektor Awam: 3 SISTEM TERSEDIA (eMesys, Sutera, ADIMS) [✓] Aplikasi Inovasi: 15 SISTEM AKTIF (Jumlah: 18 Projek) [✓] Pangkalan Data: RLS & RBAC ENFORCED [✓] Keselamatan: SOC COMPLIANT [✓] Status Munir: TERSEDIA UNTUK TEMUDUGA.'
+				: 'SYSTEM DIAGNOSTICS COMPLETE: [✓] Core SvelteKit 5: RUNES ACTIVE [✓] Public Sector: 3 PLATFORMS ONLINE (eMesys, Sutera, ADIMS) [✓] Innovation Apps: 15 SYSTEMS ACTIVE (Total: 18 Projects) [✓] Database: RLS & RBAC ENFORCED [✓] Security: SOC COMPLIANT [✓] Candidate Status: AVAILABLE FOR HIRE.';
 		}
-		// 13. Fallback with smart Malay guidance
+		// 16. Fallback with smart guidance
 		else {
-			reply =
-				$lang === 'ms'
-					? `Perintah "${rawQuery}" diterima. Saya boleh menerangkan 3 sistem kerajaan YHCM (eMesys, Sutera, ADIMS), aplikasi mobile Flutter & AI (TINDAK, Baby Kicking, 9Router), kemahiran teknikal Munir, atau memuat turun resume ATS beliau. Sila klik salah satu cadangan di bawah!`
-					: `Query "${rawQuery}" acknowledged. I can explain the 3 YHCM government platforms (eMesys, Sutera, ADIMS), mobile & AI innovations (TINDAK, Baby Kicking, 9Router), Munir's core skills, or download his ATS resume. Select one of the quick prompts below!`;
+			reply = isMalay
+				? `Perintah "${rawQuery}" diterima. Saya boleh menerangkan statistik sistem, jumlah projek kerajaan (eMesys, Sutera, ADIMS), aplikasi mobile Flutter & AI, kemahiran teknikal Munir, atau memuat turun resume ATS beliau. Sila klik salah satu cadangan di bawah!`
+				: `Query "${rawQuery}" acknowledged. I can explain ecosystem statistics, public sector project counts, mobile & AI innovations, Munir's core skills, or download his ATS resume. Select one of the quick prompts below!`;
 		}
 
 		const jarvisMsg: ChatMessage = {

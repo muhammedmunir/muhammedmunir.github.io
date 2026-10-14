@@ -216,7 +216,7 @@
 	</div>
 
 	<div class="hero-stats">
-		{#each [{ num: '4+', key: 'exp' as const }, { num: '19+', key: 'projects' as const }, { num: '18+', key: 'tech' as const }, { num: 'B.Sc.', key: 'degree' as const }] as stat}
+		{#each [{ num: '4+', key: 'exp' as const }, { num: '18+', key: 'projects' as const }, { num: '18+', key: 'tech' as const }, { num: 'B.Sc.', key: 'degree' as const }] as stat}
 			<div class="stat-item">
 				<span class="stat-num">{stat.num}</span>
 				<span class="stat-label">{$t.stats[stat.key]}</span>
