@@ -475,12 +475,13 @@ export const translations = {
 			chips: [
 				{ label: '📊 Statistik & Metrik', query: 'statistik' },
 				{ label: '🏛️ Jumlah Projek Kerajaan', query: 'berapa projek kerajaan ada' },
+				{ label: '📍 Lokasi Kediaman', query: 'di tinggal mana' },
+				{ label: '🎓 Pendidikan & Universiti', query: 'belajar mana' },
+				{ label: '💼 Pengalaman Kerja', query: 'pengalaman' },
 				{ label: '📱 Aplikasi Mobile & Web', query: 'aplikasi' },
 				{ label: '🤖 AI & Ejen Autonomi', query: 'ai' },
 				{ label: '📄 Muat Turun Resume ATS', query: 'resume' },
-				{ label: '🎯 Kemahiran & Stack', query: 'skills' },
-				{ label: '💼 Pengalaman Kerja', query: 'pengalaman' },
-				{ label: '📞 Hubungi Munir', query: 'hubungi' }
+				{ label: '📞 Hubungi & Temuduga', query: 'hubungi' }
 			]
 		}
 	},
@@ -951,11 +952,12 @@ export const translations = {
 			chips: [
 				{ label: '📊 System Telemetry & Stats', query: 'statistics' },
 				{ label: '🏛️ Public Sector Projects Count', query: 'how many government projects' },
+				{ label: '📍 Location & Base', query: 'where does he live' },
+				{ label: '🎓 Education & Degree', query: 'education' },
+				{ label: '💼 Career Trajectory', query: 'pengalaman' },
 				{ label: '📱 Mobile & Web Apps', query: 'aplikasi' },
 				{ label: '🤖 AI & Autonomous Agents', query: 'ai' },
 				{ label: '📄 Download ATS Resume', query: 'resume' },
-				{ label: '🎯 Full-Stack Weaponry', query: 'skills' },
-				{ label: '💼 Career Trajectory', query: 'pengalaman' },
 				{ label: '📞 Contact Munir', query: 'hubungi' }
 			]
 		}
