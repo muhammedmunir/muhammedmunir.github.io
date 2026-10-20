@@ -1011,7 +1011,7 @@
 				<div class="contact-end">
 					<div class="contact-end-item">📧 muhammed.munir97.mm@gmail.com</div>
 					<div class="contact-end-item">📱 +6013-5636124</div>
-					<div class="contact-end-item">📍 Bandar Puteri, Puchong, Selangor</div>
+					<div class="contact-end-item">📍 Puchong, Selangor</div>
 				</div>
 			</div>
 		{/if}

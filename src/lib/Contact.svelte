@@ -149,7 +149,7 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 		{
 			icon: '📍',
 			label: 'Lokasi / Location',
-			value: 'Bandar Puteri, Puchong, Selangor',
+			value: 'Puchong, Selangor',
 			href: null
 		}
 	];
