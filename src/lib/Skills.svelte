@@ -10,140 +10,248 @@
 	const t = derived(lang, ($l) => translations[$l].skills);
 	const tedu = derived(lang, ($l) => translations[$l].edu);
 
+	let activeDomain = $state<'all' | 'frontend' | 'backend' | 'security'>('all');
+
 	onMount(() => {
 		gsap.registerPlugin(ScrollTrigger);
+
 		gsap.fromTo(
 			'.skills-header',
-			{ opacity: 0, y: 30 },
+			{ opacity: 0, y: 25 },
 			{
 				opacity: 1,
 				y: 0,
-				duration: 0.8,
-				scrollTrigger: { trigger: '.skills-header', start: 'top 90%' }
+				duration: 0.7,
+				ease: 'power3.out',
+				scrollTrigger: { trigger: '.skills-header', start: 'top 88%' }
 			}
 		);
-		gsap.utils.toArray<HTMLElement>('.skill-col').forEach((col, i) => {
+
+		gsap.utils.toArray<HTMLElement>('.matrix-column').forEach((col, i) => {
 			gsap.fromTo(
 				col,
-				{ opacity: 0, y: 50 },
+				{ opacity: 0, y: 35 },
 				{
 					opacity: 1,
 					y: 0,
-					duration: 0.8,
-					delay: i * 0.15,
+					duration: 0.75,
+					delay: i * 0.12,
 					ease: 'power3.out',
-					scrollTrigger: { trigger: col, start: 'top 88%' }
+					scrollTrigger: { trigger: col, start: 'top 86%' }
 				}
 			);
 		});
-		gsap.utils.toArray<HTMLElement>('.bar-fill').forEach((bar) => {
-			const width = bar.getAttribute('data-width') || '0%';
-			gsap.fromTo(
-				bar,
-				{ width: '0%' },
-				{
-					width,
-					duration: 1.2,
-					ease: 'power2.out',
-					scrollTrigger: { trigger: bar, start: 'top 90%' }
-				}
-			);
-		});
+
 		gsap.utils.toArray<HTMLElement>('.edu-card').forEach((card, i) => {
 			gsap.fromTo(
 				card,
-				{ opacity: 0, y: 40 },
+				{ opacity: 0, y: 35 },
 				{
 					opacity: 1,
 					y: 0,
-					duration: 0.8,
-					delay: i * 0.15,
+					duration: 0.75,
+					delay: i * 0.12,
 					ease: 'power3.out',
-					scrollTrigger: { trigger: card, start: 'top 88%' }
+					scrollTrigger: { trigger: card, start: 'top 86%' }
 				}
 			);
 		});
 	});
 
-	const skillCategories = [
+	const skillDomains = [
 		{
+			id: 'frontend',
 			titleKey: 'frontend' as const,
 			icon: '🎨',
-			color: '#61DAFB',
+			accent: '#38bdf8',
+			domainCode: 'DOM-01',
+			badge: 'REACTIVE INTERFACES',
 			skills: [
-				{ name: 'SvelteKit', level: 92 },
-				{ name: 'Vue.js 3', level: 88 },
-				{ name: 'Flutter (Dart)', level: 85 },
-				{ name: 'React.js', level: 72 },
-				{ name: 'HTML / CSS', level: 90 },
-				{ name: 'JavaScript / TS', level: 88 }
+				{
+					name: 'SvelteKit 5',
+					scope: 'Web Architecture',
+					tier: 'PROD READY',
+					usage: 'Portfolio, IWA001, FYP System'
+				},
+				{
+					name: 'Vue.js 3',
+					scope: 'Enterprise UI',
+					tier: 'ENTERPRISE',
+					usage: 'eMesys, Sutera, YHCM Gov Portals'
+				},
+				{
+					name: 'Flutter & Dart',
+					scope: 'Cross-Platform Mobile',
+					tier: 'SHIPPED',
+					usage: 'TNB Onboardx, Baby Kicking, Tindak'
+				},
+				{
+					name: 'TypeScript',
+					scope: 'Type-Safe Runtime',
+					tier: 'CORE',
+					usage: 'Strict Mode APIs & Full-Stack Typing'
+				},
+				{
+					name: 'TailwindCSS 4',
+					scope: 'Design Systems',
+					tier: 'DESIGN OPS',
+					usage: 'Responsive Glassmorphism & Tokens'
+				},
+				{
+					name: 'Three.js / Canvas',
+					scope: '3D Simulation',
+					tier: 'EXPERIENTIAL',
+					usage: '9Router Virtual Office & Spatial UI'
+				}
 			]
 		},
 		{
+			id: 'backend',
 			titleKey: 'backend' as const,
-			icon: '☁️',
-			color: '#FF6B6B',
+			icon: '⚡',
+			accent: '#818cf8',
+			domainCode: 'DOM-02',
+			badge: 'HIGH-SCALE ENGINES',
 			skills: [
-				{ name: 'Laravel (PHP)', level: 88 },
-				{ name: 'Python (OpenCV)', level: 82 },
-				{ name: 'Node.js', level: 75 },
-				{ name: 'Supabase (RLS)', level: 90 },
-				{ name: 'Docker & MariaDB', level: 84 },
-				{ name: 'Azure & Vercel', level: 80 }
+				{
+					name: 'Laravel 11/12',
+					scope: 'Enterprise Backend',
+					tier: 'GOV SYSTEM',
+					usage: 'ADIMS, eMesys, Sutera, RESTful APIs'
+				},
+				{
+					name: 'PHP 8.5 & Horizon',
+					scope: 'Queue & Jobs Architecture',
+					tier: 'HIGH SCALE',
+					usage: 'Async Background Queues & Workers'
+				},
+				{
+					name: 'Docker Swarm',
+					scope: 'Container Orchestration',
+					tier: 'CLUSTER DEPLOY',
+					usage: 'Zero-Downtime Microservices at YHCM'
+				},
+				{
+					name: 'PostgreSQL 17 / MariaDB',
+					scope: 'Relational Database',
+					tier: 'OPTIMIZED',
+					usage: 'ACID Transactions, Indices & RLS'
+				},
+				{
+					name: 'Python (OpenCV)',
+					scope: 'Computer Vision & AI',
+					tier: 'VISION BOT',
+					usage: 'CV Automated Bot, Template Matching'
+				},
+				{
+					name: 'Supabase RLS & Redis',
+					scope: 'Realtime & Caching',
+					tier: 'SUB-10MS',
+					usage: 'Row-Level Security & In-Memory Cache'
+				}
 			]
 		},
 		{
+			id: 'security',
 			titleKey: 'security' as const,
 			icon: '🛡️',
-			color: '#D4AF37',
+			accent: '#10b981',
+			domainCode: 'DOM-03',
+			badge: 'CYBER DEFENCE & CLOUD',
 			skills: [
-				{ name: 'Splunk SIEM', level: 78 },
-				{ name: 'Wireshark', level: 80 },
-				{ name: 'Vulhub / Pen Testing', level: 72 },
-				{ name: 'VPN / Firewall Config', level: 82 },
-				{ name: 'ISO 27001 / NIST', level: 75 },
-				{ name: 'Network Troubleshoot', level: 88 }
+				{
+					name: 'Splunk SIEM',
+					scope: 'SOC Log Analytics',
+					tier: 'REALTIME SOC',
+					usage: 'TNB Platinum Threat Monitoring & Alerts'
+				},
+				{
+					name: 'Wireshark & PCAP',
+					scope: 'Packet Deep Inspection',
+					tier: 'PROTOCOL AUDIT',
+					usage: 'Traffic Anomaly & Network Forensics'
+				},
+				{
+					name: 'Vulhub & CVE Labs',
+					scope: 'Vulnerability Analysis',
+					tier: 'RED/BLUE TEAM',
+					usage: 'Exploitation Simulation & Patch Testing'
+				},
+				{
+					name: 'Linux / Ubuntu Swarm',
+					scope: 'Server Administration',
+					tier: 'HARDENED OS',
+					usage: 'Firewall, SSH Keys, Nginx Reverse Proxy'
+				},
+				{
+					name: 'Cloudflare WAF',
+					scope: 'Edge Security & CDN',
+					tier: 'EDGE SHIELD',
+					usage: 'DDoS Mitigation, DNS & SSL Management'
+				},
+				{
+					name: 'Zero-Trust RBAC',
+					scope: 'Access Governance',
+					tier: 'GOV AUDIT',
+					usage: 'Strict Role-Based Access Controls'
+				}
 			]
 		}
 	];
 
 	const excellentSkills = [
-		'Microsoft Office Suite',
-		'System Troubleshooting',
-		'Network Troubleshooting',
-		'IT Support',
-		'Row Level Security (RLS)'
+		'Enterprise System Architecture',
+		'Full-Stack Troubleshooting',
+		'Network Protocol Hardening',
+		'Row Level Security (Supabase RLS)',
+		'IT Operations & Infrastructure',
+		'Cloud Deployment (Azure, Vercel)'
 	];
+
 	const toolsSkills = [
-		'MySQL',
+		'PostgreSQL 17',
 		'MariaDB',
-		'PostgreSQL',
+		'MySQL',
 		'MongoDB',
-		'Firebase',
 		'Redis',
-		'Jenkins',
+		'Firebase',
+		'Docker Swarm',
+		'Jenkins CI/CD',
 		'Kubernetes',
-		'Cloudflare',
-		'DirectAdmin',
-		'Git',
-		'Linux / Ubuntu',
+		'Linux (Ubuntu)',
 		'Kali Linux',
-		'Figma',
+		'Cloudflare WAF',
+		'Git / GitHub Actions',
+		'Figma UI/UX',
 		'Cisco Packet Tracer',
-		'Antigravity AI',
-		'Cursor',
-		'Gemini',
 		'OpenCV',
-		'Python'
+		'Python 3'
 	];
+
 	const certifications = [
-		'CCNAv7: Introduction to Networks',
-		'CCNAv7: Switching, Routing & Wireless Essentials',
-		'IoT Fundamentals: Connecting Things',
-		'Network Security (Cisco)',
-		'DevNet Associate',
-		'Microsoft Power BI Data Analysis',
-		'Python for Data Analysis'
+		{
+			name: 'CCNAv7: Introduction to Networks',
+			issuer: 'Cisco Networking Academy',
+			id: 'CISCO-CCNA1'
+		},
+		{
+			name: 'CCNAv7: Switching, Routing & Wireless Essentials',
+			issuer: 'Cisco Networking Academy',
+			id: 'CISCO-CCNA2'
+		},
+		{ name: 'Network Security (Cisco)', issuer: 'Cisco Networking Academy', id: 'CISCO-SEC' },
+		{
+			name: 'IoT Fundamentals: Connecting Things',
+			issuer: 'Cisco Networking Academy',
+			id: 'CISCO-IOT'
+		},
+		{ name: 'DevNet Associate', issuer: 'Cisco Networking Academy', id: 'CISCO-DEVNET' },
+		{ name: 'Microsoft Power BI Data Analysis', issuer: 'Microsoft Professional', id: 'MS-PBI' },
+		{
+			name: 'Python for Data Analysis & Automation',
+			issuer: 'Professional Training',
+			id: 'PY-DATA'
+		}
 	];
 
 	const educations = [
@@ -153,7 +261,8 @@
 			location: 'Johor',
 			cgpa: '3.17',
 			icon: '🎓',
-			badgeKey: 'bachelor' as const
+			badgeKey: 'bachelor' as const,
+			majorCode: 'B.Sc. (Computer Science - Networks & Security)'
 		},
 		{
 			degreeKey: 'diploma' as const,
@@ -161,47 +270,54 @@
 			location: 'Kuala Lumpur',
 			cgpa: '2.72',
 			icon: '📜',
-			badgeKey: 'diploma' as const
+			badgeKey: 'diploma' as const,
+			majorCode: 'Dip. (Computer Science)'
 		}
 	];
 </script>
 
-<section id="skills">
+<section id="skills" class="skills-section">
+	<div class="skills-ambient" aria-hidden="true"></div>
+
 	<div class="section">
+		<!-- Section Header -->
 		<div class="section-header skills-header">
 			<div class="section-label">{$t.label}</div>
-			<h2>{$t.title}</h2>
+			<h2 class="text-gradient">{$t.title}</h2>
 			<p class="section-desc">{$t.desc}</p>
 			<div class="section-divider"></div>
 		</div>
 
-		<div class="skills-grid">
-			{#each skillCategories as cat}
-				<div class="skill-col card">
-					<div class="skill-col-header">
-						<div class="skill-icon" style="border-color:{cat.color}22;background:{cat.color}12">
-							<span role="img" aria-label={$t[cat.titleKey]}>{cat.icon}</span>
+		<!-- 3 Domain Architectural Columns (Replaces Arbitrary Percentage Bars) -->
+		<div class="matrix-grid">
+			{#each skillDomains as domain}
+				<div class="matrix-column card" style="--dom-accent: {domain.accent}">
+					<div class="col-head">
+						<div class="col-avatar" style="border-color: {domain.accent}">
+							<span>{domain.icon}</span>
 						</div>
-						<h3 class="skill-cat-title" style="color:{cat.color}">{$t[cat.titleKey]}</h3>
+						<div class="col-title-wrap">
+							<div class="col-meta-row">
+								<span class="col-code">{domain.domainCode}</span>
+								<span class="col-badge">{domain.badge}</span>
+							</div>
+							<h3 class="col-title" style="color: {domain.accent}">
+								{$t[domain.titleKey]}
+							</h3>
+						</div>
 					</div>
-					<div class="skill-bars">
-						{#each cat.skills as skill}
-							<div class="skill-bar-item">
-								<div class="skill-bar-label">
-									<span class="skill-name">{skill.name}</span>
-									<span class="skill-pct" style="color:{cat.color}">{skill.level}%</span>
+
+					<div class="skills-spec-list">
+						{#each domain.skills as skill}
+							<div class="spec-row">
+								<div class="spec-top">
+									<span class="spec-name">{skill.name}</span>
+									<span class="spec-tier">{skill.tier}</span>
 								</div>
-								<div class="bar-track">
-									<div
-										class="bar-fill"
-										data-width="{skill.level}%"
-										style="background:linear-gradient(90deg,{cat.color}88,{cat.color});width:0%"
-										role="progressbar"
-										aria-valuenow={skill.level}
-										aria-valuemin={0}
-										aria-valuemax={100}
-										aria-label="{skill.name} proficiency"
-									></div>
+								<div class="spec-scope">{skill.scope}</div>
+								<div class="spec-usage">
+									<span class="usage-lead">&gt; In Production:</span>
+									<span>{skill.usage}</span>
 								</div>
 							</div>
 						{/each}
@@ -210,108 +326,128 @@
 			{/each}
 		</div>
 
-		<div class="skill-tier-block">
-			<div class="tier-label">
-				<span class="tier-badge tier-excellent">{$t.excellent_label}</span>
+		<!-- Core Competencies Tier -->
+		<div class="tech-tier-panel card">
+			<div class="tier-header">
+				<span class="tier-pill tier-accent-green">{$t.excellent_label}</span>
+				<span class="tier-note">Production Architecture & Operational Strengths</span>
 			</div>
-			<div class="skills-pills">
-				{#each excellentSkills as skill}<span class="tag skill-pill">{skill}</span>{/each}
-			</div>
-		</div>
-
-		<div class="skill-tier-block">
-			<div class="tier-label">
-				<span class="tier-badge tier-intermediate">{$t.tools_label}</span>
-			</div>
-			<div class="skills-pills">
-				{#each toolsSkills as skill}<span class="tag skill-pill">{skill}</span>{/each}
+			<div class="chips-shelf">
+				{#each excellentSkills as item}
+					<span class="chip-item chip-highlight">{item}</span>
+				{/each}
 			</div>
 		</div>
 
-		<div class="certs-block">
-			<div class="section-label" style="margin-bottom:1.5rem">{$t.certs_label}</div>
+		<!-- Tools & Ecosystem Grid -->
+		<div class="tech-tier-panel card">
+			<div class="tier-header">
+				<span class="tier-pill tier-accent-cyan">{$t.tools_label}</span>
+				<span class="tier-note">Infrastructure, Frameworks & Toolchain Ecosystem</span>
+			</div>
+			<div class="chips-shelf">
+				{#each toolsSkills as tool}
+					<span class="chip-item">{tool}</span>
+				{/each}
+			</div>
+		</div>
+
+		<!-- Professional Certifications Grid -->
+		<div class="certs-section">
+			<div class="section-label" style="margin-bottom:1.25rem">{$t.certs_label}</div>
 			<div class="certs-grid">
 				{#each certifications as cert}
-					<div class="cert-item">
-						<div class="cert-icon" aria-hidden="true">🏅</div>
-						<span class="cert-name">{cert}</span>
+					<div class="cert-card card">
+						<div class="cert-icon-box" aria-hidden="true">
+							<svg
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<circle cx="12" cy="8" r="7"></circle>
+								<polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+							</svg>
+						</div>
+						<div class="cert-info">
+							<span class="cert-code">{cert.id}</span>
+							<p class="cert-title">{cert.name}</p>
+							<span class="cert-issuer">{cert.issuer}</span>
+						</div>
 					</div>
 				{/each}
 			</div>
 		</div>
 
+		<!-- Education Credentials (UTM Bachelor & Diploma) -->
 		<div class="edu-section">
-			<div class="section-label" style="margin-bottom:2rem">{$t.edu_label}</div>
-			<div class="edu-cards-list">
+			<div class="section-label" style="margin-bottom:1.5rem">{$t.edu_label}</div>
+			<div class="edu-deck">
 				{#each educations as edu}
 					<div class="edu-card card">
-						<div class="edu-left">
-							<div class="edu-icon" aria-hidden="true">{edu.icon}</div>
-							<div class="edu-year-line" aria-hidden="true"></div>
-							<div class="edu-year">{$tedu[edu.degreeKey].period}</div>
-						</div>
-						<div class="edu-content">
-							<div class="edu-top-row">
-								<span class="edu-badge">{$t[edu.badgeKey]}</span>
-								<span class="edu-cgpa">{$t.cgpa}: <strong>{edu.cgpa}</strong></span>
+						<div class="edu-card-top">
+							<div class="edu-icon-wrap" aria-hidden="true">
+								<span>{edu.icon}</span>
 							</div>
-							<h3 class="edu-degree">
-								{$tedu[edu.degreeKey].title}<br />
-								<span class="edu-major">({$tedu[edu.degreeKey].major})</span>
-							</h3>
-							<p class="edu-uni">
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									aria-hidden="true"
-									><path
-										d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"
-									/><circle cx="12" cy="10" r="3" /></svg
-								>
-								{edu.institution} — {edu.location}
-							</p>
-
-							<div class="fyp-card">
-								<div class="fyp-label">
+							<div class="edu-main-info">
+								<div class="edu-pill-row">
+									<span class="badge badge-academic">{$t[edu.badgeKey]}</span>
+									<span class="edu-period">{$tedu[edu.degreeKey].period}</span>
+									<span class="edu-cgpa-badge">{$t.cgpa}: <strong>{edu.cgpa}</strong></span>
+								</div>
+								<h3 class="edu-degree-title">
+									{$tedu[edu.degreeKey].title}
+								</h3>
+								<p class="edu-uni-line">
 									<svg
-										width="13"
-										height="13"
+										width="14"
+										height="14"
 										viewBox="0 0 24 24"
 										fill="none"
 										stroke="currentColor"
 										stroke-width="2"
 										aria-hidden="true"
-										><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline
-											points="14 2 14 8 20 8"
-										/></svg
 									>
-									{$t.fyp_label}
-								</div>
-								<h4 class="fyp-title">{$tedu[edu.degreeKey].fyp_title}</h4>
-								<p class="fyp-desc">{$tedu[edu.degreeKey].fyp_desc}</p>
-								<div class="fyp-tags">
-									{#if edu.degreeKey === 'degree'}
-										{#each ['SvelteKit', 'Tailwind CSS', 'Supabase', 'Google Maps API', 'Figma'] as tag}<span
-												class="tag">{tag}</span
-											>{/each}
-									{:else}
-										{#each ['MySQL', 'Microsoft Azure', 'Figma', 'PHP'] as tag}<span class="tag"
-												>{tag}</span
-											>{/each}
-									{/if}
-								</div>
+										<path
+											d="M12 22s-8-4.5-8-11.8A8 8 0 0112 2a8 8 0 018 8.2c0 7.3-8 11.8-8 11.8z"
+										/>
+										<circle cx="12" cy="10" r="3" />
+									</svg>
+									{edu.institution} — {edu.location}
+								</p>
 							</div>
+						</div>
 
-							<p class="courses-label">{$t.courses_label}</p>
-							<div class="courses-grid">
+						<!-- FYP System Card -->
+						<div class="fyp-system-box">
+							<div class="fyp-top-row">
+								<span class="fyp-tag">{$t.fyp_label}</span>
+							</div>
+							<h4 class="fyp-name">{$tedu[edu.degreeKey].fyp_title}</h4>
+							<p class="fyp-summary">{$tedu[edu.degreeKey].fyp_desc}</p>
+							<div class="fyp-techs">
+								{#if edu.degreeKey === 'degree'}
+									{#each ['SvelteKit', 'TailwindCSS', 'Supabase PostgreSQL', 'Google Maps API', 'Figma'] as tag}
+										<span class="tag">{tag}</span>
+									{/each}
+								{:else}
+									{#each ['MySQL', 'Microsoft Azure', 'Figma', 'PHP'] as tag}
+										<span class="tag">{tag}</span>
+									{/each}
+								{/if}
+							</div>
+						</div>
+
+						<!-- Relevant Coursework Grid -->
+						<div class="courses-block">
+							<span class="courses-heading">{$t.courses_label}</span>
+							<div class="courses-layout">
 								{#each $tedu[edu.degreeKey].courses as course}
-									<div class="course-item">
-										<span class="course-name">{course.name}</span>
-										<span class="course-detail">{course.detail}</span>
+									<div class="course-chip">
+										<span class="course-lead">{course.name}</span>
+										<span class="course-desc">{course.detail}</span>
 									</div>
 								{/each}
 							</div>
@@ -324,339 +460,395 @@
 </section>
 
 <style>
-	section {
-		background: linear-gradient(180deg, var(--navy-dark) 0%, var(--navy-mid) 100%);
+	.skills-section {
 		position: relative;
+		background: #030712;
+		overflow: hidden;
 	}
-	section::before {
-		content: '';
+
+	.skills-ambient {
 		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 1px;
-		background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+		top: 40%;
+		right: -100px;
+		width: 600px;
+		height: 600px;
+		background: radial-gradient(circle, rgba(129, 140, 248, 0.05) 0%, transparent 70%);
+		pointer-events: none;
 	}
-	.section-desc {
-		font-size: 1rem;
-		color: var(--text-muted);
-		margin-top: 0.75rem;
-	}
-	.skills-grid {
+
+	.matrix-grid {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
 		gap: 1.5rem;
-		margin-bottom: 2.5rem;
+		margin-bottom: 3.5rem;
 	}
-	.skill-col {
-		padding: 1.75rem;
+
+	.matrix-column {
+		padding: 1.85rem;
+		background: rgba(10, 18, 34, 0.78);
+		border: 1px solid rgba(148, 163, 184, 0.14);
+		border-top: 3px solid var(--dom-accent);
+		border-radius: 16px;
 		display: flex;
 		flex-direction: column;
-		gap: 1.4rem;
+		gap: 1.25rem;
 	}
-	.skill-col-header {
+	.matrix-column:hover {
+		border-color: var(--dom-accent);
+		background: rgba(13, 24, 46, 0.88);
+		box-shadow:
+			0 16px 40px -10px rgba(0, 0, 0, 0.6),
+			0 0 24px rgba(56, 189, 248, 0.08);
+	}
+
+	.col-head {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.9rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 	}
-	.skill-icon {
+	.col-avatar {
 		width: 44px;
 		height: 44px;
-		border: 1px solid;
 		border-radius: 12px;
+		background: rgba(3, 7, 18, 0.8);
+		border: 1.5px solid;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-size: 1.3rem;
 		flex-shrink: 0;
 	}
-	.skill-cat-title {
-		font-size: 1.05rem;
+	.col-meta-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.25rem;
+	}
+	.col-code {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		color: var(--cyan);
 		font-weight: 700;
 	}
-	.skill-bars {
+	.col-badge {
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		color: var(--text-muted);
+		letter-spacing: 0.05em;
+	}
+	.col-title {
+		font-family: var(--font-heading);
+		font-size: 1.15rem;
+		font-weight: 700;
+		line-height: 1.2;
+	}
+
+	.skills-spec-list {
 		display: flex;
 		flex-direction: column;
 		gap: 0.85rem;
 	}
-	.skill-bar-item {
+	.spec-row {
+		padding: 0.75rem 0.85rem;
+		background: rgba(3, 7, 18, 0.6);
+		border: 1px solid rgba(148, 163, 184, 0.1);
+		border-radius: 10px;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: 0.25rem;
+		transition: all 0.2s ease;
 	}
-	.skill-bar-label {
+	.spec-row:hover {
+		background: rgba(15, 27, 50, 0.85);
+		border-color: rgba(56, 189, 248, 0.3);
+	}
+	.spec-top {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 	}
-	.skill-name {
-		font-size: 0.82rem;
-		font-weight: 500;
+	.spec-name {
+		font-family: var(--font-heading);
+		font-size: 0.92rem;
+		font-weight: 700;
+		color: var(--white);
+	}
+	.spec-tier {
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		font-weight: 700;
+		color: var(--cyan);
+		background: rgba(56, 189, 248, 0.1);
+		padding: 0.1rem 0.4rem;
+		border-radius: 4px;
+	}
+	.spec-scope {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
 		color: var(--text-secondary);
 	}
-	.skill-pct {
-		font-size: 0.75rem;
-		font-weight: 700;
+	.spec-usage {
+		font-size: 0.76rem;
+		color: var(--text-muted);
+		line-height: 1.4;
 	}
-	.bar-track {
-		height: 5px;
-		background: rgba(255, 255, 255, 0.06);
-		border-radius: 3px;
-		overflow: hidden;
-	}
-	.bar-fill {
-		height: 100%;
-		border-radius: 3px;
+	.usage-lead {
+		font-family: var(--font-mono);
+		color: var(--cyan);
+		opacity: 0.8;
 	}
 
-	.skill-tier-block {
+	/* Tech Tier Panels */
+	.tech-tier-panel {
+		padding: 1.5rem 1.75rem;
 		margin-bottom: 2rem;
 	}
-	.tier-label {
-		margin-bottom: 0.85rem;
+	.tier-header {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 1.15rem;
+		flex-wrap: wrap;
 	}
-	.tier-badge {
+	.tier-pill {
+		font-family: var(--font-mono);
 		font-size: 0.72rem;
 		font-weight: 700;
-		letter-spacing: 0.1em;
+		padding: 0.25rem 0.75rem;
+		border-radius: 999px;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		padding: 0.3rem 0.9rem;
-		border-radius: 100px;
 	}
-	.tier-excellent {
-		background: rgba(34, 197, 94, 0.1);
-		color: #4ade80;
-		border: 1px solid rgba(34, 197, 94, 0.25);
+	.tier-accent-green {
+		background: rgba(16, 185, 129, 0.14);
+		color: #34d399;
+		border: 1px solid rgba(16, 185, 129, 0.35);
 	}
-	.tier-intermediate {
-		background: var(--gold-dim);
-		color: var(--gold);
-		border: 1px solid var(--gold-border);
+	.tier-accent-cyan {
+		background: rgba(56, 189, 248, 0.14);
+		color: #38bdf8;
+		border: 1px solid rgba(56, 189, 248, 0.35);
 	}
-	.skills-pills {
+	.tier-note {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		color: var(--text-muted);
+	}
+	.chips-shelf {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem;
 	}
-	.skill-pill {
-		transition: var(--transition);
-		cursor: default;
+	.chip-item {
+		padding: 0.4rem 0.85rem;
+		background: rgba(3, 7, 18, 0.65);
+		border: 1px solid rgba(148, 163, 184, 0.16);
+		border-radius: 8px;
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		color: var(--text-primary);
+		transition: all 0.2s ease;
 	}
-	.skill-pill:hover {
-		background: rgba(212, 175, 55, 0.22);
+	.chip-item:hover {
+		border-color: var(--cyan);
+		color: var(--cyan);
 		transform: translateY(-2px);
 	}
+	.chip-highlight {
+		border-color: rgba(56, 189, 248, 0.3);
+		background: rgba(56, 189, 248, 0.06);
+		color: #e0f2fe;
+	}
 
-	.certs-block {
-		margin-bottom: 4rem;
+	/* Certs Grid */
+	.certs-section {
+		margin: 3.5rem 0;
 	}
 	.certs-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 0.75rem;
+		grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+		gap: 0.85rem;
 	}
-	.cert-item {
+	.cert-card {
+		padding: 1.1rem 1.25rem;
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		padding: 0.85rem 1.1rem;
-		background: var(--card-bg);
-		border: 1px solid var(--card-border);
-		border-radius: var(--radius);
-		backdrop-filter: blur(10px);
-		transition: var(--transition);
+		gap: 0.85rem;
 	}
-	.cert-item:hover {
-		border-color: rgba(212, 175, 55, 0.4);
-		transform: translateX(4px);
-	}
-	.cert-icon {
-		font-size: 1.1rem;
+	.cert-icon-box {
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		background: rgba(56, 189, 248, 0.1);
+		border: 1px solid rgba(56, 189, 248, 0.3);
+		color: var(--cyan);
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		flex-shrink: 0;
 	}
-	.cert-name {
-		font-size: 0.845rem;
-		color: var(--text-secondary);
-		font-weight: 500;
+	.cert-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+	.cert-code {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		color: var(--cyan);
+		font-weight: 700;
+	}
+	.cert-title {
+		font-size: 0.86rem;
+		font-weight: 600;
+		color: var(--white);
+		line-height: 1.3;
+	}
+	.cert-issuer {
+		font-size: 0.74rem;
+		color: var(--text-muted);
 	}
 
-	.edu-cards-list {
+	/* Education Deck */
+	.edu-deck {
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
 	}
 	.edu-card {
-		padding: 2.25rem;
-		display: flex;
-		gap: 2rem;
+		padding: 2rem;
+		background: rgba(10, 18, 34, 0.8);
+		border: 1px solid rgba(148, 163, 184, 0.14);
+		border-radius: 18px;
 	}
-	.edu-left {
+	.edu-card-top {
 		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.5rem;
-		flex-shrink: 0;
+		align-items: flex-start;
+		gap: 1.25rem;
+		margin-bottom: 1.5rem;
 	}
-	.edu-icon {
-		font-size: 2rem;
-		width: 58px;
-		height: 58px;
-		background: rgba(212, 175, 55, 0.1);
-		border: 1px solid var(--gold-border);
+	.edu-icon-wrap {
+		width: 52px;
+		height: 52px;
 		border-radius: 14px;
+		background: rgba(3, 7, 18, 0.9);
+		border: 1.5px solid rgba(168, 85, 247, 0.4);
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		font-size: 1.6rem;
+		flex-shrink: 0;
 	}
-	.edu-year-line {
-		flex: 1;
-		width: 2px;
-		background: linear-gradient(180deg, var(--gold-border), transparent);
-		min-height: 20px;
-	}
-	.edu-year {
-		font-size: 0.7rem;
-		font-weight: 700;
-		color: var(--gold);
-		writing-mode: vertical-rl;
-		letter-spacing: 0.07em;
-		white-space: nowrap;
-	}
-	.edu-content {
-		flex: 1;
-		min-width: 0;
-	}
-	.edu-top-row {
+	.edu-pill-row {
 		display: flex;
 		align-items: center;
-		gap: 1rem;
-		margin-bottom: 0.75rem;
+		gap: 0.65rem;
+		margin-bottom: 0.4rem;
 		flex-wrap: wrap;
 	}
-	.edu-badge {
-		font-size: 0.7rem;
-		font-weight: 700;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--gold);
-		background: var(--gold-dim);
-		border: 1px solid var(--gold-border);
-		padding: 0.25rem 0.8rem;
-		border-radius: 100px;
-	}
-	.edu-cgpa {
-		font-size: 0.8rem;
+	.edu-period {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
 		color: var(--text-muted);
 	}
-	.edu-cgpa strong {
-		color: var(--gold);
+	.edu-cgpa-badge {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
+		color: var(--emerald);
+		background: rgba(16, 185, 129, 0.12);
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		padding: 0.12rem 0.5rem;
+		border-radius: 999px;
 	}
-	.edu-degree {
-		font-size: 1.3rem;
-		color: var(--text-primary);
-		margin-bottom: 0.5rem;
-		line-height: 1.35;
-	}
-	.edu-major {
-		color: var(--gold);
-		font-style: italic;
-	}
-	.edu-uni {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--text-secondary);
-		margin-bottom: 1.4rem;
-	}
-	.fyp-card {
-		background: rgba(212, 175, 55, 0.05);
-		border: 1px solid var(--gold-border);
-		border-radius: var(--radius);
-		padding: 1.1rem 1.25rem;
-		margin-bottom: 1.25rem;
-	}
-	.fyp-label {
-		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.7rem;
-		font-weight: 700;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--gold);
-		margin-bottom: 0.5rem;
-	}
-	.fyp-title {
+	.edu-degree-title {
 		font-family: var(--font-heading);
-		font-size: 1rem;
-		color: var(--text-primary);
-		margin-bottom: 0.4rem;
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--white);
+		margin-bottom: 0.35rem;
+		line-height: 1.3;
 	}
-	.fyp-desc {
+	.edu-uni-line {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
 		font-size: 0.85rem;
 		color: var(--text-secondary);
-		line-height: 1.7;
-		margin-bottom: 0.75rem;
 	}
-	.fyp-tags {
+
+	.fyp-system-box {
+		padding: 1.25rem;
+		background: rgba(3, 7, 18, 0.6);
+		border: 1px solid rgba(148, 163, 184, 0.12);
+		border-radius: 12px;
+		margin-bottom: 1.5rem;
+	}
+	.fyp-tag {
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		font-weight: 700;
+		color: var(--cyan);
+		background: rgba(56, 189, 248, 0.1);
+		padding: 0.15rem 0.5rem;
+		border-radius: 4px;
+	}
+	.fyp-name {
+		font-family: var(--font-heading);
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--white);
+		margin: 0.5rem 0 0.35rem;
+	}
+	.fyp-summary {
+		font-size: 0.85rem;
+		color: var(--text-secondary);
+		line-height: 1.6;
+		margin-bottom: 0.85rem;
+	}
+	.fyp-techs {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.4rem;
 	}
-	.courses-label {
-		font-size: 0.75rem;
-		font-weight: 700;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
+
+	.courses-heading {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
 		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
 		margin-bottom: 0.75rem;
 	}
-	.courses-grid {
+	.courses-layout {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-		gap: 0.6rem;
+		gap: 0.55rem;
 	}
-	.course-item {
-		padding: 0.75rem 0.9rem;
-		background: rgba(255, 255, 255, 0.03);
-		border: 1px solid rgba(255, 255, 255, 0.06);
+	.course-chip {
+		padding: 0.55rem 0.75rem;
+		background: rgba(3, 7, 18, 0.45);
+		border: 1px solid rgba(148, 163, 184, 0.08);
 		border-radius: 8px;
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: 0.15rem;
 	}
-	.course-name {
-		font-size: 0.82rem;
+	.course-lead {
+		font-size: 0.8rem;
 		font-weight: 600;
 		color: var(--text-primary);
 	}
-	.course-detail {
-		font-size: 0.75rem;
+	.course-desc {
+		font-size: 0.72rem;
 		color: var(--text-muted);
-		line-height: 1.4;
 	}
-	@media (max-width: 900px) {
-		.skills-grid {
+
+	@media (max-width: 1024px) {
+		.matrix-grid {
 			grid-template-columns: 1fr;
-		}
-	}
-	@media (max-width: 640px) {
-		.edu-card {
-			flex-direction: column;
-		}
-		.edu-left {
-			flex-direction: row;
-			align-items: center;
-		}
-		.edu-year-line {
-			min-height: 0;
-			width: 30px;
-			height: 2px;
-		}
-		.edu-year {
-			writing-mode: unset;
 		}
 	}
 </style>

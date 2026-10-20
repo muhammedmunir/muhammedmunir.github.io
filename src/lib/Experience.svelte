@@ -5,65 +5,83 @@
 	import { lang } from '$lib/i18n';
 	import { translations } from '$lib/translations';
 	import { derived } from 'svelte/store';
+	import { playBlip } from '$lib/sound';
 
 	const t = derived(lang, ($l) => translations[$l].experience);
 	const texp = derived(lang, ($l) => translations[$l].exp);
 
 	onMount(() => {
 		gsap.registerPlugin(ScrollTrigger);
-		gsap.utils.toArray<HTMLElement>('.timeline-item').forEach((item, i) => {
-			gsap.fromTo(
-				item,
-				{ opacity: 0, x: i % 2 === 0 ? -50 : 50 },
-				{
-					opacity: 1,
-					x: 0,
-					duration: 0.8,
-					ease: 'power3.out',
-					scrollTrigger: { trigger: item, start: 'top 85%', toggleActions: 'play none none none' }
-				}
-			);
-		});
+
 		gsap.fromTo(
 			'.exp-header',
-			{ opacity: 0, y: 30 },
+			{ opacity: 0, y: 24 },
 			{
 				opacity: 1,
 				y: 0,
-				duration: 0.8,
+				duration: 0.7,
 				ease: 'power3.out',
-				scrollTrigger: { trigger: '.exp-header', start: 'top 90%' }
+				scrollTrigger: { trigger: '.exp-header', start: 'top 88%' }
 			}
 		);
+
+		gsap.utils.toArray<HTMLElement>('.timeline-row').forEach((row, i) => {
+			gsap.fromTo(
+				row,
+				{ opacity: 0, y: 35 },
+				{
+					opacity: 1,
+					y: 0,
+					duration: 0.7,
+					delay: (i % 2) * 0.1,
+					ease: 'power3.out',
+					scrollTrigger: { trigger: row, start: 'top 86%', toggleActions: 'play none none none' }
+				}
+			);
+		});
 	});
 
 	const expMeta = [
 		{
 			key: 'yhcm' as const,
+			code: 'EXP-01',
 			company: 'YHCM Sdn Bhd',
-			location: 'Shah Alam',
+			location: 'Shah Alam, Selangor',
 			periodMs: 'Apr 2026 – Kini',
 			periodEn: 'Apr 2026 – Present',
 			typeMs: 'Sepenuh Masa',
 			typeEn: 'Full-Time',
 			current: true,
+			accentColor: '#10b981',
+			badgeTheme: 'badge-emerald',
 			icon: '🏢',
-			tags: ['Vue.js', 'Laravel Filament', 'Docker', 'MariaDB', 'MySQL', 'Linux']
+			tags: [
+				'Vue.js 3',
+				'Laravel Filament',
+				'Docker Swarm',
+				'MariaDB',
+				'PostgreSQL 17',
+				'Linux Swarm'
+			]
 		},
 		{
 			key: 'nova' as const,
+			code: 'EXP-02',
 			company: 'Nova Bitara Development Sdn Bhd',
-			location: 'Sunway',
+			location: 'Sunway, Selangor',
 			periodMs: 'Dis 2025 – Mac 2026',
 			periodEn: 'Dec 2025 – Mar 2026',
 			typeMs: 'Kontrak',
 			typeEn: 'Contract',
 			current: false,
+			accentColor: '#38bdf8',
+			badgeTheme: 'badge-cyan',
 			icon: '💻',
-			tags: ['SvelteKit', 'Supabase', 'Laravel', 'Redis', 'Vercel', 'Cloudflare']
+			tags: ['SvelteKit', 'Supabase RLS', 'Laravel', 'Redis', 'Vercel', 'Cloudflare WAF']
 		},
 		{
 			key: 'tnb_protege' as const,
+			code: 'EXP-03',
 			company: 'Tenaga Nasional Berhad (TNB)',
 			location: 'UOA Business Park, Shah Alam',
 			periodMs: 'Apr 2025 – Dis 2025',
@@ -71,95 +89,135 @@
 			typeMs: 'Protégé',
 			typeEn: 'Protégé',
 			current: false,
+			accentColor: '#f59e0b',
+			badgeTheme: 'badge-amber',
 			icon: '⚡',
-			tags: ['Flutter', 'Firebase', 'MongoDB', 'Azure', 'Jenkins', 'Kubernetes', 'Figma']
+			tags: [
+				'Flutter (Dart)',
+				'Firebase',
+				'MongoDB',
+				'Microsoft Azure',
+				'Jenkins CI/CD',
+				'Kubernetes'
+			]
 		},
 		{
 			key: 'tnb_cyber' as const,
+			code: 'EXP-04',
 			company: 'Tenaga Nasional Berhad (TNB) Platinum',
-			location: 'Bangsar',
+			location: 'Bangsar, Kuala Lumpur',
 			periodMs: 'Sept 2023 – Feb 2024',
 			periodEn: 'Sept 2023 – Feb 2024',
-			typeMs: 'Latihan Industri',
-			typeEn: 'Internship',
+			typeMs: 'Latihan Industri (SOC)',
+			typeEn: 'Internship (SOC)',
 			current: false,
+			accentColor: '#818cf8',
+			badgeTheme: 'badge-indigo',
 			icon: '🛡️',
-			tags: ['Splunk SIEM', 'Vulhub', 'Red Team', 'Blue Team', 'SOC']
+			tags: [
+				'Splunk SIEM',
+				'Vulhub Labs',
+				'Red Team',
+				'Blue Team',
+				'SOC Operations',
+				'CVE Analysis'
+			]
 		}
 	];
 </script>
 
-<section id="experience">
+<section id="experience" class="exp-section">
+	<div class="exp-ambient" aria-hidden="true"></div>
+
 	<div class="section">
+		<!-- Section Header -->
 		<div class="section-header exp-header">
 			<div class="section-label">{$t.label}</div>
-			<h2>{$t.title}</h2>
+			<h2 class="text-gradient">{$t.title}</h2>
 			<p class="section-desc">{$t.desc}</p>
 			<div class="section-divider"></div>
 		</div>
 
-		<div class="timeline">
-			<div class="timeline-track" aria-hidden="true"></div>
+		<!-- Sovereign Operations Flight Timeline -->
+		<div class="timeline-container">
+			<div class="timeline-axis" aria-hidden="true"></div>
 
 			{#each expMeta as exp, i}
-				<div class="timeline-item" class:right={i % 2 !== 0}>
-					<div class="timeline-node" class:current={exp.current} aria-hidden="true">
-						<span class="node-icon">{exp.icon}</span>
+				<div class="timeline-row" class:row-reverse={i % 2 !== 0}>
+					<!-- Center Radar Node -->
+					<div
+						class="timeline-beacon"
+						class:beacon-active={exp.current}
+						style="--beacon-color: {exp.accentColor}"
+						aria-hidden="true"
+					>
+						<span class="beacon-icon">{exp.icon}</span>
+						{#if exp.current}
+							<span class="beacon-pulse"></span>
+						{/if}
 					</div>
 
-					<div class="exp-card card">
-						<div class="exp-card-header">
-							<div class="exp-meta">
-								<span
-									class="exp-type-badge"
-									class:current-badge={exp.current}
-									class:intern-badge={exp.key === 'tnb_cyber'}
-									class:contract-badge={exp.key === 'nova'}
-									class:protege-badge={exp.key === 'tnb_protege'}
-								>
+					<!-- Content Card -->
+					<div class="exp-card card" style="--card-accent: {exp.accentColor}">
+						<div class="exp-card-top">
+							<div class="exp-badge-strip">
+								<span class="exp-code">{exp.code}</span>
+								<span class="status-badge {exp.badgeTheme}">
 									{exp.current ? $t.active : $lang === 'ms' ? exp.typeMs : exp.typeEn}
 								</span>
-								<span class="exp-period">{$lang === 'ms' ? exp.periodMs : exp.periodEn}</span>
+								<span class="exp-period">
+									<svg
+										width="13"
+										height="13"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										aria-hidden="true"
+									>
+										<circle cx="12" cy="12" r="10"></circle>
+										<polyline points="12 6 12 12 16 14"></polyline>
+									</svg>
+									{$lang === 'ms' ? exp.periodMs : exp.periodEn}
+								</span>
 							</div>
+
 							<h3 class="exp-role">{$texp[exp.key].role}</h3>
-							<p class="exp-company">
-								<svg
-									width="14"
-									height="14"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-									aria-hidden="true"
-									><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" /><polyline
-										points="9 22 9 12 15 12 15 22"
-									/></svg
-								>
-								{exp.company}
-								<span class="exp-location">· {exp.location}</span>
-							</p>
+
+							<div class="exp-entity">
+								<span class="entity-name">{exp.company}</span>
+								<span class="entity-sep">/</span>
+								<span class="entity-loc">{exp.location}</span>
+							</div>
 						</div>
 
 						<p class="exp-desc">{$texp[exp.key].desc}</p>
 
-						<ul class="exp-highlights" role="list">
-							{#each $texp[exp.key].highlights as h}
-								<li>
-									<svg
-										width="14"
-										height="14"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2.5"
-										aria-hidden="true"><polyline points="20 6 9 17 4 12" /></svg
-									>
-									{h}
-								</li>
-							{/each}
-						</ul>
+						<!-- Highlights Checklist -->
+						<div class="exp-highlights-box">
+							<span class="highlights-title">MISSION_HIGHLIGHTS &gt;</span>
+							<ul class="highlights-list" role="list">
+								{#each $texp[exp.key].highlights as h}
+									<li>
+										<svg
+											width="14"
+											height="14"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2.5"
+											aria-hidden="true"
+										>
+											<polyline points="20 6 9 17 4 12" />
+										</svg>
+										<span>{h}</span>
+									</li>
+								{/each}
+							</ul>
+						</div>
 
-						<div class="exp-tags">
+						<!-- Tech Stack Tags -->
+						<div class="exp-tags-shelf">
 							{#each exp.tags as tag}
 								<span class="tag">{tag}</span>
 							{/each}
@@ -172,38 +230,31 @@
 </section>
 
 <style>
-	section {
-		background: linear-gradient(
-			180deg,
-			var(--navy-dark) 0%,
-			var(--navy-mid) 50%,
-			var(--navy-dark) 100%
-		);
+	.exp-section {
 		position: relative;
+		background: linear-gradient(180deg, #030712 0%, #070e1c 50%, #030712 100%);
 		overflow: hidden;
 	}
-	section::before {
-		content: '';
+
+	.exp-ambient {
 		position: absolute;
-		top: 50%;
+		top: 30%;
 		left: 50%;
 		transform: translate(-50%, -50%);
-		width: 600px;
-		height: 600px;
-		background: radial-gradient(circle, rgba(212, 175, 55, 0.04) 0%, transparent 70%);
+		width: 700px;
+		height: 700px;
+		background: radial-gradient(circle, rgba(56, 189, 248, 0.05) 0%, transparent 70%);
 		pointer-events: none;
 	}
-	.section-desc {
-		font-size: 1rem;
-		color: var(--text-muted);
-		margin-top: 0.75rem;
+
+	.timeline-container {
+		position: relative;
+		padding: 2.5rem 0;
+		max-width: 1100px;
+		margin: 0 auto;
 	}
 
-	.timeline {
-		position: relative;
-		padding: 2rem 0;
-	}
-	.timeline-track {
+	.timeline-axis {
 		position: absolute;
 		left: 50%;
 		top: 0;
@@ -212,168 +263,242 @@
 		background: linear-gradient(
 			180deg,
 			transparent,
-			var(--gold-border),
-			var(--gold-border),
+			rgba(56, 189, 248, 0.28) 15%,
+			rgba(129, 140, 248, 0.28) 85%,
 			transparent
 		);
 		transform: translateX(-50%);
 	}
-	.timeline-item {
+
+	.timeline-row {
 		display: flex;
 		justify-content: flex-end;
-		padding-right: calc(50% + 3rem);
-		margin-bottom: 3rem;
+		padding-right: calc(50% + 2.75rem);
+		margin-bottom: 3.5rem;
 		position: relative;
 	}
-	.timeline-item.right {
+	.timeline-row.row-reverse {
 		justify-content: flex-start;
 		padding-right: 0;
-		padding-left: calc(50% + 3rem);
+		padding-left: calc(50% + 2.75rem);
 	}
 
-	.timeline-node {
+	/* Central Radar Beacon */
+	.timeline-beacon {
 		position: absolute;
 		left: 50%;
 		top: 1.5rem;
 		transform: translateX(-50%);
-		width: 52px;
-		height: 52px;
-		background: var(--navy-mid);
-		border: 2px solid var(--gold-border);
-		border-radius: 50%;
+		width: 46px;
+		height: 46px;
+		background: #070d19;
+		border: 2px solid var(--beacon-color);
+		border-radius: 12px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 1.4rem;
 		z-index: 2;
-		transition: var(--transition);
+		box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+		transition:
+			transform 0.25s ease,
+			box-shadow 0.25s ease;
 	}
-	.timeline-node.current {
-		border-color: var(--gold);
-		box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
-		animation: pulse-gold 3s infinite;
+	.timeline-beacon:hover {
+		transform: translateX(-50%) scale(1.08);
+		box-shadow: 0 0 24px var(--beacon-color);
 	}
-	.node-icon {
+	.beacon-icon {
+		font-size: 1.25rem;
 		line-height: 1;
 	}
+	.beacon-pulse {
+		position: absolute;
+		inset: -6px;
+		border-radius: 16px;
+		border: 1px solid var(--beacon-color);
+		animation: pulse-ring 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+		pointer-events: none;
+	}
+	@keyframes pulse-ring {
+		0% {
+			transform: scale(0.95);
+			opacity: 0.8;
+		}
+		100% {
+			transform: scale(1.35);
+			opacity: 0;
+		}
+	}
 
+	/* Experience Card */
 	.exp-card {
-		padding: 1.75rem;
-		max-width: 500px;
+		padding: 1.85rem;
 		width: 100%;
+		max-width: 500px;
+		background: rgba(10, 18, 34, 0.78);
+		border: 1px solid rgba(148, 163, 184, 0.14);
+		border-left: 3px solid var(--card-accent);
+		border-radius: 14px;
 	}
-	.exp-card-header {
-		margin-bottom: 1rem;
+	.exp-card:hover {
+		border-color: rgba(56, 189, 248, 0.38);
+		background: rgba(14, 25, 48, 0.88);
+		transform: translateY(-4px);
+		box-shadow:
+			0 20px 45px -10px rgba(0, 0, 0, 0.7),
+			0 0 25px rgba(56, 189, 248, 0.1);
 	}
-	.exp-meta {
+
+	.exp-card-top {
+		margin-bottom: 1.15rem;
+	}
+	.exp-badge-strip {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		margin-bottom: 0.6rem;
+		gap: 0.6rem;
+		margin-bottom: 0.75rem;
 		flex-wrap: wrap;
 	}
-	.exp-type-badge {
-		font-size: 0.7rem;
+	.exp-code {
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
 		font-weight: 700;
-		letter-spacing: 0.08em;
+		color: var(--cyan);
+		background: rgba(56, 189, 248, 0.08);
+		border: 1px solid rgba(56, 189, 248, 0.22);
+		padding: 0.15rem 0.45rem;
+		border-radius: 4px;
+	}
+	.status-badge {
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		padding: 0.25rem 0.75rem;
-		border-radius: 100px;
-		background: rgba(212, 175, 55, 0.1);
-		color: var(--text-muted);
-		border: 1px solid var(--card-border);
+		padding: 0.2rem 0.65rem;
+		border-radius: 999px;
 	}
-	.current-badge {
-		background: rgba(34, 197, 94, 0.12);
-		color: #4ade80;
-		border-color: rgba(34, 197, 94, 0.3);
+	.badge-emerald {
+		background: rgba(16, 185, 129, 0.14);
+		color: #34d399;
+		border: 1px solid rgba(16, 185, 129, 0.35);
 	}
-	.intern-badge {
-		background: rgba(139, 92, 246, 0.12);
-		color: #a78bfa;
-		border-color: rgba(139, 92, 246, 0.3);
+	.badge-cyan {
+		background: rgba(56, 189, 248, 0.14);
+		color: #38bdf8;
+		border: 1px solid rgba(56, 189, 248, 0.35);
 	}
-	.contract-badge {
-		background: rgba(59, 130, 246, 0.12);
-		color: #60a5fa;
-		border-color: rgba(59, 130, 246, 0.3);
+	.badge-amber {
+		background: rgba(245, 158, 11, 0.14);
+		color: #fbbf24;
+		border: 1px solid rgba(245, 158, 11, 0.35);
 	}
-	.protege-badge {
-		background: rgba(249, 115, 22, 0.12);
-		color: #fb923c;
-		border-color: rgba(249, 115, 22, 0.3);
+	.badge-indigo {
+		background: rgba(129, 140, 248, 0.14);
+		color: #a5b4fc;
+		border: 1px solid rgba(129, 140, 248, 0.35);
 	}
+
 	.exp-period {
-		font-size: 0.8rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
 		color: var(--text-muted);
-		font-weight: 500;
 	}
+
 	.exp-role {
+		font-family: var(--font-heading);
 		font-size: 1.15rem;
-		color: var(--text-primary);
+		font-weight: 700;
+		color: var(--white);
 		margin-bottom: 0.35rem;
+		line-height: 1.3;
 	}
-	.exp-company {
+	.exp-entity {
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--gold);
+		font-size: 0.85rem;
 		flex-wrap: wrap;
 	}
-	.exp-location {
-		font-weight: 400;
-		color: var(--text-muted);
-		font-size: 0.82rem;
+	.entity-name {
+		color: var(--cyan);
+		font-weight: 600;
 	}
+	.entity-sep {
+		color: var(--text-muted);
+		font-size: 0.75rem;
+	}
+	.entity-loc {
+		color: var(--text-secondary);
+		font-size: 0.8rem;
+	}
+
 	.exp-desc {
 		font-size: 0.875rem;
-		line-height: 1.7;
+		line-height: 1.65;
 		color: var(--text-secondary);
-		margin-bottom: 1rem;
+		margin-bottom: 1.15rem;
 	}
-	.exp-highlights {
+
+	.exp-highlights-box {
+		background: rgba(3, 7, 18, 0.55);
+		border: 1px solid rgba(148, 163, 184, 0.1);
+		border-radius: 8px;
+		padding: 0.9rem 1rem;
+		margin-bottom: 1.15rem;
+	}
+	.highlights-title {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: 0.66rem;
+		color: var(--text-muted);
+		letter-spacing: 0.08em;
+		margin-bottom: 0.6rem;
+	}
+	.highlights-list {
 		list-style: none;
 		display: flex;
 		flex-direction: column;
 		gap: 0.45rem;
-		margin-bottom: 1.25rem;
 	}
-	.exp-highlights li {
+	.highlights-list li {
 		display: flex;
 		align-items: flex-start;
-		gap: 0.5rem;
-		font-size: 0.845rem;
-		color: var(--text-secondary);
+		gap: 0.55rem;
+		font-size: 0.82rem;
+		color: var(--text-primary);
 		line-height: 1.5;
 	}
-	.exp-highlights svg {
-		color: var(--gold);
+	.highlights-list svg {
+		color: var(--cyan);
 		flex-shrink: 0;
-		margin-top: 3px;
+		margin-top: 2px;
 	}
-	.exp-tags {
+
+	.exp-tags-shelf {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.4rem;
 	}
 
-	@media (max-width: 768px) {
-		.timeline-track {
-			left: 1.2rem;
+	@media (max-width: 900px) {
+		.timeline-axis {
+			left: 1.5rem;
 		}
-		.timeline-item,
-		.timeline-item.right {
-			padding: 0 0 0 3.5rem;
+		.timeline-row,
+		.timeline-row.row-reverse {
+			padding-right: 0;
+			padding-left: 4rem;
 			justify-content: flex-start;
 		}
-		.timeline-node {
-			left: 1.2rem;
-			top: 1.2rem;
+		.timeline-beacon {
+			left: 1.5rem;
+			top: 1.5rem;
 			width: 40px;
 			height: 40px;
-			font-size: 1.1rem;
 		}
 		.exp-card {
 			max-width: 100%;
