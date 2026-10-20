@@ -2,11 +2,11 @@ import os
 import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 
-def set_cell_margins(cell, top=50, bottom=50, left=50, right=50):
+def set_cell_margins(cell, top=40, bottom=40, left=40, right=40):
     tc = cell._tc
     tcPr = tc.get_or_add_tcPr()
     tcMar = OxmlElement('w:tcMar')
@@ -27,26 +27,24 @@ def add_bottom_border(paragraph):
 def create_resume_docx(output_path):
     doc = docx.Document()
     
-    # Page setup - Margins 0.45 in
+    # Page setup - Margins 0.42 in
     for section in doc.sections:
-        section.top_margin = Inches(0.45)
-        section.bottom_margin = Inches(0.45)
+        section.top_margin = Inches(0.42)
+        section.bottom_margin = Inches(0.42)
         section.left_margin = Inches(0.5)
         section.right_margin = Inches(0.5)
         section.page_width = Inches(8.27)  # A4
         section.page_height = Inches(11.69)
     
-    # Styles
     COLOR_PRIMARY = RGBColor(15, 23, 42)    # #0f172a
     COLOR_BLUE = RGBColor(29, 78, 216)      # #1d4ed8
     COLOR_MUTED = RGBColor(71, 85, 105)     # #475569
     COLOR_BODY = RGBColor(51, 65, 85)       # #334155
     
-    # Helper: Section Header
     def add_section_header(title):
         p = doc.add_paragraph()
-        p.paragraph_format.space_before = Pt(6)
-        p.paragraph_format.space_after = Pt(3)
+        p.paragraph_format.space_before = Pt(5)
+        p.paragraph_format.space_after = Pt(2.5)
         p.paragraph_format.keep_with_next = True
         run = p.add_run(title.upper())
         run.bold = True
@@ -56,14 +54,12 @@ def create_resume_docx(output_path):
         add_bottom_border(p)
         return p
 
-    # Helper: Bullet Item
     def add_bullet(p, bold_prefix, text):
-        p.paragraph_format.left_indent = Inches(0.2)
+        p.paragraph_format.left_indent = Inches(0.18)
         p.paragraph_format.space_before = Pt(0)
         p.paragraph_format.space_after = Pt(1.5)
         p.paragraph_format.line_spacing = 1.15
         
-        # bullet symbol
         b_run = p.add_run("•  ")
         b_run.font.name = 'Calibri'
         b_run.font.size = Pt(8.5)
@@ -81,7 +77,6 @@ def create_resume_docx(output_path):
         t_run.font.size = Pt(9)
         t_run.font.color.rgb = COLOR_BODY
 
-    # Helper: 2-column header row
     def add_entry_header(title, company, dates, location=None):
         table = doc.add_table(rows=1, cols=2)
         table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -90,11 +85,11 @@ def create_resume_docx(output_path):
         table.columns[1].width = Inches(1.87)
         
         row = table.rows[0]
-        set_cell_margins(row.cells[0], top=20, bottom=10, left=0, right=0)
-        set_cell_margins(row.cells[1], top=20, bottom=10, left=0, right=0)
+        set_cell_margins(row.cells[0], top=15, bottom=8, left=0, right=0)
+        set_cell_margins(row.cells[1], top=15, bottom=8, left=0, right=0)
         
         p_left = row.cells[0].paragraphs[0]
-        p_left.paragraph_format.space_before = Pt(2)
+        p_left.paragraph_format.space_before = Pt(1.5)
         p_left.paragraph_format.space_after = Pt(0)
         p_left.paragraph_format.line_spacing = 1.15
         
@@ -113,7 +108,7 @@ def create_resume_docx(output_path):
             
         p_right = row.cells[1].paragraphs[0]
         p_right.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-        p_right.paragraph_format.space_before = Pt(2)
+        p_right.paragraph_format.space_before = Pt(1.5)
         p_right.paragraph_format.space_after = Pt(0)
         p_right.paragraph_format.line_spacing = 1.15
         
@@ -134,45 +129,59 @@ def create_resume_docx(output_path):
             r_loc.font.size = Pt(8.5)
             r_loc.font.color.rgb = COLOR_MUTED
 
-    # ================= HEADER =================
-    p_name = doc.add_paragraph()
-    p_name.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_name.paragraph_format.space_before = Pt(0)
-    p_name.paragraph_format.space_after = Pt(1)
-    r_name = p_name.add_run("MUHAMMED MUNIR BIN MOHD AZMI")
+    # ================= HEADER WITH PHOTO =================
+    header_table = doc.add_table(rows=1, cols=2)
+    header_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    header_table.autofit = False
+    header_table.columns[0].width = Inches(1.15)
+    header_table.columns[1].width = Inches(6.12)
+    
+    h_row = header_table.rows[0]
+    set_cell_margins(h_row.cells[0], top=0, bottom=20, left=0, right=100)
+    set_cell_margins(h_row.cells[1], top=0, bottom=20, left=50, right=0)
+    
+    # Left cell: Profile Photo
+    p_photo = h_row.cells[0].paragraphs[0]
+    p_photo.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    p_photo.paragraph_format.space_before = Pt(0)
+    p_photo.paragraph_format.space_after = Pt(0)
+    if os.path.exists("static/profile_photo.jpg"):
+        p_photo.add_run().add_picture("static/profile_photo.jpg", width=Inches(0.95), height=Inches(1.22))
+    
+    # Right cell: Name & Info
+    p_info = h_row.cells[1].paragraphs[0]
+    p_info.paragraph_format.space_before = Pt(0)
+    p_info.paragraph_format.space_after = Pt(1)
+    r_name = p_info.add_run("MUHAMMED MUNIR BIN MOHD AZMI\n")
     r_name.bold = True
     r_name.font.name = 'Calibri'
-    r_name.font.size = Pt(18)
+    r_name.font.size = Pt(17)
     r_name.font.color.rgb = COLOR_PRIMARY
-
-    p_head = doc.add_paragraph()
-    p_head.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_head.paragraph_format.space_before = Pt(0)
-    p_head.paragraph_format.space_after = Pt(3)
-    r_head = p_head.add_run("Full-Stack Systems Engineer & IT Professional • Network Security (UTM)")
+    
+    r_head = p_info.add_run("Full-Stack Systems Engineer & IT Professional • Network Security (UTM)\n")
     r_head.bold = True
     r_head.font.name = 'Calibri'
-    r_head.font.size = Pt(10)
+    r_head.font.size = Pt(9.5)
     r_head.font.color.rgb = COLOR_BLUE
-
-    p_contact = doc.add_paragraph()
-    p_contact.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    p_contact.paragraph_format.space_before = Pt(0)
-    p_contact.paragraph_format.space_after = Pt(5)
-    r_c = p_contact.add_run(
-        "Bandar Puteri, Puchong, Selangor   |   +60 13-563 6124   |   muhammed.munir97.mm@gmail.com\n"
-        "Portfolio: https://muhammedmunir.github.io/   |   LinkedIn: linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271   |   GitHub: github.com/muhammedmunir"
+    
+    r_c = p_info.add_run(
+        "📍 Puchong, Selangor   |   📞 +60 13-563 6124   |   ✉️ muhammed.munir97.mm@gmail.com\n"
+        "🌐 Portfolio: https://muhammedmunir.github.io/   |   🔗 LinkedIn: linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271   |   💻 GitHub: github.com/muhammedmunir"
     )
     r_c.font.name = 'Calibri'
-    r_c.font.size = Pt(8.5)
+    r_c.font.size = Pt(8.2)
     r_c.font.color.rgb = COLOR_BODY
-    add_bottom_border(p_contact)
+    
+    p_sep = doc.add_paragraph()
+    p_sep.paragraph_format.space_before = Pt(2)
+    p_sep.paragraph_format.space_after = Pt(2)
+    add_bottom_border(p_sep)
 
     # ================= SUMMARY =================
     add_section_header("Professional Summary")
     p_sum = doc.add_paragraph()
     p_sum.paragraph_format.space_before = Pt(2)
-    p_sum.paragraph_format.space_after = Pt(4)
+    p_sum.paragraph_format.space_after = Pt(3)
     p_sum.paragraph_format.line_spacing = 1.15
     r_sum = p_sum.add_run(
         "Versatile, security-conscious Full-Stack Systems Engineer with proven experience developing and maintaining "
@@ -182,7 +191,7 @@ def create_resume_docx(output_path):
         "and hands-on Security Operations Center (SOC) threat defense experience at Tenaga Nasional Berhad (TNB)."
     )
     r_sum.font.name = 'Calibri'
-    r_sum.font.size = Pt(9)
+    r_sum.font.size = Pt(8.8)
     r_sum.font.color.rgb = COLOR_BODY
 
     # ================= WORK EXPERIENCE =================
@@ -283,8 +292,8 @@ def create_resume_docx(output_path):
 
     for i, (cat, val) in enumerate(skills_data):
         row = t_skills.rows[i]
-        set_cell_margins(row.cells[0], top=15, bottom=15, left=0, right=0)
-        set_cell_margins(row.cells[1], top=15, bottom=15, left=0, right=0)
+        set_cell_margins(row.cells[0], top=12, bottom=12, left=0, right=0)
+        set_cell_margins(row.cells[1], top=12, bottom=12, left=0, right=0)
         
         p0 = row.cells[0].paragraphs[0]
         p0.paragraph_format.space_before = Pt(1)
@@ -348,7 +357,6 @@ def create_resume_docx(output_path):
 
 if __name__ == "__main__":
     create_resume_docx("Resume ATS Muhammed Munir final.docx")
-    # Also copy to Downloads if destination exists
     dl_path = r"C:\Users\KELUARGA AZMI\Downloads\Resume ATS Muhammed Munir final.docx"
     try:
         create_resume_docx(dl_path)

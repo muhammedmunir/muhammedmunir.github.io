@@ -1,232 +1,262 @@
 import os
+import base64
 from playwright.sync_api import sync_playwright
 import pypdf
 
-HTML_RESUME = """<!DOCTYPE html>
+def get_base64_image(image_path):
+    with open(image_path, "rb") as f:
+        return base64.b64encode(f.read()).decode("utf-8")
+
+def build_html_resume():
+    photo_b64 = get_base64_image("static/profile_photo.jpg")
+    
+    return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Muhammed Munir - ATS Resume</title>
 <style>
-  @page {
+  @page {{
     size: A4;
     margin: 8mm 13mm 8mm 13mm;
-  }
-  * {
+  }}
+  * {{
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-  }
-  body {
+  }}
+  body {{
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     color: #0f172a;
-    line-height: 1.34;
-    font-size: 8.9pt;
+    line-height: 1.33;
+    font-size: 8.85pt;
     background: #ffffff;
-  }
-  a {
+  }}
+  a {{
     color: #1d4ed8;
     text-decoration: none;
-  }
-  a:hover {
+  }}
+  a:hover {{
     text-decoration: underline;
-  }
+  }}
 
-  /* Header */
-  .header {
-    text-align: center;
+  /* Header with Photo */
+  .header {{
+    display: flex;
+    align-items: center;
+    gap: 14px;
     border-bottom: 2px solid #0f172a;
     padding-bottom: 5px;
-    margin-bottom: 7px;
-  }
-  .name {
-    font-size: 18.5pt;
+    margin-bottom: 6px;
+  }}
+  .header-photo {{
+    flex-shrink: 0;
+  }}
+  .profile-img {{
+    width: 65px;
+    height: 82px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1.5px solid #0f172a;
+    display: block;
+  }}
+  .header-info {{
+    flex-grow: 1;
+  }}
+  .name {{
+    font-size: 18pt;
     font-weight: 800;
     letter-spacing: 0.5px;
     color: #0f172a;
     text-transform: uppercase;
-  }
-  .headline {
-    font-size: 9.8pt;
+    line-height: 1.1;
+  }}
+  .headline {{
+    font-size: 9.6pt;
     font-weight: 600;
     color: #1d4ed8;
-    margin-top: 1px;
+    margin-top: 2px;
     margin-bottom: 3px;
-  }
-  .contact-bar {
-    font-size: 8.4pt;
+  }}
+  .contact-bar {{
+    font-size: 8.3pt;
     color: #334155;
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
-    gap: 3px 10px;
-  }
-  .contact-item {
+    align-items: center;
+    gap: 2.5px 8px;
+  }}
+  .contact-item {{
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-  }
-  .separator {
+    gap: 2.5px;
+  }}
+  .separator {{
     color: #94a3b8;
-  }
+  }}
 
   /* Section Styling */
-  .section {
-    margin-bottom: 7.5px;
-  }
-  .section-title {
-    font-size: 9.6pt;
+  .section {{
+    margin-bottom: 7px;
+  }}
+  .section-title {{
+    font-size: 9.5pt;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.6px;
     color: #0f172a;
     border-bottom: 1.5px solid #cbd5e1;
     padding-bottom: 1.5px;
-    margin-bottom: 4.5px;
-  }
+    margin-bottom: 4px;
+  }}
 
   /* Summary */
-  .summary-text {
-    font-size: 8.7pt;
+  .summary-text {{
+    font-size: 8.6pt;
     color: #334155;
     text-align: justify;
-    line-height: 1.36;
-  }
+    line-height: 1.35;
+  }}
 
   /* Entries */
-  .entry {
+  .entry {{
     margin-bottom: 5px;
     page-break-inside: avoid;
-  }
-  .entry-header {
+  }}
+  .entry-header {{
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     margin-bottom: 1px;
-  }
-  .entry-title {
-    font-size: 9.1pt;
+  }}
+  .entry-title {{
+    font-size: 9pt;
     font-weight: 700;
     color: #0f172a;
-  }
-  .entry-company {
-    font-size: 8.9pt;
+  }}
+  .entry-company {{
+    font-size: 8.8pt;
     font-weight: 600;
     color: #1d4ed8;
-  }
-  .entry-dates {
-    font-size: 8.4pt;
+  }}
+  .entry-dates {{
+    font-size: 8.3pt;
     font-weight: 600;
     color: #475569;
     white-space: nowrap;
-  }
-  .entry-location {
-    font-size: 8.1pt;
+  }}
+  .entry-location {{
+    font-size: 8pt;
     color: #64748b;
     font-style: italic;
-  }
+  }}
 
-  ul.bullets {
+  ul.bullets {{
     margin-left: 14px;
     margin-top: 1.5px;
     margin-bottom: 1.5px;
-  }
-  ul.bullets li {
-    font-size: 8.5pt;
+  }}
+  ul.bullets li {{
+    font-size: 8.4pt;
     color: #334155;
     margin-bottom: 1.5px;
-    line-height: 1.32;
-  }
-  ul.bullets li strong {
+    line-height: 1.31;
+  }}
+  ul.bullets li strong {{
     color: #0f172a;
-  }
+  }}
 
   /* Page Break Control */
-  .page-two {
+  .page-two {{
     page-break-before: always;
-  }
+  }}
 
   /* Projects */
-  .project-entry {
+  .project-entry {{
     margin-bottom: 4.5px;
     page-break-inside: avoid;
-  }
-  .project-header {
+  }}
+  .project-header {{
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-  }
-  .project-title {
-    font-size: 8.9pt;
+  }}
+  .project-title {{
+    font-size: 8.8pt;
     font-weight: 700;
     color: #0f172a;
-  }
-  .project-tech {
-    font-size: 8.1pt;
+  }}
+  .project-tech {{
+    font-size: 8pt;
     color: #475569;
     font-weight: 500;
-  }
-  .project-link {
-    font-size: 8.1pt;
+  }}
+  .project-link {{
+    font-size: 8pt;
     font-weight: 600;
     white-space: nowrap;
-  }
+  }}
 
   /* Skills Table */
-  .skills-table {
+  .skills-table {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 8.5pt;
-  }
-  .skills-table td {
-    padding: 1.6px 0;
+    font-size: 8.4pt;
+  }}
+  .skills-table td {{
+    padding: 1.5px 0;
     vertical-align: top;
-  }
-  .skill-label {
+  }}
+  .skill-label {{
     width: 22%;
     font-weight: 700;
     color: #0f172a;
-    font-size: 8.4pt;
-  }
-  .skill-list {
+    font-size: 8.3pt;
+  }}
+  .skill-list {{
     width: 78%;
     color: #334155;
-    font-size: 8.4pt;
-  }
+    font-size: 8.3pt;
+  }}
 
   /* Education */
-  .edu-entry {
+  .edu-entry {{
     margin-bottom: 4px;
     page-break-inside: avoid;
-  }
+  }}
 
-  .cert-list {
-    font-size: 8.4pt;
+  .cert-list {{
+    font-size: 8.3pt;
     color: #334155;
     margin-top: 2.5px;
-    line-height: 1.33;
-  }
+    line-height: 1.32;
+  }}
 </style>
 </head>
 <body>
 
   <!-- ==================== PAGE 1 ==================== -->
-  <!-- HEADER -->
+  <!-- HEADER WITH PHOTO -->
   <div class="header">
-    <div class="name">Muhammed Munir Bin Mohd Azmi</div>
-    <div class="headline">Full-Stack Systems Engineer &amp; IT Professional &bull; Network Security (UTM)</div>
-    <div class="contact-bar">
-      <span class="contact-item">📍 Bandar Puteri, Puchong, Selangor</span>
-      <span class="separator">&bull;</span>
-      <span class="contact-item">📞 +60 13-563 6124</span>
-      <span class="separator">&bull;</span>
-      <span class="contact-item">✉️ <a href="mailto:muhammed.munir97.mm@gmail.com">muhammed.munir97.mm@gmail.com</a></span>
-      <span class="separator">&bull;</span>
-      <span class="contact-item">🌐 <a href="https://muhammedmunir.github.io/">muhammedmunir.github.io</a></span>
-      <span class="separator">&bull;</span>
-      <span class="contact-item">🔗 <a href="https://www.linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271">LinkedIn</a></span>
-      <span class="separator">&bull;</span>
-      <span class="contact-item">💻 <a href="https://github.com/muhammedmunir">GitHub</a></span>
+    <div class="header-photo">
+      <img src="data:image/jpeg;base64,{photo_b64}" alt="Muhammed Munir" class="profile-img" />
+    </div>
+    <div class="header-info">
+      <div class="name">Muhammed Munir Bin Mohd Azmi</div>
+      <div class="headline">Full-Stack Systems Engineer &amp; IT Professional &bull; Network Security (UTM)</div>
+      <div class="contact-bar">
+        <span class="contact-item">📍 Puchong, Selangor</span>
+        <span class="separator">&bull;</span>
+        <span class="contact-item">📞 +60 13-563 6124</span>
+        <span class="separator">&bull;</span>
+        <span class="contact-item">✉️ <a href="mailto:muhammed.munir97.mm@gmail.com">muhammed.munir97.mm@gmail.com</a></span>
+        <span class="separator">&bull;</span>
+        <span class="contact-item">🌐 <a href="https://muhammedmunir.github.io/">muhammedmunir.github.io</a></span>
+        <span class="separator">&bull;</span>
+        <span class="contact-item">🔗 <a href="https://www.linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271">LinkedIn</a></span>
+        <span class="separator">&bull;</span>
+        <span class="contact-item">💻 <a href="https://github.com/muhammedmunir">GitHub</a></span>
+      </div>
     </div>
   </div>
 
@@ -480,7 +510,7 @@ HTML_RESUME = """<!DOCTYPE html>
   <!-- LANGUAGES -->
   <div class="section" style="margin-bottom: 0;">
     <div class="section-title">Languages</div>
-    <div style="font-size: 8.5pt; color: #334155;">
+    <div style="font-size: 8.4pt; color: #334155;">
       <strong>Malay:</strong> Native / Bilingual Proficiency &nbsp;&bull;&nbsp; <strong>English:</strong> Professional Working Proficiency
     </div>
   </div>
@@ -490,9 +520,10 @@ HTML_RESUME = """<!DOCTYPE html>
 """
 
 def generate_pdf():
+    html_content = build_html_resume()
     html_path = os.path.abspath("resume_temp.html")
     with open(html_path, "w", encoding="utf-8") as f:
-        f.write(HTML_RESUME)
+        f.write(html_content)
     
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -508,7 +539,9 @@ def generate_pdf():
     targets = [
         "static/resume.pdf",
         "Resume ATS Muhammed Munir final.pdf",
-        "build/resume.pdf"
+        "build/resume.pdf",
+        r"C:\Users\KELUARGA AZMI\Downloads\Resume ATS Muhammed Munir final.pdf",
+        r"C:\Users\KELUARGA AZMI\Downloads\Resume_Muhammed_Munir.pdf"
     ]
     for target in targets:
         os.makedirs(os.path.dirname(os.path.abspath(target)), exist_ok=True)

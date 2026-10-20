@@ -395,20 +395,20 @@
 		) {
 			reply = isMalay
 				? '📍 **Lokasi & Kediaman Muhammed Munir:**\n\n' +
-				  'Beliau menetap dan berpangkalan di **Bandar Puteri, Puchong, Selangor, Malaysia**.\n\n' +
+				  'Beliau menetap dan berpangkalan di **Puchong, Selangor, Malaysia**.\n\n' +
 				  'Ketersediaan mod kerja:\n' +
 				  '• 🏢 **Sepenuh Masa / On-site / Hibrid** di sekitar Lembah Klang, Kuala Lumpur, Putrajaya, Cyberjaya & Selangor.\n' +
 				  '• 🌐 **Kerja Jarak Jauh (Remote)** untuk seluruh Malaysia atau antarabangsa.\n\n' +
 				  'Sedia untuk dihubungi bagi sebarang peluang pekerjaan atau perbincangan projek.'
 				: '📍 **Muhammed Munir\'s Location & Work Base:**\n\n' +
-				  'He resides and is based in **Bandar Puteri, Puchong, Selangor, Malaysia**.\n\n' +
+				  'He resides and is based in **Puchong, Selangor, Malaysia**.\n\n' +
 				  'Work mode availability:\n' +
 				  '• 🏢 **Full-time / On-site / Hybrid roles** in Klang Valley, Kuala Lumpur, Putrajaya, Cyberjaya & Selangor.\n' +
 				  '• 🌐 **Remote positions** nationwide or worldwide.\n\n' +
 				  'Feel free to reach out to schedule an interview or discuss potential collaborations.';
 			spokenText = isMalay
-				? 'Muhammed Munir menetap dan berpangkalan di Bandar Puteri, Puchong, Selangor. Beliau terbuka untuk peluang kerja secara on-site di sekitar Lembah Klang mahupun secara jarak jauh.'
-				: 'Muhammed Munir resides and is based in Bandar Puteri, Puchong, Selangor. He is available for on-site roles across Klang Valley as well as remote positions.';
+				? 'Muhammed Munir menetap dan berpangkalan di Puchong, Selangor. Beliau terbuka untuk peluang kerja secara on-site di sekitar Lembah Klang mahupun secara jarak jauh.'
+				: 'Muhammed Munir resides and is based in Puchong, Selangor. He is available for on-site roles across Klang Valley as well as remote positions.';
 			action = {
 				label: isMalay ? '📞 Hubungi Munir' : '📞 Contact Munir',
 				callback: () => {
@@ -482,14 +482,14 @@
 				  '• 📧 **E-mel**: muhammed.munir97.mm@gmail.com\n' +
 				  '• 💼 **LinkedIn**: linkedin.com/in/muhammed-munir\n' +
 				  '• 🐙 **GitHub**: github.com/muhammedmunir\n' +
-				  '• 📍 **Lokasi**: Bandar Puteri, Puchong, Selangor\n\n' +
+				  '• 📍 **Lokasi**: Puchong, Selangor\n\n' +
 				  'Beliau sedia membalas sebarang pertanyaan dalam masa kurang daripada 24 jam.'
 				: '📞 **Direct Communications for Muhammed Munir:**\n\n' +
 				  '• 📱 **Phone / WhatsApp**: +6013-5636124\n' +
 				  '• 📧 **Email**: muhammed.munir97.mm@gmail.com\n' +
 				  '• 💼 **LinkedIn**: linkedin.com/in/muhammed-munir\n' +
 				  '• 🐙 **GitHub**: github.com/muhammedmunir\n' +
-				  '• 📍 **Location**: Bandar Puteri, Puchong, Selangor\n\n' +
+				  '• 📍 **Location**: Puchong, Selangor\n\n' +
 				  'He responds promptly to all professional opportunities within 24 hours.';
 			spokenText = isMalay
 				? 'Anda boleh menghubungi Munir terus melalui WhatsApp di talian kosong satu tiga, lima enam tiga enam satu dua empat, atau melalui e-mel yang tertera pada skrin.'
@@ -964,7 +964,7 @@
 			q.includes('about')
 		) {
 			reply = isMalay
-				? 'Muhammed Munir Bin Mohd Azmi adalah Pembangun Full-Stack & Profesional IT berpangkalan di Bandar Puteri Puchong, Selangor. Berkelulusan B.Sc. Sains Komputer (Keselamatan Rangkaian) UTM (PNGK 3.17). Beliau mempunyai rekod pencapaian terbukti dalam membina sistem berskala besar sektor awam kerajaan (eMesys, Sutera, ADIMS) menggunakan Vue.js 3 dan Laravel, aplikasi Flutter pintar, ejen AI 3D, serta pemantauan keselamatan siber Splunk SIEM.'
+				? 'Muhammed Munir Bin Mohd Azmi adalah Pembangun Full-Stack & Profesional IT berpangkalan di Puchong, Selangor. Berkelulusan B.Sc. Sains Komputer (Keselamatan Rangkaian) UTM (PNGK 3.17). Beliau mempunyai rekod pencapaian terbukti dalam membina sistem berskala besar sektor awam kerajaan (eMesys, Sutera, ADIMS) menggunakan Vue.js 3 dan Laravel, aplikasi Flutter pintar, ejen AI 3D, serta pemantauan keselamatan siber Splunk SIEM.'
 				: 'Muhammed Munir Bin Mohd Azmi is a Full-Stack Developer & IT Professional based in Puchong, Selangor. Holds a B.Sc. in Computer Science (Network Security) from UTM (CGPA 3.17). Proven track record engineering public-sector government platforms (eMesys, Sutera, ADIMS) with Vue.js 3 and Laravel, smart Flutter applications, 3D AI agent environments, and Splunk SIEM cybersecurity operations.';
 			spokenText = isMalay
 				? 'Muhammed Munir ialah pembangun full stack di Puchong, Selangor yang berpengalaman membina sistem perusahaan sektor awam dan aplikasi moden.'
@@ -1110,10 +1110,10 @@
 		else {
 			reply = isMalay
 				? `Maklumat Muhammed Munir bagi carian "${rawQuery}":\n\n` +
-				  `Beliau adalah Pembangun Full-Stack & Profesional IT yang menetap di Bandar Puteri, Puchong, Selangor. Berkelulusan B.Sc. Sains Komputer (Keselamatan Rangkaian) dari UTM (PNGK 3.17) dan mempunyai 4+ tahun pengalaman menghasilkan 18 sistem produksi (YHCM, TNB, Nova Bitara).\n\n` +
+				  `Beliau adalah Pembangun Full-Stack & Profesional IT yang menetap di Puchong, Selangor. Berkelulusan B.Sc. Sains Komputer (Keselamatan Rangkaian) dari UTM (PNGK 3.17) dan mempunyai 4+ tahun pengalaman menghasilkan 18 sistem produksi (YHCM, TNB, Nova Bitara).\n\n` +
 				  `Anda boleh bertanya tentang: tempat tinggal, universiti/kelulusan, statistik sistem, 3 sistem sektor awam, aplikasi mudah alih Flutter, kemahiran teknologi, atau muat turun resume ATS.`
 				: `Information on Muhammed Munir for "${rawQuery}":\n\n` +
-				  `He is a Full-Stack Developer & IT Professional based in Bandar Puteri, Puchong, Selangor. Holds a B.Sc. in Computer Science (Network Security) from UTM (CGPA 3.17) with 4+ years of industry track record shipping 18 production systems (YHCM, TNB, Nova Bitara).\n\n` +
+				  `He is a Full-Stack Developer & IT Professional based in Puchong, Selangor. Holds a B.Sc. in Computer Science (Network Security) from UTM (CGPA 3.17) with 4+ years of industry track record shipping 18 production systems (YHCM, TNB, Nova Bitara).\n\n` +
 				  `Feel free to ask about his location, education/degree, ecosystem statistics, 3 public sector systems, mobile Flutter apps, tech stack, or download his ATS resume.`;
 			spokenText = isMalay
 				? 'Muhammed Munir ialah jurutera perisian di Puchong, Selangor dengan pengalaman lapan belas sistem produksi. Anda boleh bertanya tentang lokasi, pendidikan, atau projek beliau.'
