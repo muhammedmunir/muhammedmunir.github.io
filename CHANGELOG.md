@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+- 2026-10-15 - feat(redesign): major portfolio overhaul to Neural Mission Control & Sovereign Systems Deck (Option 1)
+  - Typography upgraded to Space Grotesk (headings), Inter (body), and JetBrains Mono (telemetry/code) in `src/app.html`.
+  - Design system overhauled in `src/routes/layout.css` to Obsidian Void (`#030712`), Electric Cyan (`#38bdf8`), Cyber Indigo (`#818cf8`), Signal Emerald (`#10b981`), and Aerospace Glass.
+  - Floating Tactical Command Bar in `src/routes/+layout.svelte` with live Kuala Lumpur clock, ⌘K AI Deck trigger, audio telemetry switch, and direct ATS CV download.
+  - Removed deprecated canvas routes `/games` and `/city` for a focused, mature enterprise presentation.
+  - Redesigned `src/lib/Hero.svelte` into a Split Tactical Deck: typewriter executive identity on left, interactive 4-domain architecture topology deck on right.
+  - Redesigned `src/lib/Experience.svelte` into a Sovereign Operations Timeline with radar beacons, code badges, and mission highlights.
+  - Upgraded `src/lib/Skills.svelte` from arbitrary percentage bars to an Architectural Competency Matrix across 3 core domains, complete with production usage notes, Cisco certifications, and UTM degree credentials.
+  - Redesigned `src/lib/Contact.svelte` into an Encrypted Sovereign Communications Terminal with Web3Forms integration and direct channel cards.
+  - Verified with 0 TypeScript/Svelte errors and 0 warnings via `npm run check` and successful static build.
+
 - 2026-10-14 - feat: add interactive JARVIS Neural HUD assistant, Web Audio SFX synthesis, expanded real-world projects (TINDAK, CV Bot, Lumina Glass, IWA001, YHCM Enterprise Systems), direct ATS resume download, resolve GitHub Pages city route 404, and remove legacy privacy page
 - 2026-05-19 - feat: make skills and workflows interactive in presentation component (f627153)
 - 2026-05-19 - refactor: optimize CSS class names and styling rules in City Explorer (cec60f7)

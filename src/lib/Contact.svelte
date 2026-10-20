@@ -19,36 +19,40 @@
 
 	onMount(() => {
 		gsap.registerPlugin(ScrollTrigger);
+
 		gsap.fromTo(
 			'.contact-header',
-			{ opacity: 0, y: 30 },
+			{ opacity: 0, y: 24 },
 			{
 				opacity: 1,
 				y: 0,
-				duration: 0.8,
-				scrollTrigger: { trigger: '.contact-header', start: 'top 90%' }
+				duration: 0.7,
+				ease: 'power3.out',
+				scrollTrigger: { trigger: '.contact-header', start: 'top 88%' }
 			}
 		);
+
 		gsap.fromTo(
 			'.contact-info',
-			{ opacity: 0, x: -40 },
+			{ opacity: 0, x: -30 },
 			{
 				opacity: 1,
 				x: 0,
-				duration: 0.8,
+				duration: 0.75,
 				ease: 'power3.out',
 				scrollTrigger: { trigger: '.contact-info', start: 'top 85%' }
 			}
 		);
+
 		gsap.fromTo(
-			'.contact-form-wrap',
-			{ opacity: 0, x: 40 },
+			'.contact-form-deck',
+			{ opacity: 0, x: 30 },
 			{
 				opacity: 1,
 				x: 0,
-				duration: 0.8,
+				duration: 0.75,
 				ease: 'power3.out',
-				scrollTrigger: { trigger: '.contact-form-wrap', start: 'top 85%' }
+				scrollTrigger: { trigger: '.contact-form-deck', start: 'top 85%' }
 			}
 		);
 	});
@@ -57,7 +61,6 @@
 		e.preventDefault();
 		errorMsg = '';
 
-		// Validation
 		if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
 			errorMsg =
 				$lang === 'ms'
@@ -81,25 +84,23 @@
 				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 				body: JSON.stringify({
 					access_key: WEB3FORMS_KEY,
-					subject: `[Portfolio] ${formData.subject} — dari ${formData.name}`,
+					subject: `[Sovereign Uplink] ${formData.subject || 'Pertanyaan Kerjaya / Kolaborasi'} — dari ${formData.name}`,
 					from_name: formData.name,
 					replyto: formData.email,
 					message: `
-Mesej baharu diterima dari Portfolio — muhammedmunir.github.io
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  Nama     : ${formData.name}
-  Email    : ${formData.email}
-  Subjek   : ${formData.subject}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Mesej    :
+PENGHANTARAN MESEJ DARI SOVEREIGN MISSION CONTROL (muhammedmunir.github.io)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Pengirim : ${formData.name}
+E-mel    : ${formData.email}
+Subjek   : ${formData.subject || 'Tiada Subjek'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Kandungan Mesej:
 
 ${formData.message}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
-          `.trim(),
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.email}.
+					`.trim(),
 					botcheck: botcheck
 				})
 			});
@@ -113,8 +114,8 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 				errorMsg =
 					result.message ||
 					($lang === 'ms'
-						? 'Ralat berlaku. Sila cuba lagi.'
-						: 'An error occurred. Please try again.');
+						? 'Ralat berlaku semasa penghantaran. Sila cuba lagi atau gunakan WhatsApp.'
+						: 'An error occurred during submission. Please try again or reach via WhatsApp.');
 			}
 		} catch {
 			errorMsg =
@@ -126,103 +127,150 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 		}
 	}
 
-	const contactDetails = [
+	const directChannels = [
 		{
-			icon: '📧',
-			label: 'Email',
+			id: 'email',
+			code: 'CH-01',
+			label: 'DIRECT_EMAIL',
 			value: 'muhammed.munir97.mm@gmail.com',
-			href: 'mailto:muhammed.munir97.mm@gmail.com'
-		},
-		{ icon: '📱', label: 'Phone', value: '+6013-5636124', href: 'tel:+60135636124' },
-		{
-			icon: '💼',
-			label: 'LinkedIn',
-			value: 'linkedin.com/in/muhammed-munir-bin-mohd-azmi',
-			href: 'https://www.linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271'
+			href: 'mailto:muhammed.munir97.mm@gmail.com',
+			icon: '✉️'
 		},
 		{
-			icon: '🐙',
-			label: 'GitHub',
+			id: 'phone',
+			code: 'CH-02',
+			label: 'VOICE_&_WHATSAPP',
+			value: '+6013-5636124',
+			href: 'https://wa.me/60135636124',
+			icon: '💬'
+		},
+		{
+			id: 'linkedin',
+			code: 'CH-03',
+			label: 'LINKEDIN_NETWORK',
+			value: 'linkedin.com/in/muhammed-munir',
+			href: 'https://www.linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271',
+			icon: '💼'
+		},
+		{
+			id: 'github',
+			code: 'CH-04',
+			label: 'SOURCE_REPOSITORY',
 			value: 'github.com/muhammedmunir',
-			href: 'https://github.com/muhammedmunir'
+			href: 'https://github.com/muhammedmunir',
+			icon: '🐙'
 		},
 		{
-			icon: '📍',
-			label: 'Lokasi / Location',
-			value: 'Puchong, Selangor',
-			href: null
+			id: 'location',
+			code: 'CH-05',
+			label: 'PHYSICAL_ZONE',
+			value: 'Puchong / Shah Alam, Selangor',
+			href: null,
+			icon: '📍'
 		}
 	];
 </script>
 
-<section id="contact">
+<section id="contact" class="contact-section">
+	<div class="contact-ambient" aria-hidden="true"></div>
+
 	<div class="section">
+		<!-- Section Header -->
 		<div class="section-header contact-header">
 			<div class="section-label">{$t.label}</div>
-			<h2>{$t.title}</h2>
+			<h2 class="text-gradient">{$t.title}</h2>
 			<p class="section-desc">{$t.desc}</p>
 			<div class="section-divider"></div>
 		</div>
 
 		<div class="contact-grid">
+			<!-- LEFT: DIRECT UPLINK CHANNELS & TELEMETRY -->
 			<div class="contact-info">
-				<div class="info-intro card">
-					<div class="intro-icon" aria-hidden="true">👋</div>
-					<h3>{$t.intro_title}</h3>
-					<p>{$t.intro_desc}</p>
+				<div class="info-card card">
+					<div class="card-status-bar">
+						<span class="status-orb" aria-hidden="true"></span>
+						<span class="status-code">COMM_LINK // SECURE_UPLINK</span>
+					</div>
+					<h3 class="info-title">{$t.intro_title}</h3>
+					<p class="info-desc">{$t.intro_desc}</p>
 				</div>
 
-				<div class="contact-details">
-					{#each contactDetails as detail}
-						<div class="contact-detail-item">
-							<div class="detail-icon" aria-hidden="true">{detail.icon}</div>
-							<div class="detail-content">
-								<span class="detail-label">{detail.label}</span>
-								{#if detail.href}
-									<a
-										href={detail.href}
-										target="_blank"
-										rel="me noopener noreferrer"
-										class="detail-value"
-										id="contact-{detail.label.toLowerCase().replace(/[^a-z0-9]/g, '-')}">{detail.value}</a
-									>
+				<!-- Channels List -->
+				<div class="channels-deck">
+					{#each directChannels as ch}
+						<div class="channel-card card">
+							<div class="ch-icon" aria-hidden="true">{ch.icon}</div>
+							<div class="ch-body">
+								<div class="ch-top">
+									<span class="ch-code">{ch.code}</span>
+									<span class="ch-label">{ch.label}</span>
+								</div>
+								{#if ch.href}
+									<a href={ch.href} target="_blank" rel="me noopener noreferrer" class="ch-value">
+										{ch.value}
+										<svg
+											width="12"
+											height="12"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2.5"
+											aria-hidden="true"
+										>
+											<line x1="7" y1="17" x2="17" y2="7"></line>
+											<polyline points="7 7 17 7 17 17"></polyline>
+										</svg>
+									</a>
 								{:else}
-									<span class="detail-value">{detail.value}</span>
+									<span class="ch-value no-link">{ch.value}</span>
 								{/if}
 							</div>
 						</div>
 					{/each}
 				</div>
 
-				<div class="availability-banner">
-					<div class="avail-dot" aria-hidden="true"></div>
-					<div>
-						<p class="avail-status">{$t.avail_status}</p>
-						<p class="avail-sub">{$t.avail_sub}</p>
+				<!-- Availability Badge -->
+				<div class="avail-beacon card">
+					<div class="avail-beacon-dot" aria-hidden="true"></div>
+					<div class="avail-beacon-body">
+						<p class="avail-primary">{$t.avail_status}</p>
+						<p class="avail-secondary">{$t.avail_sub}</p>
 					</div>
 				</div>
 			</div>
 
-			<div class="contact-form-wrap card">
+			<!-- RIGHT: SOVEREIGN DIRECT TRANSMISSION FORM -->
+			<div class="contact-form-deck card">
 				{#if submitted}
-					<div class="success-state">
-						<div class="success-icon" aria-hidden="true">✅</div>
-						<h3>{$t.success_title}</h3>
-						<p>{$t.success_msg}</p>
+					<div class="success-screen">
+						<div class="success-halo" aria-hidden="true">
+							<svg
+								width="36"
+								height="36"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="#10b981"
+								stroke-width="2.5"
+							>
+								<polyline points="20 6 9 17 4 12"></polyline>
+							</svg>
+						</div>
+						<h3 class="success-title">{$t.success_title}</h3>
+						<p class="success-text">{$t.success_msg}</p>
 						<button
-							class="btn btn-outline"
+							type="button"
+							class="btn btn-primary"
 							onclick={() => {
 								submitted = false;
 								formData = { name: '', email: '', subject: '', message: '' };
 							}}
-							id="send-another-btn"
 						>
 							{$t.send_another}
 						</button>
 					</div>
 				{:else}
 					<form onsubmit={handleSubmit} id="contact-form" novalidate>
-						<!-- Honeypot anti-spam protection -->
+						<!-- Honeypot -->
 						<input
 							type="checkbox"
 							name="botcheck"
@@ -231,25 +279,41 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 							tabindex="-1"
 							autocomplete="off"
 						/>
-						<h3 class="form-title">{$t.form_title}</h3>
 
-						<div class="form-row">
-							<div class="form-group">
-								<label for="contact-name">{$t.name_label}</label>
+						<div class="form-deck-head">
+							<div class="deck-indicator" aria-hidden="true"></div>
+							<div>
+								<h3 class="form-deck-title">{$t.form_title}</h3>
+								<span class="form-deck-sub">ENCRYPTED TRANSMISSION PROTOCOL</span>
+							</div>
+						</div>
+
+						<div class="form-split">
+							<div class="field-wrap">
+								<label for="contact-name" class="field-label">
+									<span>01 //</span>
+									{$t.name_label}
+								</label>
 								<input
 									type="text"
 									id="contact-name"
+									class="field-input"
 									bind:value={formData.name}
 									placeholder={$t.name_placeholder}
 									required
 									autocomplete="name"
 								/>
 							</div>
-							<div class="form-group">
-								<label for="contact-email">{$t.email_label}</label>
+
+							<div class="field-wrap">
+								<label for="contact-email" class="field-label">
+									<span>02 //</span>
+									{$t.email_label}
+								</label>
 								<input
 									type="email"
 									id="contact-email"
+									class="field-input"
 									bind:value={formData.email}
 									placeholder={$t.email_placeholder}
 									required
@@ -258,21 +322,29 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 							</div>
 						</div>
 
-						<div class="form-group">
-							<label for="contact-subject">{$t.subject_label}</label>
+						<div class="field-wrap">
+							<label for="contact-subject" class="field-label">
+								<span>03 //</span>
+								{$t.subject_label}
+							</label>
 							<input
 								type="text"
 								id="contact-subject"
+								class="field-input"
 								bind:value={formData.subject}
 								placeholder={$t.subject_placeholder}
 								required
 							/>
 						</div>
 
-						<div class="form-group">
-							<label for="contact-message">{$t.msg_label}</label>
+						<div class="field-wrap">
+							<label for="contact-message" class="field-label">
+								<span>04 //</span>
+								{$t.msg_label}
+							</label>
 							<textarea
 								id="contact-message"
+								class="field-textarea"
 								bind:value={formData.message}
 								placeholder={$t.msg_placeholder}
 								rows="5"
@@ -281,17 +353,16 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 						</div>
 
 						{#if errorMsg}
-							<div class="error-banner" role="alert">⚠️ {errorMsg}</div>
+							<div class="error-strip" role="alert">
+								<span class="err-icon">⚠️</span>
+								<span>{errorMsg}</span>
+							</div>
 						{/if}
-						<button
-							type="submit"
-							class="btn btn-primary submit-btn"
-							id="contact-submit-btn"
-							disabled={submitting}
-						>
+
+						<button type="submit" class="btn btn-primary transmit-btn" disabled={submitting}>
 							{#if submitting}
-								<span class="spinner" aria-hidden="true"></span>
-								{$t.sending}
+								<span class="loading-spin" aria-hidden="true"></span>
+								<span>{$t.sending}</span>
 							{:else}
 								<svg
 									width="18"
@@ -299,13 +370,13 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 									viewBox="0 0 24 24"
 									fill="none"
 									stroke="currentColor"
-									stroke-width="2.5"
+									stroke-width="2.2"
 									aria-hidden="true"
-									><line x1="22" y1="2" x2="11" y2="13" /><polygon
-										points="22 2 15 22 11 13 2 9 22 2"
-									/></svg
 								>
-								{$t.send_btn}
+									<line x1="22" y1="2" x2="11" y2="13"></line>
+									<polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+								</svg>
+								<span>{$t.send_btn}</span>
 							{/if}
 						</button>
 					</form>
@@ -316,222 +387,272 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 </section>
 
 <style>
-	section {
-		background: var(--navy-dark);
+	.contact-section {
 		position: relative;
+		background: linear-gradient(180deg, #030712 0%, #070e1c 100%);
+		overflow: hidden;
 	}
-	section::before {
-		content: '';
+
+	.contact-ambient {
 		position: absolute;
-		top: 0;
-		left: 0;
-		right: 0;
-		height: 1px;
-		background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
-	}
-	section::after {
-		content: '';
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		right: 0;
-		height: 200px;
-		background: radial-gradient(
-			ellipse at center bottom,
-			rgba(212, 175, 55, 0.05),
-			transparent 70%
-		);
+		bottom: -100px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 800px;
+		height: 400px;
+		background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
 		pointer-events: none;
 	}
-	.section-desc {
-		font-size: 1rem;
-		color: var(--text-muted);
-		margin-top: 0.75rem;
-	}
+
 	.contact-grid {
 		display: grid;
-		grid-template-columns: 1fr 1.4fr;
+		grid-template-columns: 1fr 1.25fr;
 		gap: 2.5rem;
-		align-items: start;
+		align-items: flex-start;
 	}
+
+	/* Left Side */
 	.contact-info {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
+		gap: 1.25rem;
 	}
-	.info-intro {
-		padding: 2rem;
+
+	.info-card {
+		padding: 1.5rem;
+	}
+	.card-status-bar {
 		display: flex;
-		flex-direction: column;
-		gap: 0.8rem;
+		align-items: center;
+		gap: 0.5rem;
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		color: var(--cyan);
+		margin-bottom: 0.85rem;
 	}
-	.intro-icon {
-		font-size: 2rem;
+	.status-orb {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--cyan);
+		box-shadow: 0 0 8px var(--cyan);
 	}
-	.info-intro h3 {
-		font-size: 1.15rem;
-		color: var(--text-primary);
+	.info-title {
+		font-family: var(--font-heading);
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--white);
+		margin-bottom: 0.5rem;
 	}
-	.info-intro p {
-		font-size: 0.9rem;
+	.info-desc {
+		font-size: 0.88rem;
+		line-height: 1.65;
 		color: var(--text-secondary);
-		line-height: 1.7;
 	}
-	.contact-details {
+
+	.channels-deck {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 0.65rem;
 	}
-	.contact-detail-item {
+	.channel-card {
+		padding: 0.85rem 1.15rem;
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		padding: 1rem 1.25rem;
-		background: var(--card-bg);
-		border: 1px solid var(--card-border);
-		border-radius: var(--radius);
-		backdrop-filter: blur(10px);
-		transition: var(--transition);
 	}
-	.contact-detail-item:hover {
-		border-color: rgba(212, 175, 55, 0.4);
-		transform: translateX(4px);
+	.ch-icon {
+		font-size: 1.25rem;
+		line-height: 1;
 	}
-	.detail-icon {
-		font-size: 1.3rem;
-	}
-	.detail-content {
+	.ch-body {
 		display: flex;
 		flex-direction: column;
-		gap: 0.1rem;
-	}
-	.detail-label {
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
-		color: var(--text-muted);
-	}
-	.detail-value {
-		font-size: 0.9rem;
-		font-weight: 500;
-		color: var(--text-primary);
-		transition: var(--transition);
-		overflow-wrap: break-word;
-		word-break: break-all;
+		gap: 0.15rem;
 		min-width: 0;
 	}
-	a.detail-value:hover {
-		color: var(--gold);
+	.ch-top {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
 	}
-	.availability-banner {
+	.ch-code {
+		font-family: var(--font-mono);
+		font-size: 0.62rem;
+		color: var(--cyan);
+		font-weight: 700;
+	}
+	.ch-label {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		color: var(--text-muted);
+		letter-spacing: 0.04em;
+	}
+	.ch-value {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		font-size: 0.85rem;
+		color: var(--text-primary);
+		font-weight: 500;
+		word-break: break-all;
+		transition: color 0.2s ease;
+	}
+	.ch-value:hover {
+		color: var(--cyan);
+	}
+	.ch-value.no-link {
+		color: var(--text-secondary);
+		cursor: default;
+	}
+
+	.avail-beacon {
+		padding: 1.15rem 1.35rem;
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		padding: 1rem 1.25rem;
-		background: rgba(34, 197, 94, 0.06);
-		border: 1px solid rgba(34, 197, 94, 0.2);
-		border-radius: var(--radius);
+		background: rgba(16, 185, 129, 0.08);
+		border-color: rgba(16, 185, 129, 0.3);
 	}
-	.avail-dot {
-		width: 12px;
-		height: 12px;
-		background: #22c55e;
+	.avail-beacon-dot {
+		width: 10px;
+		height: 10px;
 		border-radius: 50%;
+		background: var(--emerald);
+		box-shadow: 0 0 12px var(--emerald);
+		animation: pulse-emerald 2s infinite;
 		flex-shrink: 0;
-		animation: pulse-dot 2s infinite;
 	}
-	@keyframes pulse-dot {
-		0%,
-		100% {
-			box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
-		}
-		50% {
-			box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
-		}
-	}
-	.avail-status {
-		font-size: 0.9rem;
+	.avail-primary {
+		font-family: var(--font-heading);
+		font-size: 0.92rem;
 		font-weight: 700;
-		color: #4ade80;
-		margin-bottom: 0.15rem;
+		color: #34d399;
 	}
-	.avail-sub {
+	.avail-secondary {
 		font-size: 0.78rem;
-		color: var(--text-muted);
+		color: var(--text-secondary);
 	}
-	.contact-form-wrap {
-		padding: 2.5rem;
+
+	/* Right Side Form Deck */
+	.contact-form-deck {
+		padding: 2.25rem;
+		background: rgba(10, 18, 34, 0.85);
+		border: 1px solid rgba(56, 189, 248, 0.22);
+		border-radius: 18px;
+		box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75);
 	}
-	.form-title {
-		font-size: 1.3rem;
-		color: var(--text-primary);
-		margin-bottom: 1.75rem;
+	.form-deck-head {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding-bottom: 1.25rem;
+		margin-bottom: 1.5rem;
+		border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 	}
-	.form-row {
+	.deck-indicator {
+		width: 4px;
+		height: 34px;
+		background: var(--cyan);
+		border-radius: 2px;
+		box-shadow: 0 0 10px var(--cyan);
+	}
+	.form-deck-title {
+		font-family: var(--font-heading);
+		font-size: 1.25rem;
+		font-weight: 700;
+		color: var(--white);
+	}
+	.form-deck-sub {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		color: var(--cyan);
+		letter-spacing: 0.08em;
+	}
+
+	.form-split {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		gap: 1rem;
 	}
-	.form-group {
+	.field-wrap {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.45rem;
 		margin-bottom: 1.25rem;
 	}
-	label {
-		font-size: 0.8rem;
+	.field-label {
+		font-family: var(--font-mono);
+		font-size: 0.72rem;
 		font-weight: 600;
 		color: var(--text-secondary);
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
 	}
-	input,
-	textarea {
-		background: rgba(255, 255, 255, 0.04);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 8px;
+	.field-label span {
+		color: var(--cyan);
+	}
+	.field-input,
+	.field-textarea {
+		width: 100%;
 		padding: 0.85rem 1rem;
+		background: rgba(3, 7, 18, 0.75);
+		border: 1px solid rgba(148, 163, 184, 0.16);
+		border-radius: 10px;
+		color: var(--white);
 		font-family: var(--font-body);
-		font-size: 0.9rem;
-		color: var(--text-primary);
-		transition: var(--transition);
+		font-size: 0.92rem;
+		transition: all 0.25s ease;
 		outline: none;
-		resize: none;
 	}
-	input::placeholder,
-	textarea::placeholder {
+	.field-input:focus,
+	.field-textarea:focus {
+		border-color: var(--cyan);
+		box-shadow:
+			0 0 0 3px rgba(56, 189, 248, 0.15),
+			0 8px 24px rgba(0, 0, 0, 0.5);
+		background: rgba(3, 7, 18, 0.95);
+	}
+	.field-input::placeholder,
+	.field-textarea::placeholder {
 		color: var(--text-muted);
 	}
-	input:focus,
-	textarea:focus {
-		border-color: var(--gold);
-		background: rgba(212, 175, 55, 0.04);
-		box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.1);
-	}
-	textarea {
+	.field-textarea {
+		resize: vertical;
 		min-height: 120px;
 	}
-	.submit-btn {
-		width: 100%;
-		justify-content: center;
-		padding: 1rem;
-		font-size: 1rem;
-	}
-	.error-banner {
-		background: rgba(239, 68, 68, 0.1);
-		border: 1px solid rgba(239, 68, 68, 0.3);
-		border-radius: 8px;
+
+	.error-strip {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
 		padding: 0.75rem 1rem;
-		font-size: 0.85rem;
+		background: rgba(239, 68, 68, 0.12);
+		border: 1px solid rgba(239, 68, 68, 0.35);
+		border-radius: 8px;
 		color: #fca5a5;
-		margin-bottom: 1rem;
+		font-size: 0.84rem;
+		margin-bottom: 1.25rem;
 	}
-	.spinner {
-		width: 16px;
-		height: 16px;
-		border: 2px solid rgba(0, 0, 0, 0.3);
-		border-top-color: var(--navy-dark);
+
+	.transmit-btn {
+		width: 100%;
+		padding: 0.95rem 1.5rem;
+		font-size: 0.95rem;
+		font-weight: 700;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.6rem;
+		border-radius: 10px;
+	}
+	.transmit-btn:disabled {
+		opacity: 0.7;
+		cursor: not-allowed;
+	}
+	.loading-spin {
+		width: 18px;
+		height: 18px;
+		border: 2px solid rgba(3, 7, 18, 0.3);
+		border-top-color: #030712;
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
@@ -540,32 +661,49 @@ Untuk balas, terus reply email ini atau hantar ke: ${formData.email}
 			transform: rotate(360deg);
 		}
 	}
-	.success-state {
+
+	/* Success Screen */
+	.success-screen {
+		text-align: center;
+		padding: 2.5rem 1.5rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		text-align: center;
 		gap: 1rem;
-		padding: 2rem;
 	}
-	.success-icon {
-		font-size: 3rem;
+	.success-halo {
+		width: 64px;
+		height: 64px;
+		border-radius: 50%;
+		background: rgba(16, 185, 129, 0.15);
+		border: 2px solid rgba(16, 185, 129, 0.4);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
 	}
-	.success-state h3 {
-		color: var(--text-primary);
+	.success-title {
+		font-family: var(--font-heading);
+		font-size: 1.4rem;
+		font-weight: 700;
+		color: var(--white);
 	}
-	.success-state p {
+	.success-text {
 		color: var(--text-secondary);
-		font-size: 0.9rem;
+		font-size: 0.92rem;
+		line-height: 1.6;
+		max-width: 420px;
 	}
+
 	@media (max-width: 900px) {
 		.contact-grid {
 			grid-template-columns: 1fr;
 		}
-	}
-	@media (max-width: 540px) {
-		.form-row {
+		.form-split {
 			grid-template-columns: 1fr;
+		}
+		.contact-form-deck {
+			padding: 1.5rem;
 		}
 	}
 </style>

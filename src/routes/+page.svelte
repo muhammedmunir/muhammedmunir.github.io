@@ -25,22 +25,15 @@
 
 	onMount(() => {
 		gsap.registerPlugin(ScrollTrigger);
-		const sections = document.querySelectorAll('section[id]');
-		const navLinks = document.querySelectorAll('.nav-link');
-		const observer = new IntersectionObserver(
-			(entries) => {
-				entries.forEach((entry) => {
-					if (entry.isIntersecting) {
-						navLinks.forEach((link) => {
-							link.classList.toggle('active', link.getAttribute('href') === `#${entry.target.id}`);
-						});
-					}
-				});
-			},
-			{ threshold: 0.4, rootMargin: '-80px 0px -40% 0px' }
-		);
-		sections.forEach((s) => observer.observe(s));
-		return () => observer.disconnect();
+
+		const handleOpenPres = () => {
+			openPresentation();
+		};
+		window.addEventListener('open-presentation', handleOpenPres);
+
+		return () => {
+			window.removeEventListener('open-presentation', handleOpenPres);
+		};
 	});
 </script>
 
@@ -58,7 +51,7 @@
 <Skills />
 <Contact />
 
-<!-- Floating Present button -->
+<!-- Floating Presentation Deck Button -->
 <button
 	class="fab-present"
 	onclick={openPresentation}
@@ -67,18 +60,19 @@
 	onmouseenter={() => playBlip(600, 0.03)}
 >
 	<svg
-		width="20"
-		height="20"
+		width="18"
+		height="18"
 		viewBox="0 0 24 24"
 		fill="none"
 		stroke="currentColor"
-		stroke-width="2.5"
+		stroke-width="2.2"
+		aria-hidden="true"
 	>
 		<rect x="2" y="3" width="20" height="14" rx="2" />
 		<line x1="8" y1="21" x2="16" y2="21" />
 		<line x1="12" y1="17" x2="12" y2="21" />
 	</svg>
-	Present
+	<span>DECK_MODE</span>
 </button>
 
 <!-- Presentation overlay -->
@@ -92,41 +86,40 @@
 		bottom: 2rem;
 		left: 2rem;
 		z-index: 500;
-		display: flex;
+		display: inline-flex;
 		align-items: center;
 		gap: 0.55rem;
-		background: linear-gradient(135deg, #1e3a5f, #2a4f7c);
-		border: 1px solid rgba(212, 175, 55, 0.4);
-		border-radius: 50px;
-		padding: 0.8rem 1.5rem;
-		color: #d4af37;
-		font-family: 'Inter', sans-serif;
-		font-size: 0.88rem;
+		background: rgba(8, 15, 30, 0.85);
+		border: 1px solid rgba(56, 189, 248, 0.35);
+		border-radius: 999px;
+		padding: 0.65rem 1.25rem;
+		color: var(--cyan);
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
 		font-weight: 700;
 		letter-spacing: 0.06em;
 		cursor: pointer;
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
 		box-shadow:
-			0 8px 30px rgba(0, 0, 0, 0.4),
-			0 0 0 1px rgba(212, 175, 55, 0.1);
-		transition:
-			background 0.3s ease,
-			color 0.3s ease,
-			box-shadow 0.3s ease,
-			border-color 0.3s ease;
+			0 12px 30px rgba(0, 0, 0, 0.6),
+			0 0 20px rgba(56, 189, 248, 0.12);
+		transition: all 0.25s ease;
 	}
 	.fab-present:hover {
-		background: linear-gradient(135deg, #d4af37, #e8c84a);
-		color: #0a1422;
-		border-color: transparent;
-		box-shadow: 0 12px 40px rgba(212, 175, 55, 0.35);
+		background: var(--cyan);
+		color: #030712;
+		border-color: var(--cyan);
+		box-shadow: 0 12px 35px rgba(56, 189, 248, 0.4);
+		transform: translateY(-2px);
 	}
+
 	@media (max-width: 640px) {
 		.fab-present {
-			right: 1rem;
-			bottom: 5rem;
-			padding: 0.6rem 1rem;
-			font-size: 0.8rem;
-			gap: 0.4rem;
+			left: 1rem;
+			bottom: 4.8rem;
+			padding: 0.5rem 0.95rem;
+			font-size: 0.72rem;
 		}
 	}
 </style>
