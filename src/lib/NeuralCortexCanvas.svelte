@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { lang } from '$lib/i18n';
+	import * as THREE from 'three';
 
 	let { active = 0 }: { active?: number } = $props();
 	let canvas: HTMLCanvasElement;
@@ -8,325 +9,518 @@
 	let ready = $state(false);
 	let paused = $state(false);
 	let reduced = $state(false);
-	let refresh = $state<(() => void) | undefined>();
-
-	type Point = { x: number; y: number };
-	type Branch = { from: Point; bend: Point; to: Point; width: number; color: string };
-
-	const colors = ['#38bdf8', '#818cf8', '#00f0ff', '#e2b857'];
-
-	// Strategic soma anchors across the full hero composition (coordinates in 1400x800 space)
-	const somas = [
-		{ x: 180, y: 160, color: colors[0], radius: 10, label: 'CORE' },
-		{ x: 520, y: 120, color: colors[1], radius: 8, label: 'AI' },
-		{ x: 260, y: 640, color: colors[2], radius: 9, label: 'INFRA' },
-		{ x: 620, y: 660, color: colors[3], radius: 8, label: 'SEC' },
-		{ x: 920, y: 220, color: colors[0], radius: 11, label: 'NODE-1' },
-		{ x: 1220, y: 240, color: colors[1], radius: 11, label: 'NODE-2' },
-		{ x: 940, y: 560, color: colors[2], radius: 11, label: 'NODE-3' },
-		{ x: 1240, y: 580, color: colors[3], radius: 11, label: 'NODE-4' },
-		{ x: 1080, y: 400, color: '#a5f3fc', radius: 14, label: 'CORTEX-HUB' }
-	];
+	let setCameraTarget: ((index: number) => void) | undefined;
 
 	$effect(() => {
-		active;
-		paused;
-		refresh?.();
+		if (setCameraTarget) {
+			setCameraTarget(active);
+		}
 	});
 
 	onMount(() => {
-		const ctx = canvas.getContext('2d');
-		if (!ctx) return;
 		const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+		reduced = media.matches;
+
+		let renderer: THREE.WebGLRenderer | null = null;
+		let animId = 0;
 		let visible = false;
-		let frame = 0;
-		let last = 0;
-		let time = 0;
-		let width = 0;
-		let height = 0;
-		let mouseX = -1000;
-		let mouseY = -1000;
+		let destroyed = false;
 
-		let seed = 91823;
-		const random = () => {
-			seed = (seed * 16807) % 2147483647;
-			return (seed - 1) / 2147483646;
-		};
+		// 1. Scene, Camera, Renderer
+		const scene = new THREE.Scene();
+		const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+		camera.position.set(0, 0, 8.5);
 
-		const branches: Branch[] = [];
+		renderer = new THREE.WebGLRenderer({
+			canvas,
+			alpha: true,
+			antialias: true,
+			powerPreference: 'high-performance'
+		});
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
-		// Generate organic dendritic arborization
-		function grow(from: Point, angle: number, length: number, depth: number, color: string) {
-			const to = { x: from.x + Math.cos(angle) * length, y: from.y + Math.sin(angle) * length };
-			const bend = {
-				x: (from.x + to.x) / 2 + (random() - 0.5) * length * 0.5,
-				y: (from.y + to.y) / 2 + (random() - 0.5) * length * 0.5
-			};
-			branches.push({ from, bend, to, width: depth * 0.6, color });
-			if (depth > 1) {
-				grow(to, angle - 0.32 - random() * 0.35, length * 0.6, depth - 1, color);
-				grow(to, angle + 0.32 + random() * 0.35, length * 0.6, depth - 1, color);
-			}
-		}
-
-		for (const soma of somas) {
-			for (let arm = 0; arm < 4; arm++) {
-				grow(soma, arm * Math.PI * 0.5 + random() * 0.6, 50 + random() * 35, 3, soma.color);
-			}
-		}
-
-		// Connective Axons bridging the neural cortex
-		const axons: Branch[] = [
-			// Left cluster to right cluster
-			{ from: somas[0], bend: { x: 380, y: 110 }, to: somas[1], width: 1.5, color: colors[0] },
-			{ from: somas[1], bend: { x: 740, y: 150 }, to: somas[4], width: 1.8, color: colors[1] },
-			{ from: somas[2], bend: { x: 440, y: 680 }, to: somas[3], width: 1.5, color: colors[2] },
-			{ from: somas[3], bend: { x: 780, y: 640 }, to: somas[6], width: 1.8, color: colors[3] },
-			{ from: somas[0], bend: { x: 190, y: 400 }, to: somas[2], width: 1.5, color: colors[0] },
-			// Right synaptic hub connections
-			{ from: somas[4], bend: { x: 990, y: 310 }, to: somas[8], width: 2.2, color: colors[0] },
-			{ from: somas[5], bend: { x: 1170, y: 320 }, to: somas[8], width: 2.2, color: colors[1] },
-			{ from: somas[6], bend: { x: 1000, y: 490 }, to: somas[8], width: 2.2, color: colors[2] },
-			{ from: somas[7], bend: { x: 1180, y: 500 }, to: somas[8], width: 2.2, color: colors[3] },
-			{ from: somas[4], bend: { x: 1070, y: 210 }, to: somas[5], width: 1.4, color: colors[1] },
-			{ from: somas[6], bend: { x: 1090, y: 590 }, to: somas[7], width: 1.4, color: colors[3] }
+		// Palette
+		const palette = [
+			new THREE.Color('#38bdf8'), // 0: Core Full-Stack (Cyan)
+			new THREE.Color('#818cf8'), // 1: AI Vision (Indigo)
+			new THREE.Color('#00f0ff'), // 2: Cloud Infra (Bright Cyan)
+			new THREE.Color('#e2b857'), // 3: Cybersecurity (Gold)
+			new THREE.Color('#34d399') // 4: Synaptic Bridge (Emerald)
 		];
 
-		const pointOn = (branch: Branch, p: number): Point => ({
-			x: (1 - p) ** 2 * branch.from.x + 2 * (1 - p) * p * branch.bend.x + p ** 2 * branch.to.x,
-			y: (1 - p) ** 2 * branch.from.y + 2 * (1 - p) * p * branch.bend.y + p ** 2 * branch.to.y
-		});
+		// 2. 3D Node Topology (coordinates in 3D world space)
+		const nodeDefs = [
+			{ pos: new THREE.Vector3(-2.6, 1.2, 0.4), color: palette[0], size: 0.32, name: 'CORE-01' },
+			{ pos: new THREE.Vector3(-1.1, 2.0, -0.6), color: palette[1], size: 0.28, name: 'AI-02' },
+			{ pos: new THREE.Vector3(-2.2, -1.3, 0.6), color: palette[2], size: 0.3, name: 'INFRA-03' },
+			{ pos: new THREE.Vector3(-0.7, -1.8, -0.4), color: palette[3], size: 0.28, name: 'SEC-04' },
+			{ pos: new THREE.Vector3(1.8, 0.2, 0.5), color: palette[0], size: 0.42, name: 'CORTEX-HUB' },
+			{ pos: new THREE.Vector3(3.2, 1.4, -0.3), color: palette[1], size: 0.3, name: 'NODE-A' },
+			{ pos: new THREE.Vector3(3.4, -1.2, 0.3), color: palette[3], size: 0.3, name: 'NODE-B' }
+		];
 
-		function stroke(branch: Branch) {
-			if (!ctx) return;
-			ctx.beginPath();
-			ctx.moveTo(branch.from.x, branch.from.y);
-			ctx.quadraticCurveTo(branch.bend.x, branch.bend.y, branch.to.x, branch.to.y);
-			ctx.stroke();
+		const nodeGroup = new THREE.Group();
+		scene.add(nodeGroup);
+
+		interface NodeMesh {
+			core: THREE.Mesh;
+			halo: THREE.Mesh;
+			ring: THREE.Mesh;
+			baseScale: number;
+			color: THREE.Color;
+			targetPos: THREE.Vector3;
 		}
 
-		function draw() {
-			if (!ctx || !width || !height) return;
-			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-			ctx.clearRect(0, 0, width, height);
+		const nodeMeshes: NodeMesh[] = [];
 
-			ctx.save();
-			ctx.scale(width / 1400, height / 800);
-			ctx.lineCap = 'round';
+		const sphereGeo = new THREE.IcosahedronGeometry(1, 2);
+		const ringGeo = new THREE.TorusGeometry(1.4, 0.035, 8, 32);
 
-			// Draw dendritic tree
-			for (const branch of branches) {
-				ctx.strokeStyle = branch.color;
-				ctx.globalAlpha = 0.16;
-				ctx.lineWidth = branch.width;
-				stroke(branch);
+		nodeDefs.forEach((def) => {
+			// Inner glowing core
+			const coreMat = new THREE.MeshBasicMaterial({
+				color: def.color,
+				wireframe: true,
+				transparent: true,
+				opacity: 0.85
+			});
+			const core = new THREE.Mesh(sphereGeo, coreMat);
+
+			// Outer glowing membrane
+			const haloMat = new THREE.MeshBasicMaterial({
+				color: def.color,
+				transparent: true,
+				opacity: 0.25,
+				blending: THREE.AdditiveBlending
+			});
+			const halo = new THREE.Mesh(sphereGeo, haloMat);
+			halo.scale.setScalar(1.35);
+
+			// Orbiting synaptic ring
+			const ringMat = new THREE.MeshBasicMaterial({
+				color: def.color,
+				transparent: true,
+				opacity: 0.6,
+				blending: THREE.AdditiveBlending
+			});
+			const ring = new THREE.Mesh(ringGeo, ringMat);
+
+			const nodeContainer = new THREE.Group();
+			nodeContainer.position.copy(def.pos);
+			nodeContainer.scale.setScalar(def.size);
+			nodeContainer.add(core);
+			nodeContainer.add(halo);
+			nodeContainer.add(ring);
+			nodeGroup.add(nodeContainer);
+
+			nodeMeshes.push({
+				core,
+				halo,
+				ring,
+				baseScale: def.size,
+				color: def.color,
+				targetPos: def.pos
+			});
+		});
+
+		// 3. 3D Neural Axons (Curves connecting nodes in 3D)
+		const connections: [number, number, THREE.Vector3][] = [
+			[0, 1, new THREE.Vector3(-1.8, 1.8, 0.2)],
+			[0, 2, new THREE.Vector3(-2.6, -0.1, 0.8)],
+			[1, 3, new THREE.Vector3(-1.0, 0.1, -0.7)],
+			[2, 3, new THREE.Vector3(-1.4, -1.9, 0.3)],
+			[0, 4, new THREE.Vector3(-0.3, 0.9, 0.8)],
+			[1, 4, new THREE.Vector3(0.5, 1.3, -0.2)],
+			[2, 4, new THREE.Vector3(-0.2, -0.6, 0.7)],
+			[3, 4, new THREE.Vector3(0.7, -0.9, -0.1)],
+			[4, 5, new THREE.Vector3(2.6, 0.9, 0.3)],
+			[4, 6, new THREE.Vector3(2.7, -0.6, 0.6)],
+			[5, 6, new THREE.Vector3(3.6, 0.1, -0.2)]
+		];
+
+		const axonCurves: THREE.QuadraticBezierCurve3[] = [];
+		const axonGroup = new THREE.Group();
+		scene.add(axonGroup);
+
+		connections.forEach(([fromIdx, toIdx, ctrl]) => {
+			const p0 = nodeDefs[fromIdx].pos;
+			const p2 = nodeDefs[toIdx].pos;
+			const curve = new THREE.QuadraticBezierCurve3(p0, ctrl, p2);
+			axonCurves.push(curve);
+
+			const pts = curve.getPoints(36);
+			const geom = new THREE.BufferGeometry().setFromPoints(pts);
+			const mat = new THREE.LineBasicMaterial({
+				color: nodeDefs[fromIdx].color,
+				transparent: true,
+				opacity: 0.3,
+				blending: THREE.AdditiveBlending
+			});
+			const line = new THREE.Line(geom, mat);
+			axonGroup.add(line);
+		});
+
+		// 4. Traveling Action Potentials (3D Pulses)
+		interface Pulse {
+			curveIdx: number;
+			progress: number;
+			speed: number;
+			mesh: THREE.Mesh;
+		}
+
+		const pulseGroup = new THREE.Group();
+		scene.add(pulseGroup);
+
+		const pulseGeo = new THREE.SphereGeometry(0.065, 8, 8);
+		const pulseMat = new THREE.MeshBasicMaterial({
+			color: 0xffffff,
+			blending: THREE.AdditiveBlending
+		});
+
+		const pulses: Pulse[] = [];
+		const pulseCount = 18;
+
+		for (let i = 0; i < pulseCount; i++) {
+			const curveIdx = i % axonCurves.length;
+			const mesh = new THREE.Mesh(pulseGeo, pulseMat);
+			pulseGroup.add(mesh);
+			pulses.push({
+				curveIdx,
+				progress: Math.random(),
+				speed: 0.18 + Math.random() * 0.22,
+				mesh
+			});
+		}
+
+		// 5. 3D Synaptic Starfield / Ambient Particle Cloud
+		const particleCount = 650;
+		const particleGeo = new THREE.BufferGeometry();
+		const positions = new Float32Array(particleCount * 3);
+		const colorsArr = new Float32Array(particleCount * 3);
+
+		for (let i = 0; i < particleCount; i++) {
+			positions[i * 3] = (Math.random() - 0.5) * 14;
+			positions[i * 3 + 1] = (Math.random() - 0.5) * 9;
+			positions[i * 3 + 2] = (Math.random() - 0.5) * 8 - 1;
+
+			const c = palette[Math.floor(Math.random() * palette.length)];
+			colorsArr[i * 3] = c.r;
+			colorsArr[i * 3 + 1] = c.g;
+			colorsArr[i * 3 + 2] = c.b;
+		}
+
+		particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+		particleGeo.setAttribute('color', new THREE.BufferAttribute(colorsArr, 3));
+
+		// Soft circular particle texture generated via tiny canvas
+		const pCanvas = document.createElement('canvas');
+		pCanvas.width = 32;
+		pCanvas.height = 32;
+		const pCtx = pCanvas.getContext('2d');
+		if (pCtx) {
+			const grad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
+			grad.addColorStop(0, 'rgba(255,255,255,1)');
+			grad.addColorStop(0.3, 'rgba(255,255,255,0.7)');
+			grad.addColorStop(1, 'rgba(255,255,255,0)');
+			pCtx.fillStyle = grad;
+			pCtx.fillRect(0, 0, 32, 32);
+		}
+		const pTexture = new THREE.CanvasTexture(pCanvas);
+
+		const particleMat = new THREE.PointsMaterial({
+			size: 0.12,
+			map: pTexture,
+			vertexColors: true,
+			transparent: true,
+			opacity: 0.65,
+			blending: THREE.AdditiveBlending,
+			depthWrite: false
+		});
+
+		const particleField = new THREE.Points(particleGeo, particleMat);
+		scene.add(particleField);
+
+		// 6. Interactive Mouse Parallax & Camera Tracking
+		let targetCameraX = 0;
+		let targetCameraY = 0;
+		let mouseNormX = 0;
+		let mouseNormY = 0;
+
+		const onMouseMove = (e: MouseEvent) => {
+			if (reduced || paused) return;
+			const rect = canvas.getBoundingClientRect();
+			mouseNormX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+			mouseNormY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+
+			targetCameraX = mouseNormX * 0.7;
+			targetCameraY = mouseNormY * 0.45;
+		};
+
+		window.addEventListener('mousemove', onMouseMove, { passive: true });
+
+		// Camera focus shifts smoothly based on active domain
+		setCameraTarget = (idx: number) => {
+			if (idx >= 0 && idx < 4) {
+				const n = nodeMeshes[idx];
+				// Highlight target node
+				nodeMeshes.forEach((m, i) => {
+					const isTarget = i === idx;
+					m.ring.scale.setScalar(isTarget ? 1.6 : 1.0);
+					(m.core.material as THREE.MeshBasicMaterial).opacity = isTarget ? 1.0 : 0.75;
+					(m.halo.material as THREE.MeshBasicMaterial).opacity = isTarget ? 0.5 : 0.2;
+				});
 			}
+		};
 
-			// Draw primary axon highways
-			for (const branch of axons) {
-				ctx.strokeStyle = branch.color;
-				ctx.globalAlpha = 0.35;
-				ctx.lineWidth = branch.width;
-				stroke(branch);
-			}
+		// 7. Resize handling
+		const resize = () => {
+			if (!canvas || !renderer) return;
+			const w = host.clientWidth || window.innerWidth;
+			const h = host.clientHeight || window.innerHeight;
+			camera.aspect = w / h;
+			camera.updateProjectionMatrix();
+			renderer.setSize(w, h, false);
+		};
 
-			// Draw traveling action potential electrical pulses
-			for (let i = 0; i < axons.length; i++) {
-				const branch = axons[i];
-				const speed = 0.00015;
-				const progress = (time * speed + i * 0.14) % 1;
+		const ro = new ResizeObserver(resize);
+		ro.observe(host);
+		resize();
 
-				for (let trail = 0; trail < 8; trail++) {
-					const tPos = Math.max(0, progress - trail * 0.012);
-					const pt = pointOn(branch, tPos);
-					ctx.globalAlpha = (1 - trail / 8) * 0.85;
-					ctx.fillStyle = branch.color;
-					ctx.beginPath();
-					ctx.arc(pt.x, pt.y, 2.8 - trail * 0.22, 0, Math.PI * 2);
-					ctx.fill();
+		// 8. Visibility & Intersection handling (100% battery efficient)
+		const io = new IntersectionObserver(
+			(entries) => {
+				visible = entries.some((e) => e.isIntersecting);
+				if (visible && !paused && !reduced) {
+					startLoop();
+				} else {
+					cancelAnimationFrame(animId);
 				}
+			},
+			{ threshold: 0.05 }
+		);
+		io.observe(canvas);
+
+		const onVisibility = () => {
+			if (document.hidden) {
+				cancelAnimationFrame(animId);
+			} else if (visible && !paused && !reduced) {
+				startLoop();
 			}
+		};
+		document.addEventListener('visibilitychange', onVisibility);
 
-			// Draw somas (cell bodies)
-			somas.forEach((soma, i) => {
-				const isSelectedNode = i >= 4 && i <= 7 && i - 4 === active;
-				const isHub = i === 8;
-				const baseRadius = soma.radius;
-				const pulseGlow = Math.sin(time * 0.002 + i) * 4;
-				const glowRadius = isSelectedNode ? 42 : isHub ? 36 : baseRadius + 18 + pulseGlow;
+		// 9. Animation Loop
+		let lastTime = performance.now();
 
-				// Bioluminescent halo
-				const glow = ctx.createRadialGradient(soma.x, soma.y, 0, soma.x, soma.y, glowRadius);
-				glow.addColorStop(0, soma.color + (isSelectedNode ? 'cc' : '77'));
-				glow.addColorStop(0.35, soma.color + (isSelectedNode ? '44' : '22'));
-				glow.addColorStop(1, soma.color + '00');
+		function renderFrame(now: number) {
+			const dt = Math.min((now - lastTime) / 1000, 0.1);
+			lastTime = now;
 
-				ctx.globalAlpha = 1;
-				ctx.fillStyle = glow;
-				ctx.beginPath();
-				ctx.arc(soma.x, soma.y, glowRadius, 0, Math.PI * 2);
-				ctx.fill();
+			// Camera smooth damping
+			camera.position.x += (targetCameraX - camera.position.x) * 0.05;
+			camera.position.y += (targetCameraY - camera.position.y) * 0.05;
+			camera.lookAt(0, 0, 0);
 
-				// Soma core
-				ctx.fillStyle = isSelectedNode ? '#ffffff' : soma.color;
-				ctx.beginPath();
-				for (let n = 0; n <= 10; n++) {
-					const a = (n / 10) * Math.PI * 2;
-					const r = baseRadius + Math.sin(a * 3 + i) * 1.5;
-					ctx.lineTo(soma.x + Math.cos(a) * r, soma.y + Math.sin(a) * r);
-				}
-				ctx.closePath();
-				ctx.fill();
+			// Rotate particle field gently
+			particleField.rotation.y += 0.0008;
+			particleField.rotation.x += 0.0004;
+
+			// Animate nodes & rings
+			nodeMeshes.forEach((mesh, i) => {
+				mesh.core.rotation.y += 0.012 * (i % 2 === 0 ? 1 : -1);
+				mesh.core.rotation.x += 0.008;
+				mesh.ring.rotation.x += 0.015;
+				mesh.ring.rotation.z += 0.01;
 			});
 
-			ctx.restore();
+			// Move action potential pulses along 3D axons
+			pulses.forEach((p) => {
+				p.progress += p.speed * dt;
+				if (p.progress >= 1) {
+					p.progress = 0;
+					p.curveIdx = (p.curveIdx + 1) % axonCurves.length;
+				}
+				const curve = axonCurves[p.curveIdx];
+				const pos = curve.getPoint(p.progress);
+				p.mesh.position.copy(pos);
+			});
+
+			if (renderer) {
+				renderer.render(scene, camera);
+			}
 		}
 
-		function animate(now: number) {
-			frame = 0;
-			time += last ? Math.min(now - last, 40) : 0;
-			last = now;
-			draw();
-			frame = requestAnimationFrame(animate);
+		function loop(now: number) {
+			renderFrame(now);
+			if (visible && !paused && !reduced && !destroyed) {
+				animId = requestAnimationFrame(loop);
+			}
 		}
 
-		function synchronize() {
-			cancelAnimationFrame(frame);
-			frame = 0;
-			last = 0;
-			if (!visible || document.hidden) return;
-			draw();
-			if (!paused && !reduced) frame = requestAnimationFrame(animate);
+		function startLoop() {
+			cancelAnimationFrame(animId);
+			lastTime = performance.now();
+			animId = requestAnimationFrame(loop);
 		}
 
-		function resize() {
-			if (!host) return;
-			const bounds = host.getBoundingClientRect();
-			width = bounds.width;
-			height = bounds.height;
-			const dpr = Math.min(window.devicePixelRatio || 1, 2);
-			canvas.width = Math.round(width * dpr);
-			canvas.height = Math.round(height * dpr);
-			synchronize();
-		}
-
-		const motionChange = () => {
-			reduced = media.matches;
-			synchronize();
-		};
-		motionChange();
-
-		const resizeObserver = new ResizeObserver(resize);
-		resizeObserver.observe(host);
-
-		const intersectionObserver = new IntersectionObserver(([entry]) => {
-			visible = entry.isIntersecting;
-			synchronize();
-		});
-		intersectionObserver.observe(host);
-
-		const handleMouseMove = (e: MouseEvent) => {
-			const rect = canvas.getBoundingClientRect();
-			mouseX = ((e.clientX - rect.left) / width) * 1400;
-			mouseY = ((e.clientY - rect.top) / height) * 800;
-		};
-
-		window.addEventListener('mousemove', handleMouseMove, { passive: true });
-		document.addEventListener('visibilitychange', synchronize);
-		media.addEventListener('change', motionChange);
-		refresh = synchronize;
-		resize();
 		ready = true;
+		startLoop();
 
+		// Cleanup on unmount
 		return () => {
-			cancelAnimationFrame(frame);
-			window.removeEventListener('mousemove', handleMouseMove);
-			resizeObserver.disconnect();
-			intersectionObserver.disconnect();
-			document.removeEventListener('visibilitychange', synchronize);
-			media.removeEventListener('change', motionChange);
-			refresh = undefined;
+			destroyed = true;
+			cancelAnimationFrame(animId);
+			ro.disconnect();
+			io.disconnect();
+			window.removeEventListener('mousemove', onMouseMove);
+			document.removeEventListener('visibilitychange', onVisibility);
+
+			scene.clear();
+			sphereGeo.dispose();
+			ringGeo.dispose();
+			pulseGeo.dispose();
+			pulseMat.dispose();
+			particleGeo.dispose();
+			particleMat.dispose();
+			pTexture.dispose();
+			renderer?.dispose();
 		};
 	});
 </script>
 
-<div class="cortex-canvas-host" bind:this={host}>
-	<canvas bind:this={canvas} aria-hidden="true"></canvas>
-	<div class="cortex-motion-badge">
-		{#if reduced}
-			<span class="motion-status"
-				>{$lang === 'ms' ? 'PETA NEURAL STATIK' : 'STATIC NEURAL MAP'}</span
-			>
-		{:else if ready}
-			<button
-				type="button"
-				class="pulse-toggle-btn"
-				aria-pressed={paused}
-				onclick={() => (paused = !paused)}
-				title={$lang === 'ms' ? 'Kawal Animasi Denyutan' : 'Toggle Pulse Animation'}
-			>
-				<span class="btn-icon" aria-hidden="true">{paused ? '▷' : 'Ⅱ'}</span>
-				<span>{$lang === 'ms' ? (paused ? 'Sambung' : 'Jeda') : paused ? 'Resume' : 'Pause'}</span>
-			</button>
-		{/if}
+<div class="cortex-host" bind:this={host} class:is-ready={ready}>
+	<canvas bind:this={canvas} class="cortex-gl"></canvas>
+
+	<!-- Ambient Bioluminescent Depth Halos -->
+	<div class="ambient-glow cyan-halo" aria-hidden="true"></div>
+	<div class="ambient-glow violet-halo" aria-hidden="true"></div>
+
+	<!-- Accessible 3D Controls -->
+	<div class="canvas-telemetry">
+		<button
+			type="button"
+			class="cortex-ctrl-btn"
+			aria-pressed={paused}
+			onclick={() => {
+				paused = !paused;
+			}}
+		>
+			<span class="ctrl-indicator" class:active={!paused}></span>
+			<span class="ctrl-text">
+				{paused
+					? $lang === 'ms'
+						? '3D JEDA'
+						: '3D PAUSED'
+					: $lang === 'ms'
+						? '3D REALTIME'
+						: '3D REALTIME'}
+			</span>
+		</button>
 	</div>
 </div>
 
 <style>
-	.cortex-canvas-host {
+	.cortex-host {
 		position: absolute;
 		inset: 0;
-		pointer-events: none;
-		z-index: 0;
+		width: 100%;
+		height: 100%;
 		overflow: hidden;
+		pointer-events: none;
+		z-index: 1;
+		opacity: 0;
+		transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 	}
-	canvas {
+	.cortex-host.is-ready {
+		opacity: 1;
+	}
+
+	.cortex-gl {
 		position: absolute;
 		inset: 0;
 		width: 100%;
 		height: 100%;
 		display: block;
+		pointer-events: auto;
 	}
-	.cortex-motion-badge {
+
+	/* Ambient Depth Lighting */
+	.ambient-glow {
 		position: absolute;
-		bottom: 1rem;
-		right: 1.5rem;
+		border-radius: 50%;
+		pointer-events: none;
+		filter: blur(80px);
+		opacity: 0.18;
+		mix-blend-mode: screen;
+		z-index: 0;
+	}
+	.cyan-halo {
+		width: 480px;
+		height: 480px;
+		top: 10%;
+		left: 15%;
+		background: radial-gradient(circle, rgba(56, 189, 248, 0.4) 0%, transparent 70%);
+	}
+	.violet-halo {
+		width: 540px;
+		height: 540px;
+		bottom: 12%;
+		right: 15%;
+		background: radial-gradient(circle, rgba(129, 140, 248, 0.35) 0%, transparent 70%);
+	}
+
+	/* Telemetry Toggle Button */
+	.canvas-telemetry {
+		position: absolute;
+		bottom: 1.5rem;
+		left: 2rem;
 		z-index: 10;
 		pointer-events: auto;
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		letter-spacing: 0.05em;
 	}
-	.pulse-toggle-btn {
+	.cortex-ctrl-btn {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
-		padding: 0.35rem 0.65rem;
-		min-height: 36px;
-		background: rgba(7, 13, 25, 0.85);
-		border: 1px solid rgba(56, 189, 248, 0.25);
-		border-radius: 6px;
-		color: var(--text-secondary);
+		gap: 0.5rem;
+		padding: 0.4rem 0.85rem;
+		border-radius: 999px;
+		background: rgba(12, 21, 38, 0.8);
+		border: 1px solid rgba(148, 163, 184, 0.2);
+		color: var(--text-muted);
+		font-family: var(--font-mono);
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
 		cursor: pointer;
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 		transition: all 0.2s ease;
 	}
-	.pulse-toggle-btn:hover {
+	.cortex-ctrl-btn:hover {
 		border-color: var(--cyan);
 		color: var(--white);
-		box-shadow: 0 0 14px rgba(56, 189, 248, 0.2);
+		transform: translateY(-1px);
 	}
-	.btn-icon {
-		color: var(--cyan);
-		font-weight: bold;
+	.cortex-ctrl-btn:focus-visible {
+		outline: 2px solid var(--cyan);
+		outline-offset: 2px;
 	}
-	.motion-status {
-		color: var(--text-muted);
-		background: rgba(7, 13, 25, 0.7);
-		padding: 0.3rem 0.6rem;
-		border-radius: 4px;
-		border: 1px solid rgba(148, 163, 184, 0.15);
+	.ctrl-indicator {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #64748b;
+		transition: all 0.25s ease;
+	}
+	.ctrl-indicator.active {
+		background: var(--cyan);
+		box-shadow: 0 0 8px var(--cyan);
+	}
+
+	@media (max-width: 768px) {
+		.canvas-telemetry {
+			bottom: 1rem;
+			left: 1rem;
+		}
 	}
 </style>
