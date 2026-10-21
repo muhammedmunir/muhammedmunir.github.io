@@ -47,28 +47,7 @@
 </svelte:head>
 
 <div class="neural-page">
-	<div class="neural-spine" aria-hidden="true">
-		<svg viewBox="0 0 160 1000" preserveAspectRatio="none">
-			<defs
-				><linearGradient id="spine-color" x1="0" y1="0" x2="0" y2="1"
-					><stop stop-color="#67e8f9" /><stop offset="0.5" stop-color="#b5a1ff" /><stop
-						offset="1"
-						stop-color="#efd18c"
-					/></linearGradient
-				></defs
-			>
-			<path
-				class="spine-trunk"
-				d="M80 0 C20 100 130 140 70 240 S130 410 75 510 S20 680 85 770 S125 910 75 1000"
-			/>
-			{#each [160, 350, 550, 750, 920] as y}
-				<path
-					d={`M80 ${y} q-25 -35 -58 -45 m35 20 -5 -30 M80 ${y} q25 30 64 35 m-38 -16 10 30 M80 ${y} q-20 35 -54 45`}
-				/>
-				<circle cx="80" cy={y} r="4" />
-			{/each}
-		</svg>
-	</div>
+	<div class="neural-ambient-mesh" aria-hidden="true"></div>
 	<Hero />
 	<Experience />
 	<Projects />
@@ -112,36 +91,30 @@
 		position: relative;
 		isolation: isolate;
 	}
-	.neural-spine {
+	.neural-ambient-mesh {
 		position: absolute;
-		inset: 20rem auto 0 max(0px, calc((100vw - 1400px) / 2));
-		width: 100px;
+		inset: 0;
 		pointer-events: none;
 		z-index: -1;
-		opacity: 0.42;
-	}
-	.neural-spine svg {
-		width: 100%;
-		height: 100%;
-		overflow: visible;
-	}
-	.neural-spine path {
-		fill: none;
-		stroke: url(#spine-color);
-		stroke-width: 1;
-		vector-effect: non-scaling-stroke;
-	}
-	.neural-spine .spine-trunk {
-		stroke-width: 2;
-	}
-	.neural-spine circle {
-		fill: #a5eaf2;
-	}
-	@media (max-width: 640px) {
-		.neural-spine {
-			width: 28px;
-			opacity: 0.3;
-		}
+		background-image:
+			radial-gradient(circle at 15% 12%, rgba(56, 189, 248, 0.05) 0%, transparent 45%),
+			radial-gradient(circle at 85% 35%, rgba(129, 140, 248, 0.04) 0%, transparent 45%),
+			radial-gradient(circle at 20% 65%, rgba(16, 185, 129, 0.03) 0%, transparent 40%),
+			radial-gradient(circle at 80% 88%, rgba(226, 184, 87, 0.04) 0%, transparent 45%),
+			radial-gradient(rgba(56, 189, 248, 0.08) 1px, transparent 1px);
+		background-size:
+			100% 100%,
+			100% 100%,
+			100% 100%,
+			100% 100%,
+			48px 48px;
+		background-position:
+			0 0,
+			0 0,
+			0 0,
+			0 0,
+			0 0;
+		opacity: 0.75;
 	}
 	.fab-present {
 		position: fixed;

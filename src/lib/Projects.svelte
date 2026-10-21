@@ -921,21 +921,28 @@
 
 	.project-card {
 		position: relative;
-		border-radius: 18px;
-		padding: 1.8rem;
-		background: rgba(11, 20, 38, 0.75);
-		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 16px;
+		padding: 1.75rem;
+		background: rgba(12, 21, 38, 0.75);
+		border: 1px solid rgba(148, 163, 184, 0.14);
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
 		overflow: hidden;
-		transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow: none;
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		box-shadow:
+			0 14px 40px -10px rgba(0, 0, 0, 0.6),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 	.project-card:hover {
-		transform: translateY(-5px);
+		transform: translateY(-4px);
 		border-color: var(--proj-accent);
-		box-shadow: none;
+		box-shadow:
+			0 20px 48px -10px rgba(0, 0, 0, 0.75),
+			0 0 24px color-mix(in srgb, var(--proj-accent) 20%, transparent),
+			inset 0 1px 0 rgba(255, 255, 255, 0.16);
 	}
 
 	.card-header-row {
