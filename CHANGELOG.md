@@ -2,14 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-- 2026-10-21 - feat(redesign): Bioluminescent Neural Cortex, Neural Console & Synaptic Deck overhaul
-  - Living Bioluminescent Neural Cortex (`src/lib/NeuralCortexCanvas.svelte`): Deterministic branching axon topology (7 somas, 245 dendrite bifurcations), traveling action potential trails (cyan/violet/gold), DPR cap, visibility/offscreen auto-suspend, user pause toggle, and static SVG fallback.
-  - Interactive Connectome Hero (`src/lib/Hero.svelte`): 4-node spatial connectome with native buttons (`aria-pressed`), active state inspection viewport, and SVG synaptic connections.
-  - Neural Cortex Console (`src/lib/JarvisHUD.svelte` & `src/lib/cortex-data.ts`): Full rebuild with native `<dialog>` modal, 3 operation modes (Neural Query with local keyword disclosure, Architecture Trace with verified project tech stacks, Executive CLI), speech synthesis caching with opt-in controls, and collision-free `Ctrl/Cmd + K/J` shortcuts.
-  - Synaptic Pitch Deck (`src/lib/Presentation.svelte` & `src/lib/deck/*`): 8 executive chapters with native modal isolation, accessible focus restoration to actual trigger, isolated `<details>` keyboard controls, and wrapped bilingual rendering.
-  - Section Cohesion (`Experience.svelte`, `Projects.svelte`, `Skills.svelte`, `Contact.svelte`): Replaced heavy blurred glass boxes with clean charcoal surfaces, cyan axon timeline rails, project index numbers (P/01-P/18), native modal project specs, domain connection paths, and fixed the Web3Forms checkbox hydration bug (`bind:checked`).
-  - Audio Telemetry (`src/lib/sound.ts`): Audio defaults to OFF (opt-in) with persistent `localStorage` state.
-  - Verification & Accessibility: 19/19 Playwright regression tests passed; real a11y-loop CLI audit (5 baseline passes + 24 interaction states); 0 errors and 0 warnings on `svelte-check`; successful static production build.
+- 2026-10-21 - feat(redesign): Full-Bleed Bioluminescent Neural Cortex, De-collision & Visual Soul Elevation
+  - Removed 12,000px distorted SVG spine (`src/routes/+page.svelte`) which previously collided with headings, buttons, and content across viewports; replaced with high-performance ambient neural matrix mesh.
+  - Full-Bleed Living Neural Cortex (`src/lib/NeuralCortexCanvas.svelte`): Expanded from a cramped 440px side-box into an ambient neuro-synaptic canvas spanning the entire Hero with 9 strategic somas, 245 dendrites, traveling electrical pulse trails (cyan/violet/gold), mouse interactivity, DPR cap, and pause toggle.
+  - Tactical Architecture Terminal (`src/lib/Hero.svelte`): Eliminated 270px vertical asymmetry and overlapping percentage buttons; replaced with a precision 2x2 Synaptic Selector Grid (CORE-01, AI-02, INFRA-03, SEC-04), live telemetry oscilloscope, and verified stack chips. Desktop hero height balanced to 900px (100vh) without vertical clipping; mobile hero streamlined without 2,000px scroll trap.
+  - Re-elevated Visual Craft & Lighting (`Experience.svelte`, `Projects.svelte`, `Skills.svelte`): Restored deep obsidian glass depth, specular top border highlights (`inset 0 1px 0 rgba(255, 255, 255, 0.15)`), vibrant text gradients, glowing synaptic beacons with pulse rings, and holographic hover elevation.
+  - Neural Cortex Console (`src/lib/JarvisHUD.svelte` & `src/lib/cortex-data.ts`): Native `<dialog>` modal, 3 operation modes (Neural Query, Architecture Trace, Executive CLI), speech synthesis caching, and collision-free `Ctrl/Cmd + K/J` shortcuts.
+  - Synaptic Pitch Deck (`src/lib/Presentation.svelte` & `src/lib/deck/*`): 8 executive chapters with native modal isolation, accessible focus restoration, and wrapped bilingual rendering.
+  - Verified with 0 errors/warnings on `svelte-check`, successful static build, and 19/19 passing Playwright regression checks across 1440px, 390px, and 320px.
 
 - 2026-10-15 - feat(redesign): major portfolio overhaul to Neural Mission Control & Sovereign Systems Deck (Option 1)
   - Typography upgraded to Space Grotesk (headings), Inter (body), and JetBrains Mono (telemetry/code) in `src/app.html`.

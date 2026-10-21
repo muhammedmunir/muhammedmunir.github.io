@@ -433,18 +433,28 @@
 
 	.matrix-column {
 		padding: 1.85rem;
-		background: rgba(10, 18, 34, 0.78);
+		background: rgba(12, 21, 38, 0.75);
 		border: 1px solid rgba(148, 163, 184, 0.14);
 		border-top: 3px solid var(--dom-accent);
 		border-radius: 16px;
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		box-shadow:
+			0 14px 40px -10px rgba(0, 0, 0, 0.6),
+			inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 	.matrix-column:hover {
 		border-color: var(--dom-accent);
-		background: rgba(13, 24, 46, 0.88);
-		box-shadow: none;
+		background: rgba(15, 28, 48, 0.9);
+		transform: translateY(-3px);
+		box-shadow:
+			0 20px 48px -10px rgba(0, 0, 0, 0.75),
+			0 0 25px color-mix(in srgb, var(--dom-accent) 20%, transparent),
+			inset 0 1px 0 rgba(255, 255, 255, 0.15);
 	}
 
 	.col-head {
