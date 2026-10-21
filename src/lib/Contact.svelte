@@ -1,14 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gsap } from 'gsap';
-	import { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import { lang } from '$lib/i18n';
 	import { translations } from '$lib/translations';
 	import { derived } from 'svelte/store';
 	import { playConfirm, playBlip } from '$lib/sound';
 
 	let formData = $state({ name: '', email: '', subject: '', message: '' });
-	let botcheck = $state('');
+	let botcheck = $state(false);
 	let submitted = $state(false);
 	let submitting = $state(false);
 	let errorMsg = $state('');
@@ -17,48 +14,9 @@
 
 	const t = derived(lang, ($l) => translations[$l].contact);
 
-	onMount(() => {
-		gsap.registerPlugin(ScrollTrigger);
-
-		gsap.fromTo(
-			'.contact-header',
-			{ opacity: 0, y: 24 },
-			{
-				opacity: 1,
-				y: 0,
-				duration: 0.7,
-				ease: 'power3.out',
-				scrollTrigger: { trigger: '.contact-header', start: 'top 88%' }
-			}
-		);
-
-		gsap.fromTo(
-			'.contact-info',
-			{ opacity: 0, x: -30 },
-			{
-				opacity: 1,
-				x: 0,
-				duration: 0.75,
-				ease: 'power3.out',
-				scrollTrigger: { trigger: '.contact-info', start: 'top 85%' }
-			}
-		);
-
-		gsap.fromTo(
-			'.contact-form-deck',
-			{ opacity: 0, x: 30 },
-			{
-				opacity: 1,
-				x: 0,
-				duration: 0.75,
-				ease: 'power3.out',
-				scrollTrigger: { trigger: '.contact-form-deck', start: 'top 85%' }
-			}
-		);
-	});
-
 	async function handleSubmit(e: Event) {
 		e.preventDefault();
+		if (submitting) return;
 		errorMsg = '';
 
 		if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
@@ -84,11 +42,11 @@
 				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 				body: JSON.stringify({
 					access_key: WEB3FORMS_KEY,
-					subject: `[Sovereign Uplink] ${formData.subject || 'Pertanyaan Kerjaya / Kolaborasi'} — dari ${formData.name}`,
+					subject: `[Portfolio] ${formData.subject || 'Career / Collaboration'} — ${formData.name}`,
 					from_name: formData.name,
 					replyto: formData.email,
 					message: `
-PENGHANTARAN MESEJ DARI SOVEREIGN MISSION CONTROL (muhammedmunir.github.io)
+MESEJ DARI PORTFOLIO MUHAMMED MUNIR (muhammedmunir.github.io)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Pengirim : ${formData.name}
 E-mel    : ${formData.email}
@@ -101,13 +59,13 @@ ${formData.message}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.email}.
 					`.trim(),
-					botcheck: botcheck
+					botcheck: Boolean(botcheck)
 				})
 			});
 
 			const result = await response.json();
 
-			if (result.success) {
+			if (response.ok && result.success) {
 				submitted = true;
 				playConfirm();
 			} else {
@@ -131,7 +89,8 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		{
 			id: 'email',
 			code: 'CH-01',
-			label: 'DIRECT_EMAIL',
+			labelMs: 'E-MEL',
+			labelEn: 'EMAIL',
 			value: 'muhammed.munir97.mm@gmail.com',
 			href: 'mailto:muhammed.munir97.mm@gmail.com',
 			icon: '✉️'
@@ -139,7 +98,8 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		{
 			id: 'phone',
 			code: 'CH-02',
-			label: 'VOICE_&_WHATSAPP',
+			labelMs: 'TELEFON & WHATSAPP',
+			labelEn: 'PHONE & WHATSAPP',
 			value: '+6013-5636124',
 			href: 'https://wa.me/60135636124',
 			icon: '💬'
@@ -147,7 +107,8 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		{
 			id: 'linkedin',
 			code: 'CH-03',
-			label: 'LINKEDIN_NETWORK',
+			labelMs: 'LINKEDIN',
+			labelEn: 'LINKEDIN',
 			value: 'linkedin.com/in/muhammed-munir',
 			href: 'https://www.linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271',
 			icon: '💼'
@@ -155,7 +116,8 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		{
 			id: 'github',
 			code: 'CH-04',
-			label: 'SOURCE_REPOSITORY',
+			labelMs: 'GITHUB',
+			labelEn: 'GITHUB',
 			value: 'github.com/muhammedmunir',
 			href: 'https://github.com/muhammedmunir',
 			icon: '🐙'
@@ -163,7 +125,8 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		{
 			id: 'location',
 			code: 'CH-05',
-			label: 'PHYSICAL_ZONE',
+			labelMs: 'LOKASI',
+			labelEn: 'LOCATION',
 			value: 'Puchong / Shah Alam, Selangor',
 			href: null,
 			icon: '📍'
@@ -172,15 +135,16 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 </script>
 
 <section id="contact" class="contact-section">
-	<div class="contact-ambient" aria-hidden="true"></div>
-
 	<div class="section">
 		<!-- Section Header -->
 		<div class="section-header contact-header">
 			<div class="section-label">{$t.label}</div>
 			<h2 class="text-gradient">{$t.title}</h2>
 			<p class="section-desc">{$t.desc}</p>
-			<div class="section-divider"></div>
+			<svg class="contact-branches" viewBox="0 0 320 42" aria-hidden="true">
+				<path d="M0 8H85Q100 8 110 20L120 30H220M100 8H240Q254 8 264 20L276 32H318" />
+				<circle cx="220" cy="30" r="2" /><circle cx="318" cy="32" r="2" />
+			</svg>
 		</div>
 
 		<div class="contact-grid">
@@ -189,7 +153,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 				<div class="info-card card">
 					<div class="card-status-bar">
 						<span class="status-orb" aria-hidden="true"></span>
-						<span class="status-code">COMM_LINK // SECURE_UPLINK</span>
+						<span class="status-code">{$t.channels_label}</span>
 					</div>
 					<h3 class="info-title">{$t.intro_title}</h3>
 					<p class="info-desc">{$t.intro_desc}</p>
@@ -203,7 +167,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 							<div class="ch-body">
 								<div class="ch-top">
 									<span class="ch-code">{ch.code}</span>
-									<span class="ch-label">{ch.label}</span>
+									<span class="ch-label">{$lang === 'ms' ? ch.labelMs : ch.labelEn}</span>
 								</div>
 								{#if ch.href}
 									<a href={ch.href} target="_blank" rel="me noopener noreferrer" class="ch-value">
@@ -242,14 +206,14 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 			<!-- RIGHT: SOVEREIGN DIRECT TRANSMISSION FORM -->
 			<div class="contact-form-deck card">
 				{#if submitted}
-					<div class="success-screen">
+					<div class="success-screen" role="status" aria-live="polite">
 						<div class="success-halo" aria-hidden="true">
 							<svg
 								width="36"
 								height="36"
 								viewBox="0 0 24 24"
 								fill="none"
-								stroke="#10b981"
+								stroke="#67e8f9"
 								stroke-width="2.5"
 							>
 								<polyline points="20 6 9 17 4 12"></polyline>
@@ -263,18 +227,19 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 							onclick={() => {
 								submitted = false;
 								formData = { name: '', email: '', subject: '', message: '' };
+								botcheck = false;
 							}}
 						>
 							{$t.send_another}
 						</button>
 					</div>
 				{:else}
-					<form onsubmit={handleSubmit} id="contact-form" novalidate>
+					<form onsubmit={handleSubmit} id="contact-form" novalidate aria-busy={submitting}>
 						<!-- Honeypot -->
 						<input
 							type="checkbox"
 							name="botcheck"
-							bind:value={botcheck}
+							bind:checked={botcheck}
 							style="display:none !important;"
 							tabindex="-1"
 							autocomplete="off"
@@ -284,7 +249,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 							<div class="deck-indicator" aria-hidden="true"></div>
 							<div>
 								<h3 class="form-deck-title">{$t.form_title}</h3>
-								<span class="form-deck-sub">ENCRYPTED TRANSMISSION PROTOCOL</span>
+								<span class="form-deck-sub">{$t.form_sub}</span>
 							</div>
 						</div>
 
@@ -333,7 +298,6 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 								class="field-input"
 								bind:value={formData.subject}
 								placeholder={$t.subject_placeholder}
-								required
 							/>
 						</div>
 
@@ -389,19 +353,8 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 <style>
 	.contact-section {
 		position: relative;
-		background: linear-gradient(180deg, #030712 0%, #070e1c 100%);
+		background: linear-gradient(180deg, #050d16 0%, #070e1c 100%);
 		overflow: hidden;
-	}
-
-	.contact-ambient {
-		position: absolute;
-		bottom: -100px;
-		left: 50%;
-		transform: translateX(-50%);
-		width: 800px;
-		height: 400px;
-		background: radial-gradient(ellipse at center, rgba(56, 189, 248, 0.08) 0%, transparent 70%);
-		pointer-events: none;
 	}
 
 	.contact-grid {
@@ -435,7 +388,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		height: 6px;
 		border-radius: 50%;
 		background: var(--cyan);
-		box-shadow: 0 0 8px var(--cyan);
+		box-shadow: none;
 	}
 	.info-title {
 		font-family: var(--font-heading);
@@ -519,15 +472,15 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		height: 10px;
 		border-radius: 50%;
 		background: var(--emerald);
-		box-shadow: 0 0 12px var(--emerald);
-		animation: pulse-emerald 2s infinite;
+		box-shadow: none;
+
 		flex-shrink: 0;
 	}
 	.avail-primary {
 		font-family: var(--font-heading);
 		font-size: 0.92rem;
 		font-weight: 700;
-		color: #34d399;
+		color: #e4c988;
 	}
 	.avail-secondary {
 		font-size: 0.78rem;
@@ -540,7 +493,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		background: rgba(10, 18, 34, 0.85);
 		border: 1px solid rgba(56, 189, 248, 0.22);
 		border-radius: 18px;
-		box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.75);
+		box-shadow: none;
 	}
 	.form-deck-head {
 		display: flex;
@@ -555,7 +508,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		height: 34px;
 		background: var(--cyan);
 		border-radius: 2px;
-		box-shadow: 0 0 10px var(--cyan);
+		box-shadow: none;
 	}
 	.form-deck-title {
 		font-family: var(--font-heading);
@@ -606,9 +559,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 	.field-input:focus,
 	.field-textarea:focus {
 		border-color: var(--cyan);
-		box-shadow:
-			0 0 0 3px rgba(56, 189, 248, 0.15),
-			0 8px 24px rgba(0, 0, 0, 0.5);
+		box-shadow: none;
 		background: rgba(3, 7, 18, 0.95);
 	}
 	.field-input::placeholder,
@@ -652,7 +603,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		width: 18px;
 		height: 18px;
 		border: 2px solid rgba(3, 7, 18, 0.3);
-		border-top-color: #030712;
+		border-top-color: #050d16;
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
@@ -680,7 +631,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow: 0 0 25px rgba(16, 185, 129, 0.2);
+		box-shadow: none;
 	}
 	.success-title {
 		font-family: var(--font-heading);
@@ -705,5 +656,152 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		.contact-form-deck {
 			padding: 1.5rem;
 		}
+	}
+	.contact-section {
+		--cyan: #67e8f9;
+		--text-muted: #a6b5c6;
+		background: #050d16;
+	}
+	.section-header {
+		text-align: left;
+		max-width: 760px;
+	}
+	.section-header h2 {
+		background: none;
+		-webkit-text-fill-color: currentColor;
+		color: #edf3f7;
+	}
+	.section-label {
+		color: #67e8f9;
+	}
+	.contact-branches {
+		width: min(320px, 100%);
+		height: 42px;
+		margin-top: 1rem;
+		stroke: #67e8f970;
+		stroke-width: 1;
+		fill: #050d16;
+	}
+	.contact-branches path {
+		fill: none;
+	}
+	.contact-branches circle {
+		stroke: #a5b4fc;
+	}
+	.contact-grid {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+	}
+	.contact-info,
+	.contact-form-deck {
+		min-width: 0;
+	}
+	.card,
+	.card:hover {
+		background: #111a23;
+		border: 1px solid #ffffff18;
+		border-radius: 6px;
+		transform: none;
+		box-shadow: none;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+	.info-card,
+	.info-card:hover {
+		background: transparent;
+		border: 0;
+		padding: 0 0 0.75rem;
+	}
+	.channels-deck {
+		position: relative;
+		border-left: 1px solid #67e8f944;
+		padding-left: 1rem;
+	}
+	.channel-card,
+	.channel-card:hover {
+		position: relative;
+		background: transparent;
+		border: 0;
+		border-bottom: 1px solid #ffffff18;
+		padding: 0.5rem 0;
+		border-radius: 0;
+	}
+	.channel-card::before {
+		content: '';
+		position: absolute;
+		left: -1rem;
+		top: 50%;
+		width: 0.65rem;
+		border-top: 1px solid #67e8f966;
+	}
+	.ch-value:not(.no-link) {
+		min-height: 44px;
+	}
+	.ch-top {
+		flex-wrap: wrap;
+	}
+	.ch-value {
+		overflow-wrap: anywhere;
+		word-break: normal;
+		line-height: 1.6;
+	}
+	.ch-value svg {
+		flex-shrink: 0;
+	}
+	.avail-beacon,
+	.avail-beacon:hover {
+		border-color: #e4c98833;
+	}
+	.avail-beacon-dot {
+		background: #e4c988;
+		animation: none;
+	}
+	.field-input,
+	.field-textarea,
+	.field-input:focus,
+	.field-textarea:focus {
+		background: #050d16;
+		border-radius: 5px;
+	}
+	.field-input:focus-visible,
+	.field-textarea:focus-visible {
+		outline: 2px solid #67e8f9;
+		outline-offset: 3px;
+	}
+	.transmit-btn {
+		min-height: 48px;
+		background: #67e8f9;
+		color: #050d16;
+		border: 1px solid #67e8f9;
+		box-shadow: none;
+	}
+	.transmit-btn:hover {
+		background: #a5f3fc;
+		color: #050d16;
+		box-shadow: none;
+		transform: none;
+	}
+	.success-halo {
+		border-color: #67e8f966;
+		background: #67e8f914;
+	}
+	@media (max-width: 900px) {
+		.contact-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation: none !important;
+			transition: none !important;
+		}
+	}
+	.btn,
+	.btn:hover {
+		box-shadow: none;
+		transform: none;
+		filter: none;
+		min-height: 44px;
 	}
 </style>

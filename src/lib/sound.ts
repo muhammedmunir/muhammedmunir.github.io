@@ -1,13 +1,25 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
 
-// Check if user disabled audio previously
-const initialSound = browser ? localStorage.getItem('jarvis_sfx') !== 'false' : true;
+// Audio is opt-in. Only an explicit persisted 'true' enables it.
+function readSoundPreference(): boolean {
+	if (!browser) return false;
+	try {
+		return localStorage.getItem('jarvis_sfx') === 'true';
+	} catch {
+		return false;
+	}
+}
+const initialSound = readSoundPreference();
 export const sfxEnabled = writable<boolean>(initialSound);
 
 if (browser) {
 	sfxEnabled.subscribe((val) => {
-		localStorage.setItem('jarvis_sfx', String(val));
+		try {
+			localStorage.setItem('jarvis_sfx', String(val));
+		} catch {
+			/* Storage may be unavailable. */
+		}
 	});
 }
 
@@ -36,7 +48,7 @@ function getAudioContext(): AudioContext | null {
 /** Soft cybernetic click / blip on hover or tap */
 export function playBlip(freq = 880, duration = 0.04) {
 	if (!browser) return;
-	let enabled = true;
+	let enabled = false;
 	sfxEnabled.subscribe((v) => (enabled = v))();
 	if (!enabled) return;
 
@@ -67,7 +79,7 @@ export function playBlip(freq = 880, duration = 0.04) {
 /** Futuristic Jarvis activation chime / confirm sound */
 export function playConfirm() {
 	if (!browser) return;
-	let enabled = true;
+	let enabled = false;
 	sfxEnabled.subscribe((v) => (enabled = v))();
 	if (!enabled) return;
 
@@ -99,7 +111,7 @@ export function playConfirm() {
 /** Cyber scan / telemetry sweep */
 export function playScan() {
 	if (!browser) return;
-	let enabled = true;
+	let enabled = false;
 	sfxEnabled.subscribe((v) => (enabled = v))();
 	if (!enabled) return;
 
@@ -131,7 +143,7 @@ export function playScan() {
 /** Sci-fi warp / teleport sound */
 export function playWarp() {
 	if (!browser) return;
-	let enabled = true;
+	let enabled = false;
 	sfxEnabled.subscribe((v) => (enabled = v))();
 	if (!enabled) return;
 

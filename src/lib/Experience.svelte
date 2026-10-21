@@ -1,45 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gsap } from 'gsap';
-	import { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import { lang } from '$lib/i18n';
 	import { translations } from '$lib/translations';
 	import { derived } from 'svelte/store';
-	import { playBlip } from '$lib/sound';
 
 	const t = derived(lang, ($l) => translations[$l].experience);
 	const texp = derived(lang, ($l) => translations[$l].exp);
-
-	onMount(() => {
-		gsap.registerPlugin(ScrollTrigger);
-
-		gsap.fromTo(
-			'.exp-header',
-			{ opacity: 0, y: 24 },
-			{
-				opacity: 1,
-				y: 0,
-				duration: 0.7,
-				ease: 'power3.out',
-				scrollTrigger: { trigger: '.exp-header', start: 'top 88%' }
-			}
-		);
-
-		gsap.utils.toArray<HTMLElement>('.timeline-row').forEach((row, i) => {
-			gsap.fromTo(
-				row,
-				{ opacity: 0, y: 35 },
-				{
-					opacity: 1,
-					y: 0,
-					duration: 0.7,
-					delay: (i % 2) * 0.1,
-					ease: 'power3.out',
-					scrollTrigger: { trigger: row, start: 'top 86%', toggleActions: 'play none none none' }
-				}
-			);
-		});
-	});
 
 	const expMeta = [
 		{
@@ -52,9 +17,7 @@
 			typeMs: 'Sepenuh Masa',
 			typeEn: 'Full-Time',
 			current: true,
-			accentColor: '#10b981',
 			badgeTheme: 'badge-emerald',
-			icon: '🏢',
 			tags: [
 				'Vue.js 3',
 				'Laravel Filament',
@@ -74,9 +37,7 @@
 			typeMs: 'Kontrak',
 			typeEn: 'Contract',
 			current: false,
-			accentColor: '#38bdf8',
 			badgeTheme: 'badge-cyan',
-			icon: '💻',
 			tags: ['SvelteKit', 'Supabase RLS', 'Laravel', 'Redis', 'Vercel', 'Cloudflare WAF']
 		},
 		{
@@ -89,9 +50,7 @@
 			typeMs: 'Protégé',
 			typeEn: 'Protégé',
 			current: false,
-			accentColor: '#f59e0b',
 			badgeTheme: 'badge-amber',
-			icon: '⚡',
 			tags: [
 				'Flutter (Dart)',
 				'Firebase',
@@ -111,9 +70,7 @@
 			typeMs: 'Latihan Industri (SOC)',
 			typeEn: 'Internship (SOC)',
 			current: false,
-			accentColor: '#818cf8',
 			badgeTheme: 'badge-indigo',
-			icon: '🛡️',
 			tags: [
 				'Splunk SIEM',
 				'Vulhub Labs',
@@ -127,8 +84,6 @@
 </script>
 
 <section id="experience" class="exp-section">
-	<div class="exp-ambient" aria-hidden="true"></div>
-
 	<div class="section">
 		<!-- Section Header -->
 		<div class="section-header exp-header">
@@ -142,23 +97,12 @@
 		<div class="timeline-container">
 			<div class="timeline-axis" aria-hidden="true"></div>
 
-			{#each expMeta as exp, i}
-				<div class="timeline-row" class:row-reverse={i % 2 !== 0}>
-					<!-- Center Radar Node -->
-					<div
-						class="timeline-beacon"
-						class:beacon-active={exp.current}
-						style="--beacon-color: {exp.accentColor}"
-						aria-hidden="true"
-					>
-						<span class="beacon-icon">{exp.icon}</span>
-						{#if exp.current}
-							<span class="beacon-pulse"></span>
-						{/if}
-					</div>
+			{#each expMeta as exp}
+				<div class="timeline-row">
+					<div class="timeline-beacon" class:beacon-active={exp.current} aria-hidden="true"></div>
 
-					<!-- Content Card -->
-					<div class="exp-card card" style="--card-accent: {exp.accentColor}">
+					<!-- Career entry -->
+					<div class="exp-card">
 						<div class="exp-card-top">
 							<div class="exp-badge-strip">
 								<span class="exp-code">{exp.code}</span>
@@ -195,7 +139,9 @@
 
 						<!-- Highlights Checklist -->
 						<div class="exp-highlights-box">
-							<span class="highlights-title">MISSION_HIGHLIGHTS &gt;</span>
+							<span class="highlights-title"
+								>{$lang === 'ms' ? 'Sumbangan utama' : 'Key contributions'}</span
+							>
 							<ul class="highlights-list" role="list">
 								{#each $texp[exp.key].highlights as h}
 									<li>
@@ -231,277 +177,197 @@
 
 <style>
 	.exp-section {
-		position: relative;
-		background: linear-gradient(180deg, #030712 0%, #070e1c 50%, #030712 100%);
-		overflow: hidden;
+		--cyan: #67e8f9;
+		background: #050d16;
 	}
-
-	.exp-ambient {
-		position: absolute;
-		top: 30%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		width: 700px;
-		height: 700px;
-		background: radial-gradient(circle, rgba(56, 189, 248, 0.05) 0%, transparent 70%);
-		pointer-events: none;
+	.section-header {
+		text-align: left;
+		max-width: 760px;
+		margin-bottom: 3rem;
 	}
-
+	.section-header h2 {
+		color: #edf3f7;
+		background: none;
+		-webkit-text-fill-color: currentColor;
+	}
+	.section-label {
+		color: #67e8f9;
+	}
+	.section-divider {
+		margin-left: 0;
+		background: #67e8f9;
+		height: 1px;
+	}
 	.timeline-container {
 		position: relative;
-		padding: 2.5rem 0;
-		max-width: 1100px;
+		max-width: 1050px;
 		margin: 0 auto;
+		padding-left: 3rem;
 	}
-
 	.timeline-axis {
 		position: absolute;
-		left: 50%;
-		top: 0;
-		bottom: 0;
-		width: 2px;
-		background: linear-gradient(
-			180deg,
-			transparent,
-			rgba(56, 189, 248, 0.28) 15%,
-			rgba(129, 140, 248, 0.28) 85%,
-			transparent
-		);
-		transform: translateX(-50%);
+		left: 7px;
+		top: 0.8rem;
+		bottom: 2rem;
+		width: 1px;
+		background: linear-gradient(#67e8f9, #67e8f955 80%, transparent);
 	}
-
 	.timeline-row {
-		display: flex;
-		justify-content: flex-end;
-		padding-right: calc(50% + 2.75rem);
-		margin-bottom: 3.5rem;
 		position: relative;
+		padding-bottom: 2.8rem;
 	}
-	.timeline-row.row-reverse {
-		justify-content: flex-start;
-		padding-right: 0;
-		padding-left: calc(50% + 2.75rem);
+	.timeline-row::before {
+		content: '';
+		position: absolute;
+		left: -2.55rem;
+		top: 0.8rem;
+		width: 2rem;
+		height: 1rem;
+		border-top: 1px solid #67e8f955;
+		border-right: 1px solid #67e8f955;
+		border-radius: 0 10px 0 0;
 	}
-
-	/* Central Radar Beacon */
 	.timeline-beacon {
 		position: absolute;
-		left: 50%;
-		top: 1.5rem;
-		transform: translateX(-50%);
-		width: 46px;
-		height: 46px;
-		background: #070d19;
-		border: 2px solid var(--beacon-color);
-		border-radius: 12px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 2;
-		box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
-		transition:
-			transform 0.25s ease,
-			box-shadow 0.25s ease;
+		left: calc(-3rem + 3px);
+		top: 0.55rem;
+		width: 9px;
+		height: 9px;
+		border: 1px solid #67e8f9;
+		border-radius: 50%;
+		background: #050d16;
 	}
-	.timeline-beacon:hover {
-		transform: translateX(-50%) scale(1.08);
-		box-shadow: 0 0 24px var(--beacon-color);
+	.beacon-active {
+		background: #67e8f9;
 	}
-	.beacon-icon {
-		font-size: 1.25rem;
-		line-height: 1;
-	}
-	.beacon-pulse {
-		position: absolute;
-		inset: -6px;
-		border-radius: 16px;
-		border: 1px solid var(--beacon-color);
-		animation: pulse-ring 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
-		pointer-events: none;
-	}
-	@keyframes pulse-ring {
-		0% {
-			transform: scale(0.95);
-			opacity: 0.8;
-		}
-		100% {
-			transform: scale(1.35);
-			opacity: 0;
-		}
-	}
-
-	/* Experience Card */
 	.exp-card {
-		padding: 1.85rem;
-		width: 100%;
-		max-width: 500px;
-		background: rgba(10, 18, 34, 0.78);
-		border: 1px solid rgba(148, 163, 184, 0.14);
-		border-left: 3px solid var(--card-accent);
-		border-radius: 14px;
+		padding: 0 0 2.5rem 0.5rem;
+		border-bottom: 1px solid #ffffff18;
 	}
-	.exp-card:hover {
-		border-color: rgba(56, 189, 248, 0.38);
-		background: rgba(14, 25, 48, 0.88);
-		transform: translateY(-4px);
-		box-shadow:
-			0 20px 45px -10px rgba(0, 0, 0, 0.7),
-			0 0 25px rgba(56, 189, 248, 0.1);
+	.timeline-row:last-child .exp-card {
+		border-bottom: 0;
+		padding-bottom: 0;
 	}
-
 	.exp-card-top {
-		margin-bottom: 1.15rem;
+		margin-bottom: 1.2rem;
 	}
 	.exp-badge-strip {
 		display: flex;
 		align-items: center;
-		gap: 0.6rem;
-		margin-bottom: 0.75rem;
+		gap: 0.7rem;
 		flex-wrap: wrap;
+		margin-bottom: 0.85rem;
 	}
-	.exp-code {
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		font-weight: 700;
-		color: var(--cyan);
-		background: rgba(56, 189, 248, 0.08);
-		border: 1px solid rgba(56, 189, 248, 0.22);
-		padding: 0.15rem 0.45rem;
-		border-radius: 4px;
-	}
-	.status-badge {
-		font-family: var(--font-mono);
-		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		padding: 0.2rem 0.65rem;
-		border-radius: 999px;
-	}
-	.badge-emerald {
-		background: rgba(16, 185, 129, 0.14);
-		color: #34d399;
-		border: 1px solid rgba(16, 185, 129, 0.35);
-	}
-	.badge-cyan {
-		background: rgba(56, 189, 248, 0.14);
-		color: #38bdf8;
-		border: 1px solid rgba(56, 189, 248, 0.35);
-	}
-	.badge-amber {
-		background: rgba(245, 158, 11, 0.14);
-		color: #fbbf24;
-		border: 1px solid rgba(245, 158, 11, 0.35);
-	}
-	.badge-indigo {
-		background: rgba(129, 140, 248, 0.14);
-		color: #a5b4fc;
-		border: 1px solid rgba(129, 140, 248, 0.35);
-	}
-
-	.exp-period {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
+	.exp-code,
+	.status-badge,
+	.exp-period,
+	.highlights-title {
 		font-family: var(--font-mono);
 		font-size: 0.72rem;
-		color: var(--text-muted);
 	}
-
+	.exp-code {
+		color: #67e8f9;
+	}
+	.status-badge {
+		color: #a5b4fc;
+		padding: 0.15rem 0.55rem;
+		border: 1px solid #a5b4fc40;
+		border-radius: 4px;
+	}
+	.badge-emerald {
+		color: #e4c988;
+		border-color: #e4c98840;
+	}
+	.exp-period {
+		display: inline-flex;
+		gap: 0.4rem;
+		align-items: center;
+		color: #a6b5c6;
+	}
 	.exp-role {
-		font-family: var(--font-heading);
-		font-size: 1.15rem;
-		font-weight: 700;
-		color: var(--white);
-		margin-bottom: 0.35rem;
+		font-size: clamp(1.2rem, 2.2vw, 1.6rem);
 		line-height: 1.3;
+		color: #edf3f7;
+		margin-bottom: 0.6rem;
 	}
 	.exp-entity {
 		display: flex;
-		align-items: center;
-		gap: 0.4rem;
-		font-size: 0.85rem;
 		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.9rem;
 	}
 	.entity-name {
-		color: var(--cyan);
-		font-weight: 600;
+		color: #67e8f9;
 	}
-	.entity-sep {
-		color: var(--text-muted);
-		font-size: 0.75rem;
-	}
+	.entity-sep,
 	.entity-loc {
-		color: var(--text-secondary);
-		font-size: 0.8rem;
+		color: #a6b5c6;
 	}
-
 	.exp-desc {
-		font-size: 0.875rem;
-		line-height: 1.65;
-		color: var(--text-secondary);
-		margin-bottom: 1.15rem;
+		color: #bac6d3;
+		font-size: 0.95rem;
+		line-height: 1.8;
+		max-width: 85ch;
+		margin-bottom: 1.4rem;
 	}
-
 	.exp-highlights-box {
-		background: rgba(3, 7, 18, 0.55);
-		border: 1px solid rgba(148, 163, 184, 0.1);
-		border-radius: 8px;
-		padding: 0.9rem 1rem;
-		margin-bottom: 1.15rem;
+		padding-left: 1rem;
+		border-left: 1px solid #a5b4fc55;
+		margin-bottom: 1.4rem;
 	}
 	.highlights-title {
 		display: block;
-		font-family: var(--font-mono);
-		font-size: 0.66rem;
-		color: var(--text-muted);
-		letter-spacing: 0.08em;
-		margin-bottom: 0.6rem;
+		color: #e4c988;
+		margin-bottom: 0.75rem;
 	}
 	.highlights-list {
 		list-style: none;
-		display: flex;
-		flex-direction: column;
-		gap: 0.45rem;
+		display: grid;
+		gap: 0.6rem;
+		padding: 0;
 	}
 	.highlights-list li {
 		display: flex;
 		align-items: flex-start;
-		gap: 0.55rem;
-		font-size: 0.82rem;
-		color: var(--text-primary);
-		line-height: 1.5;
+		gap: 0.6rem;
+		color: #bac6d3;
+		line-height: 1.65;
+		font-size: 0.875rem;
 	}
 	.highlights-list svg {
-		color: var(--cyan);
+		color: #67e8f9;
 		flex-shrink: 0;
-		margin-top: 2px;
+		margin-top: 0.3rem;
 	}
-
 	.exp-tags-shelf {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
+		gap: 0.5rem;
 	}
-
-	@media (max-width: 900px) {
-		.timeline-axis {
-			left: 1.5rem;
-		}
-		.timeline-row,
-		.timeline-row.row-reverse {
-			padding-right: 0;
-			padding-left: 4rem;
-			justify-content: flex-start;
+	.tag {
+		background: #101b25;
+		border: 1px solid #ffffff18;
+		border-radius: 4px;
+		color: #c5cfda;
+		box-shadow: none;
+	}
+	@media (max-width: 600px) {
+		.timeline-container {
+			padding-left: 1.8rem;
 		}
 		.timeline-beacon {
-			left: 1.5rem;
-			top: 1.5rem;
-			width: 40px;
-			height: 40px;
+			left: calc(-1.8rem + 3px);
+		}
+		.timeline-row::before {
+			left: -1.35rem;
+			width: 0.8rem;
 		}
 		.exp-card {
-			max-width: 100%;
+			padding-left: 0;
+		}
+		.exp-badge-strip {
+			gap: 0.5rem;
 		}
 	}
 </style>

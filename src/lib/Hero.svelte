@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gsap } from 'gsap';
+	import NeuralCortexCanvas from '$lib/NeuralCortexCanvas.svelte';
 	import { lang } from '$lib/i18n';
 	import { translations } from '$lib/translations';
 	import { derived } from 'svelte/store';
@@ -8,9 +7,6 @@
 
 	const t = derived(lang, ($l) => translations[$l].hero);
 
-	let roleIndex = $state(0);
-	let displayedRole = $state('');
-	let isDeleting = $state(false);
 	let activeNode = $state(0);
 
 	const rolesMs = [
@@ -31,21 +27,21 @@
 			id: 'CORE-01',
 			titleMs: 'Kejuruteraan Full-Stack & Enterprise',
 			titleEn: 'Full-Stack & Enterprise Engineering',
-			metric: '18+ Production Systems',
-			status: 'OPTIMAL',
+			shortMs: 'Full-Stack',
+			shortEn: 'Full-Stack',
 			color: '#38bdf8',
 			stack: ['Laravel 12', 'Vue.js 3', 'SvelteKit 5', 'TypeScript', 'PostgreSQL/MySQL'],
 			descMs:
-				'Seni bina sistem kerajaan & korporat berskala tinggi dengan pengesahan 2FA, storan awan S3, dan prestasi sub-100ms.',
+				'Seni bina sistem kerajaan & korporat berskala tinggi dengan pengesahan 2FA, storan awan S3, dan integrasi perkhidmatan.',
 			descEn:
-				'High-scale government & corporate system architecture with 2FA security, S3 cloud storage, and sub-100ms response times.'
+				'High-scale government & corporate system architecture with 2FA security, S3 cloud storage, and service integration.'
 		},
 		{
 			id: 'AI-02',
 			titleMs: 'Visi Komputer & Automasi Pintar',
 			titleEn: 'Computer Vision & Intelligent Automation',
-			metric: 'Real-Time Inference',
-			status: 'ACTIVE',
+			shortMs: 'Visi & AI',
+			shortEn: 'Vision & AI',
 			color: '#818cf8',
 			stack: ['Python', 'OpenCV', 'MediaPipe', 'OCR Engine', 'Automated Bots'],
 			descMs:
@@ -57,9 +53,9 @@
 			id: 'INFRA-03',
 			titleMs: 'Infrastruktur Awan & Orkestrasi Kontena',
 			titleEn: 'Cloud Infrastructure & Container Orchestration',
-			metric: '99.9% High Availability',
-			status: 'CLUSTER READY',
-			color: '#10b981',
+			shortMs: 'Infrastruktur',
+			shortEn: 'Infrastructure',
+			color: '#67e8f9',
 			stack: ['Docker Swarm', 'Linux Server', 'Nginx Reverse Proxy', 'CI/CD Actions', 'Cloudflare'],
 			descMs:
 				'Kluster kontena teragih, penyeimbangan beban trafik automatik, dan saluran penghantaran berterusan tanpa henti.',
@@ -70,8 +66,8 @@
 			id: 'SEC-04',
 			titleMs: 'Keselamatan Siber & Rangkaian Pertahanan',
 			titleEn: 'Cybersecurity & Defensive Networking',
-			metric: 'Zero-Trust Hardened',
-			status: 'GUARDED',
+			shortMs: 'Keselamatan',
+			shortEn: 'Security',
 			color: '#f59e0b',
 			stack: [
 				'Network Security',
@@ -101,63 +97,9 @@
 		playConfirm();
 		window.dispatchEvent(new CustomEvent('open-jarvis'));
 	}
-
-	onMount(() => {
-		let typeTimer: ReturnType<typeof setTimeout>;
-
-		const tickRole = () => {
-			const roles = $lang === 'ms' ? rolesMs : rolesEn;
-			const currentFull = roles[roleIndex % roles.length] || '';
-
-			if (!isDeleting) {
-				displayedRole = currentFull.slice(0, displayedRole.length + 1);
-				if (displayedRole === currentFull) {
-					typeTimer = setTimeout(() => {
-						isDeleting = true;
-						tickRole();
-					}, 2400);
-					return;
-				}
-				typeTimer = setTimeout(tickRole, 45);
-			} else {
-				displayedRole = currentFull.slice(0, displayedRole.length - 1);
-				if (displayedRole === '') {
-					isDeleting = false;
-					roleIndex = (roleIndex + 1) % roles.length;
-					typeTimer = setTimeout(tickRole, 220);
-					return;
-				}
-				typeTimer = setTimeout(tickRole, 24);
-			}
-		};
-		tickRole();
-
-		const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-		if (!prefersReduced) {
-			gsap.fromTo(
-				'.hero-reveal',
-				{ opacity: 0, y: 24 },
-				{ opacity: 1, y: 0, duration: 0.75, stagger: 0.1, ease: 'power3.out' }
-			);
-			gsap.fromTo(
-				'.arch-deck',
-				{ opacity: 0, x: 28, scale: 0.98 },
-				{ opacity: 1, x: 0, scale: 1, duration: 0.85, delay: 0.25, ease: 'power3.out' }
-			);
-		}
-
-		const nodeAutoCycle = setInterval(() => {
-			activeNode = (activeNode + 1) % archNodes.length;
-		}, 6500);
-
-		return () => {
-			clearTimeout(typeTimer);
-			clearInterval(nodeAutoCycle);
-		};
-	});
 </script>
 
-<section id="hero" class="hero-section bg-grid">
+<section id="hero" class="hero-section">
 	<div class="hero-ambient" aria-hidden="true">
 		<div class="glow-orb orb-cyan"></div>
 		<div class="glow-orb orb-indigo"></div>
@@ -168,7 +110,7 @@
 		<div class="hero-left">
 			<div class="hero-reveal telemetry-banner">
 				<span class="status-beacon" aria-hidden="true"></span>
-				<span class="telemetry-code">SYS.NODE // MY-KUL</span>
+				<span class="telemetry-code">MUNIR / MY</span>
 				<span class="telemetry-sep">•</span>
 				<span class="telemetry-status">{$t.badge}</span>
 			</div>
@@ -184,10 +126,8 @@
 				<span class="title-secondary">Bin Mohd Azmi</span>
 			</h1>
 
-			<div class="hero-reveal role-terminal" aria-live="polite">
-				<span class="role-prefix">&gt; ROLE_EXEC:</span>
-				<span class="role-typed">{displayedRole}</span>
-				<span class="role-cursor" aria-hidden="true">_</span>
+			<div class="hero-reveal role-terminal">
+				<span class="role-typed">{$lang === 'ms' ? rolesMs[0] : rolesEn[0]}</span>
 			</div>
 
 			<div class="hero-reveal hero-bio">
@@ -293,53 +233,70 @@
 			</div>
 		</div>
 
-		<!-- RIGHT COLUMN: INTERACTIVE SYSTEM ARCHITECTURE DECK -->
-		<div class="arch-deck card">
-			<!-- Deck Top Bar -->
+		<!-- Native buttons follow the four primary somas of the connectome. -->
+		<div class="arch-deck">
 			<div class="deck-header">
-				<div class="deck-dots" aria-hidden="true">
-					<span class="dot-red"></span>
-					<span class="dot-amber"></span>
-					<span class="dot-green"></span>
-				</div>
-				<div class="deck-title">
-					<span>ARCHITECTURE_TOPOLOGY.SYS</span>
-				</div>
-				<div class="deck-live">
-					<span class="live-pulse"></span>
-					<span>LIVE TELEMETRY</span>
-				</div>
+				<h2 id="connectome-title">
+					{$lang === 'ms' ? 'Rangkaian kepakaran' : 'A connected practice'}
+				</h2>
+				<span class="deck-title">NEURAL / 01—04</span>
 			</div>
-
-			<!-- Interactive Node Selector Tabs -->
-			<div class="node-grid" role="tablist" aria-label="System Architecture Domains">
+			<p class="connectome-hint">
+				{$lang === 'ms'
+					? 'Pilih nod untuk meneroka kepakaran.'
+					: 'Select a node to explore the practice.'}
+			</p>
+			<div class="connectome" role="group" aria-labelledby="connectome-title">
+				<NeuralCortexCanvas active={activeNode} />
+				<svg
+					class="connectome-paths"
+					viewBox="0 0 1000 700"
+					preserveAspectRatio="none"
+					aria-hidden="true"
+				>
+					{#each ['M245 170 Q347 250 500 345', 'M745 185 Q647 440 500 345', 'M260 525 Q356 250 500 345', 'M740 520 Q644 440 500 345'] as path, idx}
+						<path
+							d={path}
+							class:selected={activeNode === idx}
+							style="--path-color: {archNodes[idx].color}"
+						/>
+					{/each}
+				</svg>
+				<span class="connectome-center" aria-hidden="true">MUNIR</span>
 				{#each archNodes as node, idx}
 					<button
 						type="button"
-						role="tab"
-						aria-selected={activeNode === idx}
-						class="node-tab"
+						class="neural-node"
 						class:active={activeNode === idx}
-						style="--node-color: {node.color}"
+						style="--node-color: {node.color}; --x: {[24.5, 74.5, 26, 74][idx]}%; --y: {[
+							24.3, 26.4, 75, 74.3
+						][idx]}%"
+						aria-pressed={activeNode === idx}
+						aria-controls="neural-detail"
+						aria-label={`0${idx + 1} ${$lang === 'ms' ? node.shortMs : node.shortEn} — ${$lang === 'ms' ? node.titleMs : node.titleEn}`}
 						onclick={() => selectNode(idx)}
 					>
-						<div class="node-tab-top">
-							<span class="node-id">{node.id}</span>
-							<span class="node-status">{node.status}</span>
-						</div>
-						<div class="node-tab-title">
-							{$lang === 'ms' ? node.titleMs : node.titleEn}
-						</div>
+						<span class="node-ring" aria-hidden="true"></span>
+						<span class="node-label"
+							><span class="node-id">0{idx + 1}</span>
+							{$lang === 'ms' ? node.shortMs : node.shortEn}</span
+						>
 					</button>
 				{/each}
 			</div>
 
 			<!-- Active Node Inspection Viewport -->
 			{#each [archNodes[activeNode]] as current}
-				<div class="node-viewport" style="--active-color: {current.color}">
+				<div
+					id="neural-detail"
+					class="node-viewport"
+					style="--active-color: {current.color}"
+					aria-live="polite"
+					aria-atomic="true"
+				>
 					<div class="viewport-meta">
 						<span class="viewport-id">NODE // {current.id}</span>
-						<span class="viewport-metric">{current.metric}</span>
+						<span class="viewport-metric">0{activeNode + 1} / 04</span>
 					</div>
 					<h2 class="viewport-heading">
 						{$lang === 'ms' ? current.titleMs : current.titleEn}
@@ -355,7 +312,13 @@
 				</div>
 			{/each}
 
-			<!-- Executive Telemetry Metrics Strip -->
+			<details class="practice-roles">
+				<summary>{$lang === 'ms' ? 'Bidang peranan' : 'Areas of practice'}</summary>
+				<ul>
+					{#each $lang === 'ms' ? rolesMs : rolesEn as role}<li>{role}</li>{/each}
+				</ul>
+			</details>
+			<!-- Portfolio background, not live telemetry. -->
 			<div class="deck-metrics">
 				<div class="metric-cell">
 					<span class="metric-val">4+</span>
@@ -489,7 +452,7 @@
 		color: var(--white);
 	}
 	.title-secondary {
-		background: linear-gradient(135deg, #38bdf8 0%, #818cf8 55%, #10b981 100%);
+		background: linear-gradient(135deg, #a5f3fc 0%, #b5a1ff 65%, #efd18c 100%);
 		-webkit-background-clip: text;
 		-webkit-text-fill-color: transparent;
 		background-clip: text;
@@ -508,26 +471,9 @@
 		margin-bottom: 1.5rem;
 		min-height: 2.6rem;
 	}
-	.role-prefix {
-		color: var(--text-muted);
-		font-size: 0.78rem;
-	}
 	.role-typed {
 		color: var(--cyan);
 		font-weight: 600;
-	}
-	.role-cursor {
-		color: var(--cyan);
-		animation: cursor-blink 1s steps(2) infinite;
-	}
-	@keyframes cursor-blink {
-		0%,
-		100% {
-			opacity: 1;
-		}
-		50% {
-			opacity: 0;
-		}
 	}
 
 	.hero-bio {
@@ -578,7 +524,8 @@
 		background: none;
 		border: none;
 		cursor: pointer;
-		padding: 0.2rem 0;
+		padding: 0.5rem 0;
+		min-height: 44px;
 		transition: color 0.2s ease;
 	}
 	.utility-link:hover {
@@ -598,15 +545,108 @@
 		font-size: 0.68rem;
 	}
 
-	/* Right Column: Architecture Deck */
 	.arch-deck {
-		padding: 1.35rem;
-		background: rgba(8, 15, 30, 0.82);
-		border: 1px solid rgba(56, 189, 248, 0.22);
-		border-radius: 18px;
-		box-shadow:
-			0 24px 60px -12px rgba(0, 0, 0, 0.75),
-			0 0 35px rgba(56, 189, 248, 0.07);
+		min-width: 0;
+		width: 100%;
+	}
+	.connectome-hint {
+		font-size: 0.85rem;
+	}
+	.connectome {
+		position: relative;
+		height: clamp(330px, 32vw, 440px);
+		margin: 0 -1rem 1rem;
+		isolation: isolate;
+	}
+	.connectome-paths {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+	}
+	.connectome-paths path {
+		fill: none;
+		stroke: var(--path-color);
+		stroke-width: 1;
+		opacity: 0.18;
+	}
+	.connectome-paths path.selected {
+		opacity: 0.85;
+		stroke-width: 2;
+	}
+	.connectome-center {
+		position: absolute;
+		top: 54%;
+		left: 50%;
+		transform: translateX(-50%);
+		font: 0.65rem var(--font-mono);
+		letter-spacing: 0.2em;
+		color: #c1e8ec;
+	}
+	.neural-node {
+		position: absolute;
+		left: var(--x);
+		top: var(--y);
+		transform: translate(-50%, -21px);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 8px;
+		background: transparent;
+		border: 0;
+		color: var(--text-primary);
+		cursor: pointer;
+		min-width: 100px;
+		padding: 0 4px 6px;
+		border-radius: 8px;
+	}
+	.node-ring {
+		width: 42px;
+		height: 42px;
+		border: 1px solid var(--node-color);
+		border-radius: 50%;
+		background: transparent;
+		box-shadow: 0 0 18px color-mix(in srgb, var(--node-color) 15%, transparent);
+	}
+	.neural-node.active .node-ring {
+		border-width: 2px;
+		outline: 1px solid color-mix(in srgb, var(--node-color) 30%, transparent);
+		outline-offset: 5px;
+		box-shadow: 0 0 28px color-mix(in srgb, var(--node-color) 30%, transparent);
+	}
+	.node-label {
+		font-size: 0.78rem;
+		font-weight: 600;
+		padding: 4px 7px;
+		border-radius: 4px;
+		background: #080f1e;
+		border-bottom: 1px solid transparent;
+	}
+	.neural-node.active .node-label,
+	.neural-node:hover .node-label {
+		border-bottom-color: var(--node-color);
+	}
+	.node-id {
+		color: var(--node-color);
+		font: 0.65rem var(--font-mono);
+	}
+	.practice-roles {
+		color: var(--text-secondary);
+		font-size: 0.82rem;
+		margin: 1rem 0;
+	}
+	.practice-roles summary {
+		cursor: pointer;
+		min-height: 44px;
+		display: list-item;
+		padding: 0.6rem 0;
+		color: var(--text-primary);
+	}
+	.practice-roles ul {
+		padding-left: 1.2rem;
+	}
+	.deck-header h2 {
+		font-size: clamp(1.1rem, 2vw, 1.4rem);
 	}
 
 	.deck-header {
@@ -619,93 +659,13 @@
 		font-family: var(--font-mono);
 		font-size: 0.7rem;
 	}
-	.deck-dots {
-		display: flex;
-		gap: 6px;
-	}
-	.deck-dots span {
-		width: 9px;
-		height: 9px;
-		border-radius: 50%;
-	}
-	.dot-red {
-		background: #ef4444;
-		opacity: 0.8;
-	}
-	.dot-amber {
-		background: #f59e0b;
-		opacity: 0.8;
-	}
-	.dot-green {
-		background: #10b981;
-		opacity: 0.8;
-	}
 	.deck-title {
 		color: var(--text-secondary);
 		letter-spacing: 0.08em;
 	}
-	.deck-live {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		color: var(--emerald);
-		font-weight: 600;
-	}
-	.live-pulse {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		background: var(--emerald);
-		box-shadow: 0 0 8px var(--emerald);
-	}
-
-	.node-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 0.65rem;
-		margin-bottom: 1rem;
-	}
-	.node-tab {
-		text-align: left;
-		padding: 0.75rem 0.85rem;
-		background: rgba(3, 7, 18, 0.65);
-		border: 1px solid rgba(148, 163, 184, 0.14);
-		border-radius: 10px;
-		cursor: pointer;
-		transition: all 0.25s ease;
-	}
-	.node-tab:hover {
-		border-color: rgba(56, 189, 248, 0.35);
-		background: rgba(12, 22, 42, 0.8);
-	}
-	.node-tab.active {
-		background: rgba(15, 29, 54, 0.92);
-		border-color: var(--node-color);
-		box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.08);
-	}
-	.node-tab-top {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		font-family: var(--font-mono);
-		font-size: 0.65rem;
-		margin-bottom: 0.3rem;
-	}
-	.node-id {
-		color: var(--node-color);
-		font-weight: 700;
-	}
-	.node-status {
-		color: var(--text-muted);
-	}
-	.node-tab-title {
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: var(--text-primary);
-		line-height: 1.3;
-	}
 
 	.node-viewport {
+		min-height: 230px;
 		padding: 1.15rem;
 		background: rgba(3, 7, 18, 0.78);
 		border: 1px solid rgba(148, 163, 184, 0.16);
@@ -804,8 +764,24 @@
 		}
 	}
 	@media (max-width: 600px) {
-		.node-grid {
-			grid-template-columns: 1fr;
+		.deck-title {
+			font-size: 0.6rem;
+		}
+		.hero-title {
+			font-size: clamp(2.15rem, 9vw, 3.2rem);
+		}
+		.hero-greeting {
+			font-size: 0.7rem;
+			letter-spacing: 0.07em;
+		}
+		.node-viewport {
+			min-height: 270px;
+		}
+		.connectome {
+			margin-inline: -0.5rem;
+		}
+		.node-label {
+			font-size: 0.7rem;
 		}
 		.deck-metrics {
 			grid-template-columns: repeat(2, 1fr);
