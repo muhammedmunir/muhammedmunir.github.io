@@ -31,8 +31,8 @@
 	/* Optical Typography Hierarchy */
 	--white: #f8fafc;
 	--text-primary: #f1f5f9;
-	--text-secondary: #94a3b8;
-	--text-muted: #64748b;
+	--text-secondary: #b1bfd1;
+	--text-muted: #95a4ba;
 
 	/* Aerospace Glassmorphism */
 	--card-bg: rgba(12, 21, 38, 0.65);
@@ -101,12 +101,35 @@ body {
 	overflow-x: hidden;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	selection-background-color: rgba(56, 189, 248, 0.25);
 }
 
 ::selection {
 	background: rgba(56, 189, 248, 0.25);
 	color: var(--white);
+}
+
+/* Visible keyboard navigation across native neural controls and existing sections. */
+:focus-visible {
+	outline: 2px solid #efd18c;
+	outline-offset: 5px;
+}
+section[id] {
+	scroll-margin-top: 7rem;
+}
+.skip-link {
+	position: fixed;
+	top: 0.75rem;
+	left: 1rem;
+	z-index: 2000;
+	transform: translateY(-200%);
+	padding: 0.75rem 1rem;
+	background: #080f1e;
+	color: #f8fafc;
+	border: 1px solid #efd18c;
+	border-radius: 6px;
+}
+.skip-link:focus {
+	transform: translateY(0);
 }
 
 /* Typography */
@@ -237,7 +260,7 @@ a {
 	white-space: nowrap;
 }
 .btn-primary {
-	background: linear-gradient(135deg, #38bdf8 0%, #2563eb 100%);
+	background: linear-gradient(135deg, #91e7f4 0%, #63bce8 100%);
 	color: #030712;
 	font-weight: 700;
 	box-shadow: 0 4px 24px rgba(56, 189, 248, 0.3);
@@ -277,12 +300,11 @@ a {
 	white-space: nowrap;
 }
 
-/* Architectural Grid Background */
+/* Quiet tissue-like light lets the neural spine connect existing sections. */
 .bg-grid {
 	background-image:
-		linear-gradient(rgba(56, 189, 248, 0.035) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(56, 189, 248, 0.035) 1px, transparent 1px);
-	background-size: 56px 56px;
+		radial-gradient(ellipse at 12% 35%, rgba(103, 232, 249, 0.035), transparent 55%),
+		radial-gradient(ellipse at 90% 70%, rgba(181, 161, 255, 0.035), transparent 50%);
 }
 
 /* Ambient Orbs */

@@ -1,69 +1,17 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gsap } from 'gsap';
-	import { ScrollTrigger } from 'gsap/ScrollTrigger';
 	import { lang } from '$lib/i18n';
 	import { translations } from '$lib/translations';
 	import { derived } from 'svelte/store';
-	import { playBlip } from '$lib/sound';
 
 	const t = derived(lang, ($l) => translations[$l].skills);
 	const tedu = derived(lang, ($l) => translations[$l].edu);
-
-	let activeDomain = $state<'all' | 'frontend' | 'backend' | 'security'>('all');
-
-	onMount(() => {
-		gsap.registerPlugin(ScrollTrigger);
-
-		gsap.fromTo(
-			'.skills-header',
-			{ opacity: 0, y: 25 },
-			{
-				opacity: 1,
-				y: 0,
-				duration: 0.7,
-				ease: 'power3.out',
-				scrollTrigger: { trigger: '.skills-header', start: 'top 88%' }
-			}
-		);
-
-		gsap.utils.toArray<HTMLElement>('.matrix-column').forEach((col, i) => {
-			gsap.fromTo(
-				col,
-				{ opacity: 0, y: 35 },
-				{
-					opacity: 1,
-					y: 0,
-					duration: 0.75,
-					delay: i * 0.12,
-					ease: 'power3.out',
-					scrollTrigger: { trigger: col, start: 'top 86%' }
-				}
-			);
-		});
-
-		gsap.utils.toArray<HTMLElement>('.edu-card').forEach((card, i) => {
-			gsap.fromTo(
-				card,
-				{ opacity: 0, y: 35 },
-				{
-					opacity: 1,
-					y: 0,
-					duration: 0.75,
-					delay: i * 0.12,
-					ease: 'power3.out',
-					scrollTrigger: { trigger: card, start: 'top 86%' }
-				}
-			);
-		});
-	});
 
 	const skillDomains = [
 		{
 			id: 'frontend',
 			titleKey: 'frontend' as const,
 			icon: '🎨',
-			accent: '#38bdf8',
+			accent: '#67e8f9',
 			domainCode: 'DOM-01',
 			badge: 'REACTIVE INTERFACES',
 			skills: [
@@ -109,7 +57,7 @@
 			id: 'backend',
 			titleKey: 'backend' as const,
 			icon: '⚡',
-			accent: '#818cf8',
+			accent: '#a5b4fc',
 			domainCode: 'DOM-02',
 			badge: 'HIGH-SCALE ENGINES',
 			skills: [
@@ -155,7 +103,7 @@
 			id: 'security',
 			titleKey: 'security' as const,
 			icon: '🛡️',
-			accent: '#10b981',
+			accent: '#67e8f9',
 			domainCode: 'DOM-03',
 			badge: 'CYBER DEFENCE & CLOUD',
 			skills: [
@@ -277,8 +225,6 @@
 </script>
 
 <section id="skills" class="skills-section">
-	<div class="skills-ambient" aria-hidden="true"></div>
-
 	<div class="section">
 		<!-- Section Header -->
 		<div class="section-header skills-header">
@@ -290,8 +236,12 @@
 
 		<!-- 3 Domain Architectural Columns (Replaces Arbitrary Percentage Bars) -->
 		<div class="matrix-grid">
+			<svg class="domain-paths" viewBox="0 0 1000 64" preserveAspectRatio="none" aria-hidden="true">
+				<path d="M500 0V18M166 64V42Q166 30 180 30H820Q834 30 834 42V64M500 18V64" />
+				<circle cx="500" cy="18" r="3" />
+			</svg>
 			{#each skillDomains as domain}
-				<div class="matrix-column card" style="--dom-accent: {domain.accent}">
+				<div class="matrix-column" style="--dom-accent: {domain.accent}">
 					<div class="col-head">
 						<div class="col-avatar" style="border-color: {domain.accent}">
 							<span>{domain.icon}</span>
@@ -316,7 +266,7 @@
 								</div>
 								<div class="spec-scope">{skill.scope}</div>
 								<div class="spec-usage">
-									<span class="usage-lead">&gt; In Production:</span>
+									<span class="usage-lead">{$lang === 'ms' ? 'Penggunaan:' : 'Used in:'}</span>
 									<span>{skill.usage}</span>
 								</div>
 							</div>
@@ -330,7 +280,11 @@
 		<div class="tech-tier-panel card">
 			<div class="tier-header">
 				<span class="tier-pill tier-accent-green">{$t.excellent_label}</span>
-				<span class="tier-note">Production Architecture & Operational Strengths</span>
+				<span class="tier-note"
+					>{$lang === 'ms'
+						? 'Seni bina & kekuatan operasi'
+						: 'Architecture & operational strengths'}</span
+				>
 			</div>
 			<div class="chips-shelf">
 				{#each excellentSkills as item}
@@ -343,7 +297,11 @@
 		<div class="tech-tier-panel card">
 			<div class="tier-header">
 				<span class="tier-pill tier-accent-cyan">{$t.tools_label}</span>
-				<span class="tier-note">Infrastructure, Frameworks & Toolchain Ecosystem</span>
+				<span class="tier-note"
+					>{$lang === 'ms'
+						? 'Infrastruktur, rangka kerja & alatan'
+						: 'Infrastructure, frameworks & toolchain'}</span
+				>
 			</div>
 			<div class="chips-shelf">
 				{#each toolsSkills as tool}
@@ -466,16 +424,6 @@
 		overflow: hidden;
 	}
 
-	.skills-ambient {
-		position: absolute;
-		top: 40%;
-		right: -100px;
-		width: 600px;
-		height: 600px;
-		background: radial-gradient(circle, rgba(129, 140, 248, 0.05) 0%, transparent 70%);
-		pointer-events: none;
-	}
-
 	.matrix-grid {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
@@ -496,9 +444,7 @@
 	.matrix-column:hover {
 		border-color: var(--dom-accent);
 		background: rgba(13, 24, 46, 0.88);
-		box-shadow:
-			0 16px 40px -10px rgba(0, 0, 0, 0.6),
-			0 0 24px rgba(56, 189, 248, 0.08);
+		box-shadow: none;
 	}
 
 	.col-head {
@@ -628,7 +574,7 @@
 	}
 	.tier-accent-cyan {
 		background: rgba(56, 189, 248, 0.14);
-		color: #38bdf8;
+		color: #67e8f9;
 		border: 1px solid rgba(56, 189, 248, 0.35);
 	}
 	.tier-note {
@@ -849,6 +795,175 @@
 	@media (max-width: 1024px) {
 		.matrix-grid {
 			grid-template-columns: 1fr;
+		}
+	}
+	.skills-section {
+		--cyan: #67e8f9;
+		--text-muted: #a6b5c6;
+		background: #050d16;
+	}
+	.section-header {
+		text-align: left;
+		max-width: 760px;
+		margin-bottom: 3rem;
+	}
+	.section-header h2 {
+		background: none;
+		-webkit-text-fill-color: currentColor;
+		color: #edf3f7;
+	}
+	.section-label {
+		color: #67e8f9;
+	}
+	.section-divider {
+		margin-left: 0;
+		height: 1px;
+		background: #a5b4fc;
+	}
+	.matrix-grid {
+		position: relative;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		padding-top: 64px;
+	}
+	.domain-paths {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 64px;
+		fill: #050d16;
+		stroke: #a5b4fc88;
+		stroke-width: 1;
+	}
+	.domain-paths path {
+		fill: none;
+		vector-effect: non-scaling-stroke;
+	}
+	.domain-paths circle {
+		stroke: #67e8f9;
+	}
+	.matrix-column {
+		position: relative;
+		padding: 1.3rem;
+		background: #111a23;
+		border: 1px solid #ffffff18;
+		border-radius: 6px;
+		min-width: 0;
+	}
+	.matrix-column::before {
+		content: '';
+		position: absolute;
+		top: -4px;
+		left: calc(50% - 4px);
+		width: 7px;
+		height: 7px;
+		border: 1px solid var(--dom-accent);
+		border-radius: 50%;
+		background: #050d16;
+	}
+	.matrix-column:hover {
+		background: #111a23;
+		border-color: #ffffff18;
+	}
+	.col-meta-row,
+	.spec-top {
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.spec-row {
+		background: none;
+		border: 0;
+		border-bottom: 1px solid #ffffff18;
+		border-radius: 0;
+		padding: 0.8rem 0;
+	}
+	.spec-row:hover {
+		background: none;
+		border-color: #ffffff18;
+	}
+	.spec-tier {
+		color: #e4c988;
+		background: none;
+		padding: 0;
+	}
+	.spec-usage {
+		line-height: 1.7;
+	}
+	.chip-item:hover {
+		transform: none;
+	}
+	.card,
+	.card:hover {
+		background: #111a23;
+		border: 1px solid #ffffff18;
+		border-radius: 6px;
+		transform: none;
+		box-shadow: none;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+	.certs-grid {
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+	}
+	.courses-layout {
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+	}
+	.tier-accent-green,
+	.edu-cgpa-badge {
+		color: #e4c988;
+		background: #e4c98812;
+		border-color: #e4c98840;
+	}
+	@media (max-width: 1024px) {
+		.matrix-grid {
+			grid-template-columns: 1fr;
+			padding-top: 0;
+			padding-left: 1.5rem;
+			gap: 1.25rem;
+		}
+		.domain-paths {
+			display: none;
+		}
+		.matrix-grid::before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 1.8rem;
+			bottom: 1.8rem;
+			width: 1px;
+			background: linear-gradient(#67e8f988, #a5b4fc88);
+		}
+		.matrix-column::before {
+			top: 1.8rem;
+			left: -1.5rem;
+			width: 1.5rem;
+			height: 8px;
+			border: 0;
+			border-top: 1px solid var(--dom-accent);
+			border-right: 1px solid var(--dom-accent);
+			border-radius: 0 6px 0 0;
+			background: none;
+		}
+	}
+	@media (max-width: 600px) {
+		.edu-card {
+			padding: 1.2rem;
+		}
+		.edu-card-top {
+			gap: 0.6rem;
+		}
+		.edu-icon-wrap {
+			width: 30px;
+			height: 30px;
+			font-size: 1rem;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation: none !important;
+			transition: none !important;
 		}
 	}
 </style>

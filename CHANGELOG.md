@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+- 2026-10-21 - feat(redesign): Bioluminescent Neural Cortex, Neural Console & Synaptic Deck overhaul
+  - Living Bioluminescent Neural Cortex (`src/lib/NeuralCortexCanvas.svelte`): Deterministic branching axon topology (7 somas, 245 dendrite bifurcations), traveling action potential trails (cyan/violet/gold), DPR cap, visibility/offscreen auto-suspend, user pause toggle, and static SVG fallback.
+  - Interactive Connectome Hero (`src/lib/Hero.svelte`): 4-node spatial connectome with native buttons (`aria-pressed`), active state inspection viewport, and SVG synaptic connections.
+  - Neural Cortex Console (`src/lib/JarvisHUD.svelte` & `src/lib/cortex-data.ts`): Full rebuild with native `<dialog>` modal, 3 operation modes (Neural Query with local keyword disclosure, Architecture Trace with verified project tech stacks, Executive CLI), speech synthesis caching with opt-in controls, and collision-free `Ctrl/Cmd + K/J` shortcuts.
+  - Synaptic Pitch Deck (`src/lib/Presentation.svelte` & `src/lib/deck/*`): 8 executive chapters with native modal isolation, accessible focus restoration to actual trigger, isolated `<details>` keyboard controls, and wrapped bilingual rendering.
+  - Section Cohesion (`Experience.svelte`, `Projects.svelte`, `Skills.svelte`, `Contact.svelte`): Replaced heavy blurred glass boxes with clean charcoal surfaces, cyan axon timeline rails, project index numbers (P/01-P/18), native modal project specs, domain connection paths, and fixed the Web3Forms checkbox hydration bug (`bind:checked`).
+  - Audio Telemetry (`src/lib/sound.ts`): Audio defaults to OFF (opt-in) with persistent `localStorage` state.
+  - Verification & Accessibility: 19/19 Playwright regression tests passed; real a11y-loop CLI audit (5 baseline passes + 24 interaction states); 0 errors and 0 warnings on `svelte-check`; successful static production build.
+
 - 2026-10-15 - feat(redesign): major portfolio overhaul to Neural Mission Control & Sovereign Systems Deck (Option 1)
   - Typography upgraded to Space Grotesk (headings), Inter (body), and JetBrains Mono (telemetry/code) in `src/app.html`.
   - Design system overhauled in `src/routes/layout.css` to Obsidian Void (`#030712`), Electric Cyan (`#38bdf8`), Cyber Indigo (`#818cf8`), Signal Emerald (`#10b981`), and Aerospace Glass.

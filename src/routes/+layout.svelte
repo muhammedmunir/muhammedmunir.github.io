@@ -72,9 +72,18 @@
 			}
 		};
 
+		const handleEscape = (event: KeyboardEvent) => {
+			if (event.key === 'Escape' && mobileOpen) {
+				mobileOpen = false;
+				document.getElementById('mobile-menu-toggle')?.focus();
+			}
+		};
+		handleScroll();
+		window.addEventListener('keydown', handleEscape);
 		window.addEventListener('scroll', handleScroll, { passive: true });
 		return () => {
 			clearInterval(clockInterval);
+			window.removeEventListener('keydown', handleEscape);
 			window.removeEventListener('scroll', handleScroll);
 		};
 	});
@@ -83,6 +92,10 @@
 <svelte:head>
 	<title>Muhammed Munir Bin Mohd Azmi | Full-Stack Software Engineer & Solutions Architect</title>
 </svelte:head>
+
+<a class="skip-link" href="#main-content"
+	>{$lang === 'ms' ? 'Langkau ke kandungan' : 'Skip to content'}</a
+>
 
 <!-- FLOATING TACTICAL COMMAND BAR -->
 <header class="nav-wrapper" class:scrolled={navScrolled}>
@@ -107,6 +120,7 @@
 						href={link.href}
 						class="nav-link"
 						class:active={isActive}
+						aria-current={isActive ? 'location' : undefined}
 						id="nav-{link.key}"
 						onmouseenter={() => playBlip(620, 0.02)}
 					>
@@ -125,7 +139,9 @@
 				class="cmd-trigger"
 				onclick={openCommandDeck}
 				onmouseenter={() => playBlip(740, 0.03)}
-				aria-label="Open Neural Command Deck"
+				aria-label={$lang === 'ms'
+					? 'AI DECK ⌘K — Buka konsol neural'
+					: 'AI DECK ⌘K — Open neural console'}
 				title="Neural Command Deck (Ctrl+K)"
 			>
 				<span class="cmd-orb" aria-hidden="true"></span>
@@ -182,7 +198,7 @@
 					toggleLang();
 					playBlip(750, 0.04);
 				}}
-				aria-label="Tukar bahasa / Switch language"
+				aria-label="BM / EN — Tukar bahasa / Switch language"
 				title={$lang === 'ms' ? 'Switch to English' : 'Tukar ke Bahasa Melayu'}
 			>
 				<span class="lang-opt" class:active={$lang === 'ms'}>BM</span>
@@ -230,12 +246,20 @@
 			<button
 				type="button"
 				class="hamburger"
+				id="mobile-menu-toggle"
+				aria-controls="mobile-navigation"
 				class:open={mobileOpen}
 				onclick={() => {
 					mobileOpen = !mobileOpen;
 					playBlip(500, 0.03);
 				}}
-				aria-label={mobileOpen ? 'Tutup menu' : 'Buka menu'}
+				aria-label={$lang === 'ms'
+					? mobileOpen
+						? 'Tutup menu'
+						: 'Buka menu'
+					: mobileOpen
+						? 'Close menu'
+						: 'Open menu'}
 				aria-expanded={mobileOpen}
 			>
 				<span></span><span></span><span></span>
@@ -245,10 +269,15 @@
 
 	<!-- Mobile Tactical Drawer -->
 	{#if mobileOpen}
-		<div class="mobile-menu" role="navigation" aria-label="Mobile navigation">
+		<div
+			id="mobile-navigation"
+			class="mobile-menu"
+			role="navigation"
+			aria-label={$lang === 'ms' ? 'Navigasi mudah alih' : 'Mobile navigation'}
+		>
 			<div class="mobile-telemetry">
 				<span class="telemetry-dot"></span>
-				<span>SYS.ONLINE // {currentTime}</span>
+				<span>MY / {currentTime}</span>
 			</div>
 			{#each navKeys as link}
 				<a href={link.href} class="mobile-nav-link" onclick={() => (mobileOpen = false)}>
@@ -291,7 +320,7 @@
 	{/if}
 </header>
 
-<main>
+<main id="main-content" tabindex="-1">
 	{@render children()}
 </main>
 
@@ -319,8 +348,8 @@
 					<span class="telem-val">{currentTime}</span>
 				</div>
 				<div class="telem-pill">
-					<span class="telem-label">STATUS</span>
-					<span class="telem-val telem-online">OPERATIONAL</span>
+					<span class="telem-label">{$lang === 'ms' ? 'BAHASA' : 'LANGUAGES'}</span>
+					<span class="telem-val telem-online">BM / EN</span>
 				</div>
 			</div>
 		</div>
@@ -333,6 +362,9 @@
 </footer>
 
 <style>
+	.nav-brand {
+		min-height: 44px;
+	}
 	.nav-wrapper {
 		position: fixed;
 		top: 0;
@@ -401,7 +433,6 @@
 		border-radius: 50%;
 		background: #10b981;
 		box-shadow: 0 0 10px #10b981;
-		animation: pulse-emerald 2.4s infinite;
 	}
 	.logo-port {
 		color: var(--white);
@@ -475,6 +506,8 @@
 		font-family: var(--font-mono);
 		font-size: 0.72rem;
 		font-weight: 600;
+		min-height: 44px;
+		min-width: 44px;
 		cursor: pointer;
 		transition: all 0.25s ease;
 	}
@@ -503,8 +536,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 34px;
-		height: 34px;
+		width: 44px;
+		height: 44px;
 		border-radius: 8px;
 		background: rgba(15, 29, 53, 0.55);
 		border: 1px solid rgba(148, 163, 184, 0.16);
@@ -521,6 +554,7 @@
 	}
 
 	.lang-toggle {
+		min-height: 44px;
 		display: inline-flex;
 		align-items: center;
 		background: rgba(15, 29, 53, 0.55);
@@ -579,8 +613,8 @@
 		flex-direction: column;
 		justify-content: center;
 		gap: 4px;
-		width: 36px;
-		height: 36px;
+		width: 44px;
+		height: 44px;
 		background: rgba(15, 29, 53, 0.6);
 		border: 1px solid rgba(148, 163, 184, 0.2);
 		border-radius: 8px;
@@ -612,6 +646,8 @@
 		border: 1px solid rgba(56, 189, 248, 0.22);
 		border-radius: 14px;
 		padding: 1rem;
+		max-height: calc(100dvh - 110px);
+		overflow-y: auto;
 		display: flex;
 		flex-direction: column;
 		gap: 0.35rem;
@@ -762,7 +798,31 @@
 			display: inline-flex;
 		}
 	}
+	@media (max-width: 380px) {
+		.logo-folio {
+			display: none;
+		}
+		.lang-opt {
+			padding-inline: 0.3rem;
+		}
+	}
 	@media (max-width: 520px) {
+		.nav-deck {
+			gap: 0.4rem;
+			padding-inline: 0.6rem;
+		}
+		.nav-actions {
+			gap: 0.3rem;
+		}
+		.brand-status {
+			display: none;
+		}
+		.nav-brand {
+			font-size: 0.9rem;
+		}
+		.logo-folio {
+			font-size: 0.75rem;
+		}
 		.brand-tag,
 		.cmd-label {
 			display: none;

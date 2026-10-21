@@ -1,7 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gsap } from 'gsap';
-	import { ScrollTrigger } from 'gsap/ScrollTrigger';
+	import {
+		acquireScrollLock,
+		releaseScrollLock,
+		hasOpenModal,
+		keyboardScrollRegion
+	} from '$lib/deck/focus-utils';
 	import { lang } from '$lib/i18n';
 	import { translations } from '$lib/translations';
 	import { derived } from 'svelte/store';
@@ -37,7 +40,7 @@
 			context: 'YHCM Sdn Bhd • Platform Pengurusan Aset',
 			category: 'gov',
 			badgeKey: 'enterprise',
-			accent: '#38BDF8',
+			accent: '#67e8f9',
 			icon: '🛡️',
 			isGov: true,
 			gradient: 'linear-gradient(135deg, rgba(56,189,248,0.14) 0%, rgba(10,25,48,0.7) 100%)',
@@ -57,7 +60,7 @@
 			context: 'YHCM Sdn Bhd • Operasi & Penyelenggaraan',
 			category: 'gov',
 			badgeKey: 'enterprise',
-			accent: '#10B981',
+			accent: '#67e8f9',
 			icon: '⚙️',
 			isGov: true,
 			gradient: 'linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(8,30,22,0.7) 100%)',
@@ -77,7 +80,7 @@
 			context: 'YHCM Sdn Bhd • Arkib & Rekod Digital',
 			category: 'gov',
 			badgeKey: 'enterprise',
-			accent: '#A855F7',
+			accent: '#a5b4fc',
 			icon: '📦',
 			isGov: true,
 			gradient: 'linear-gradient(135deg, rgba(168,85,247,0.14) 0%, rgba(24,12,38,0.7) 100%)',
@@ -101,7 +104,7 @@
 			context: 'Inovasi Peribadi • Seni Bina Android Pintar',
 			category: 'ai',
 			badgeKey: 'innovation',
-			accent: '#00F0FF',
+			accent: '#67e8f9',
 			icon: '⚡',
 			gradient: 'linear-gradient(135deg, rgba(0,240,255,0.14) 0%, rgba(6,25,45,0.7) 100%)',
 			tags: [
@@ -119,7 +122,7 @@
 			context: 'Autonomous AI Orchestration & Virtual Office',
 			category: 'ai',
 			badgeKey: 'innovation',
-			accent: '#818CF8',
+			accent: '#a5b4fc',
 			icon: '🏢',
 			image: '/images/9router_office_3d.png',
 			gradient: 'linear-gradient(135deg, rgba(129,140,248,0.14) 0%, rgba(15,18,48,0.7) 100%)',
@@ -137,7 +140,7 @@
 			context: 'Desktop Automation & Systems Engineering',
 			category: 'ai',
 			badgeKey: 'innovation',
-			accent: '#EC4899',
+			accent: '#67e8f9',
 			icon: '👁️',
 			gradient: 'linear-gradient(135deg, rgba(236,72,153,0.14) 0%, rgba(30,10,35,0.7) 100%)',
 			tags: [
@@ -155,7 +158,7 @@
 			context: 'Kesihatan Ibu Mengandung • Aplikasi Mudah Alih',
 			category: 'mobile',
 			badgeKey: 'production',
-			accent: '#F43F5E',
+			accent: '#67e8f9',
 			icon: '👶',
 			image: '/images/baby_kicking_logo.png',
 			gradient: 'linear-gradient(135deg, rgba(244,63,94,0.14) 0%, rgba(35,10,20,0.7) 100%)',
@@ -173,7 +176,7 @@
 			context: 'Fintech • Pengiraan Percukaian LHDN Malaysia',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#10B981',
+			accent: '#67e8f9',
 			icon: '📊',
 			gradient: 'linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(8,30,22,0.7) 100%)',
 			tags: [
@@ -190,7 +193,7 @@
 			context: 'Agri-Tech • IoT Smart Farming Telemetry',
 			category: 'mobile',
 			badgeKey: 'innovation',
-			accent: '#84CC16',
+			accent: '#67e8f9',
 			icon: '🌱',
 			gradient: 'linear-gradient(135deg, rgba(132,204,22,0.14) 0%, rgba(20,30,8,0.7) 100%)',
 			tags: [
@@ -207,7 +210,7 @@
 			context: 'Lumina Glass Studio & Custom Contracting',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#38BDF8',
+			accent: '#67e8f9',
 			icon: '🪞',
 			gradient: 'linear-gradient(135deg, rgba(56,189,248,0.14) 0%, rgba(10,25,48,0.7) 100%)',
 			tags: [
@@ -224,7 +227,7 @@
 			context: 'Enjin Fizik Permainan & Pelanjutan Pelayar',
 			category: 'sim',
 			badgeKey: 'innovation',
-			accent: '#F59E0B',
+			accent: '#e4c988',
 			icon: '🎱',
 			gradient: 'linear-gradient(135deg, rgba(245,158,11,0.14) 0%, rgba(35,20,5,0.7) 100%)',
 			tags: [
@@ -241,7 +244,7 @@
 			context: 'Nova Bitara Development Sdn Bhd',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#D4AF37',
+			accent: '#e4c988',
 			icon: '🔐',
 			docHref: '/docs/iwa001-case-study.pdf',
 			gradient: 'linear-gradient(135deg, rgba(212,175,55,0.14) 0%, rgba(25,20,5,0.7) 100%)',
@@ -253,7 +256,7 @@
 			context: 'Tenaga Nasional Berhad (TNB)',
 			category: 'web',
 			badgeKey: 'enterprise',
-			accent: '#22C55E',
+			accent: '#67e8f9',
 			icon: '⚡',
 			gradient: 'linear-gradient(135deg, rgba(34,197,94,0.14) 0%, rgba(8,28,15,0.7) 100%)',
 			tags: [
@@ -271,7 +274,7 @@
 			context: 'Nova Bitara Development Sdn Bhd',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#60A5FA',
+			accent: '#67e8f9',
 			icon: '🌐',
 			docHref: '/docs/infinity-landing-case-study.pdf',
 			gradient: 'linear-gradient(135deg, rgba(96,165,250,0.14) 0%, rgba(12,24,45,0.7) 100%)',
@@ -283,7 +286,7 @@
 			context: 'Infrastruktur & Pemantauan Telemetri Pelayan',
 			category: 'sim',
 			badgeKey: 'innovation',
-			accent: '#E11D48',
+			accent: '#67e8f9',
 			icon: '📡',
 			gradient: 'linear-gradient(135deg, rgba(225,29,72,0.14) 0%, rgba(35,6,15,0.7) 100%)',
 			tags: [
@@ -299,7 +302,7 @@
 			context: 'Aplikasi Produktiviti & Pengurusan Tugasan',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#FBBF24',
+			accent: '#e4c988',
 			icon: '🎯',
 			gradient: 'linear-gradient(135deg, rgba(251,191,36,0.14) 0%, rgba(35,25,5,0.7) 100%)',
 			tags: ['Modular Kanban', 'Pomodoro Focus Timer', 'Local State Machine', 'Zero Bloat']
@@ -310,7 +313,7 @@
 			context: 'Algoritma Sains Komputer & Pelanjutan Pelayar',
 			category: 'sim',
 			badgeKey: 'innovation',
-			accent: '#38BDF8',
+			accent: '#67e8f9',
 			icon: '🧩',
 			gradient: 'linear-gradient(135deg, rgba(56,189,248,0.14) 0%, rgba(8,25,45,0.7) 100%)',
 			tags: ['Procedural Generator', 'Backtracking Solver', 'Chromium Extension', 'Dark UI']
@@ -321,7 +324,7 @@
 			context: 'Universiti Teknologi Malaysia (UTM FYP)',
 			category: 'web',
 			badgeKey: 'academic',
-			accent: '#A78BFA',
+			accent: '#a5b4fc',
 			icon: '🗺️',
 			gradient: 'linear-gradient(135deg, rgba(167,139,250,0.14) 0%, rgba(22,12,38,0.7) 100%)',
 			tags: [
@@ -371,47 +374,29 @@
 	);
 
 	function openSpecs(project: ProjectItem) {
+		if (selectedProject || hasOpenModal()) return;
 		playConfirm();
 		selectedProject = project;
-		document.body.style.overflow = 'hidden';
 	}
 
 	function closeSpecs() {
 		playBlip(440, 0.04);
 		selectedProject = null;
-		document.body.style.overflow = '';
 	}
 
-	onMount(() => {
-		gsap.registerPlugin(ScrollTrigger);
-
-		gsap.utils.toArray('.project-card').forEach((card, i) => {
-			gsap.fromTo(
-				card as HTMLElement,
-				{ opacity: 0, y: 25 },
-				{
-					opacity: 1,
-					y: 0,
-					duration: 0.5,
-					delay: (i % 3) * 0.08,
-					ease: 'power2.out',
-					scrollTrigger: {
-						trigger: card as HTMLElement,
-						start: 'top 90%',
-						toggleActions: 'play none none none'
-					}
-				}
-			);
-		});
-
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === 'Escape' && selectedProject) {
-				closeSpecs();
+	function focusDialog(node: HTMLDialogElement) {
+		const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+		node.showModal();
+		acquireScrollLock();
+		node.querySelector<HTMLButtonElement>('.modal-close-btn')?.focus();
+		return {
+			destroy() {
+				node.close();
+				releaseScrollLock();
+				if (previous?.isConnected) previous.focus({ preventScroll: true });
 			}
 		};
-		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
-	});
+	}
 </script>
 
 <section id="projects" class="section projects-section">
@@ -449,22 +434,27 @@
 				class="project-search-input"
 				placeholder={$t.search_placeholder}
 				bind:value={searchQuery}
-				aria-label="Cari Projek"
+				aria-label={$lang === 'ms' ? 'Cari projek' : 'Search projects'}
 			/>
 			{#if searchQuery}
 				<button
 					class="clear-search-btn"
 					onclick={() => (searchQuery = '')}
-					aria-label="Padam Carian">✕</button
+					aria-label={$lang === 'ms' ? 'Padam carian' : 'Clear search'}>✕</button
 				>
 			{/if}
 		</div>
 
 		<!-- Category Filter Pills -->
-		<div class="category-pills" role="tablist">
+		<div
+			class="category-pills"
+			role="group"
+			aria-label={$lang === 'ms' ? 'Kategori projek' : 'Project categories'}
+		>
 			<button
 				class="pill-btn"
 				class:active={activeFilter === 'all'}
+				aria-pressed={activeFilter === 'all'}
 				onclick={() => {
 					activeFilter = 'all';
 					playBlip(550, 0.03);
@@ -476,6 +466,7 @@
 			<button
 				class="pill-btn"
 				class:active={activeFilter === 'gov'}
+				aria-pressed={activeFilter === 'gov'}
 				onclick={() => {
 					activeFilter = 'gov';
 					playBlip(570, 0.03);
@@ -487,6 +478,7 @@
 			<button
 				class="pill-btn"
 				class:active={activeFilter === 'ai'}
+				aria-pressed={activeFilter === 'ai'}
 				onclick={() => {
 					activeFilter = 'ai';
 					playBlip(590, 0.03);
@@ -498,6 +490,7 @@
 			<button
 				class="pill-btn"
 				class:active={activeFilter === 'mobile'}
+				aria-pressed={activeFilter === 'mobile'}
 				onclick={() => {
 					activeFilter = 'mobile';
 					playBlip(610, 0.03);
@@ -509,6 +502,7 @@
 			<button
 				class="pill-btn"
 				class:active={activeFilter === 'web'}
+				aria-pressed={activeFilter === 'web'}
 				onclick={() => {
 					activeFilter = 'web';
 					playBlip(630, 0.03);
@@ -520,6 +514,7 @@
 			<button
 				class="pill-btn"
 				class:active={activeFilter === 'sim'}
+				aria-pressed={activeFilter === 'sim'}
 				onclick={() => {
 					activeFilter = 'sim';
 					playBlip(650, 0.03);
@@ -536,8 +531,12 @@
 		{#if filteredProjects.length === 0}
 			<div class="empty-state">
 				<div class="empty-glyph">📡</div>
-				<h4>Tiada projek ditemui untuk "{searchQuery}"</h4>
-				<p>Cuba kata kunci lain seperti Laravel, Flutter, Docker, AI, atau reset penapis.</p>
+				<h4>{$lang === 'ms' ? 'Tiada projek ditemui' : 'No projects found'}: “{searchQuery}”</h4>
+				<p>
+					{$lang === 'ms'
+						? 'Cuba kata kunci lain atau set semula penapis.'
+						: 'Try another keyword or reset the filters.'}
+				</p>
 				<button
 					class="btn btn-outline"
 					onclick={() => {
@@ -545,22 +544,16 @@
 						searchQuery = '';
 					}}
 				>
-					Set Semula Penapis
+					{$lang === 'ms' ? 'Set semula penapis' : 'Reset filters'}
 				</button>
 			</div>
 		{:else}
 			{#each filteredProjects as project (project.id)}
 				{@const itemData = $t[project.key as keyof typeof $t] as any}
-				<article
-					class="project-card"
-					style="--proj-accent: {project.accent};"
-					onmouseenter={() => playBlip(700, 0.02)}
-				>
-					<div
-						class="card-glow-bg"
-						style="background: {project.gradient};"
-						aria-hidden="true"
-					></div>
+				<article class="project-card" style="--proj-accent: {project.accent};">
+					<span class="project-index" aria-hidden="true"
+						>P/{String(allProjects.indexOf(project) + 1).padStart(2, '0')}</span
+					>
 
 					<!-- Header: Icon & Category Badge -->
 					<div class="card-header-row">
@@ -573,7 +566,7 @@
 						</div>
 						<div class="card-badges">
 							{#if project.isGov}
-								<span class="badge badge-gov">🏛️ Sektor Awam</span>
+								<span class="badge badge-gov">{$t.filter_gov}</span>
 							{:else}
 								<span class="badge badge-type badge-{project.badgeKey}">
 									{$t[project.badgeKey]}
@@ -606,7 +599,7 @@
 					<!-- Footer Actions: Specs Modal Button & optional PDF -->
 					<div class="card-footer-row">
 						<button class="btn-card-specs" onclick={() => openSpecs(project)}>
-							<span>Spesifikasi Sistem</span>
+							<span>{$t.specs_btn}</span>
 							<span class="arrow-glyph">➔</span>
 						</button>
 
@@ -617,7 +610,7 @@
 								rel="noopener noreferrer"
 								class="btn-card-doc"
 								download
-								title="Muat Turun Kajian Kes (PDF)"
+								title={$t.view_doc}
 							>
 								<span>PDF</span>
 							</a>
@@ -634,8 +627,9 @@
 			<div class="cta-text">
 				<h3>{$t.cta}</h3>
 				<p>
-					Sedia berbincang untuk peranan sepenuh masa, perundingan kanan, atau demonstrasi
-					arkitektur sistem.
+					{$lang === 'ms'
+						? 'Mari bincangkan peluang kerjaya, kerjasama atau demonstrasi sistem.'
+						: 'Let’s discuss career opportunities, collaboration or a system walkthrough.'}
 				</p>
 			</div>
 			<a href="#contact" class="btn btn-primary cta-btn" onclick={() => playConfirm()}>
@@ -648,14 +642,16 @@
 <!-- 🔍 FULL TECHNICAL SPECIFICATION MODAL -->
 {#if selectedProject}
 	{@const modalData = $t[selectedProject.key as keyof typeof $t] as any}
-	<div class="modal-backdrop" onclick={closeSpecs} role="presentation"></div>
-
-	<div
+	<dialog
 		class="specs-modal"
 		style="--modal-accent: {selectedProject.accent};"
-		role="dialog"
-		aria-label="Spesifikasi Sistem Penuh"
-		aria-modal="true"
+		aria-label={$t.specs_modal_title}
+		use:focusDialog
+		tabindex="-1"
+		oncancel={(event) => {
+			event.preventDefault();
+			closeSpecs();
+		}}
 	>
 		<!-- Modal Header -->
 		<header class="modal-header">
@@ -664,7 +660,7 @@
 				<div>
 					<div class="modal-badge-row">
 						{#if selectedProject.isGov}
-							<span class="badge badge-gov">🏛️ SEKTOR AWAM</span>
+							<span class="badge badge-gov">{$t.filter_gov}</span>
 						{/if}
 						<span class="badge badge-modal">{$t[selectedProject.badgeKey]}</span>
 					</div>
@@ -672,14 +668,19 @@
 					<p class="modal-sub">{modalData.subtitle}</p>
 				</div>
 			</div>
-			<button class="modal-close-btn" onclick={closeSpecs} aria-label="Tutup Dialog">✕</button>
+			<button
+				class="modal-close-btn"
+				onclick={closeSpecs}
+				aria-label={$lang === 'ms' ? 'Tutup dialog' : 'Close dialog'}
+				><span aria-hidden="true">✕</span></button
+			>
 		</header>
 
 		<!-- Modal Body -->
-		<div class="modal-body">
+		<div class="modal-body" role="region" aria-label={$t.specs_arch} use:keyboardScrollRegion>
 			<!-- Context Card -->
 			<div class="modal-context-strip">
-				<span class="dim">Organisasi / Konteks:</span>
+				<span class="dim">{$t.context_label}:</span>
 				<strong>{selectedProject.context}</strong>
 			</div>
 
@@ -697,7 +698,7 @@
 
 			<!-- System Description -->
 			<div class="modal-section">
-				<h3 class="modal-section-title">Huraian Arkitektur Sistem</h3>
+				<h3 class="modal-section-title">{$t.specs_arch}</h3>
 				<p class="modal-long-desc">{modalData.desc}</p>
 			</div>
 
@@ -718,7 +719,9 @@
 
 			<!-- Tech Stack Badges -->
 			<div class="modal-section">
-				<h3 class="modal-section-title">Teknologi & Alatan Digunakan</h3>
+				<h3 class="modal-section-title">
+					{$lang === 'ms' ? 'Teknologi & alatan' : 'Technologies & tools'}
+				</h3>
 				<div class="modal-tags-grid">
 					{#each selectedProject.tags as tag}
 						<span class="tag modal-tag">{tag}</span>
@@ -737,17 +740,22 @@
 					class="btn btn-primary"
 					download
 				>
-					📥 Muat Turun Dokumen Kajian Kes (PDF)
+					{$t.view_doc}
 				</a>
 			{/if}
 			<button class="btn btn-outline" onclick={closeSpecs}>
 				{$t.close_modal}
 			</button>
 		</footer>
-	</div>
+	</dialog>
 {/if}
 
 <style>
+	.project-search-input:focus-visible,
+	.modal-body:focus-visible {
+		outline: 2px solid #efd18c;
+		outline-offset: 3px;
+	}
 	.projects-section {
 		position: relative;
 		padding: 6rem 1.5rem;
@@ -767,7 +775,7 @@
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.15em;
-		color: #38bdf8;
+		color: #67e8f9;
 		margin-bottom: 0.5rem;
 	}
 	.section-title {
@@ -788,7 +796,7 @@
 	.section-divider {
 		width: 60px;
 		height: 3px;
-		background: linear-gradient(90deg, #38bdf8, #818cf8);
+		background: linear-gradient(90deg, #67e8f9, #a5b4fc);
 		border-radius: 3px;
 		margin: 1.8rem auto 0;
 	}
@@ -814,7 +822,7 @@
 		transform: translateY(-50%);
 		display: flex;
 		align-items: center;
-		color: #64748b;
+		color: #a6b5c6;
 		pointer-events: none;
 	}
 	.project-search-input {
@@ -827,19 +835,16 @@
 		font-family: var(--font-body);
 		font-size: 0.95rem;
 		outline: none;
-		backdrop-filter: blur(14px);
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+		box-shadow: none;
 		transition: all 0.25s ease;
 	}
 	.project-search-input:focus {
-		border-color: #38bdf8;
-		box-shadow:
-			0 0 0 3px rgba(56, 189, 248, 0.15),
-			0 8px 24px rgba(0, 0, 0, 0.4);
+		border-color: #67e8f9;
+		box-shadow: none;
 		background: rgba(15, 23, 42, 0.9);
 	}
 	.project-search-input::placeholder {
-		color: #64748b;
+		color: #a6b5c6;
 	}
 	.clear-search-btn {
 		position: absolute;
@@ -893,9 +898,9 @@
 	}
 	.pill-btn.active {
 		background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(129, 140, 248, 0.2) 100%);
-		border-color: #38bdf8;
-		color: #38bdf8;
-		box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+		border-color: #67e8f9;
+		color: #67e8f9;
+		box-shadow: none;
 	}
 	.pill-count {
 		font-family: var(--font-mono);
@@ -920,31 +925,17 @@
 		padding: 1.8rem;
 		background: rgba(11, 20, 38, 0.75);
 		border: 1px solid rgba(255, 255, 255, 0.08);
-		backdrop-filter: blur(16px);
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
 		overflow: hidden;
 		transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+		box-shadow: none;
 	}
 	.project-card:hover {
 		transform: translateY(-5px);
 		border-color: var(--proj-accent);
-		box-shadow:
-			0 18px 45px rgba(0, 0, 0, 0.55),
-			0 0 30px rgba(56, 189, 248, 0.12);
-	}
-
-	.card-glow-bg {
-		position: absolute;
-		inset: 0;
-		opacity: 0.6;
-		pointer-events: none;
-		transition: opacity 0.3s;
-	}
-	.project-card:hover .card-glow-bg {
-		opacity: 1;
+		box-shadow: none;
 	}
 
 	.card-header-row {
@@ -965,7 +956,7 @@
 		align-items: center;
 		justify-content: center;
 		font-size: 1.4rem;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		box-shadow: none;
 		overflow: hidden;
 	}
 	.card-avatar-img {
@@ -990,7 +981,7 @@
 	}
 	.badge-gov {
 		background: rgba(56, 189, 248, 0.14);
-		color: #38bdf8;
+		color: #67e8f9;
 		border: 1px solid rgba(56, 189, 248, 0.35);
 	}
 	.badge-enterprise {
@@ -1000,7 +991,7 @@
 	}
 	.badge-production {
 		background: rgba(212, 175, 55, 0.14);
-		color: #d4af37;
+		color: #e4c988;
 		border: 1px solid rgba(212, 175, 55, 0.35);
 	}
 	.badge-innovation {
@@ -1071,7 +1062,7 @@
 	.tag-more {
 		background: rgba(56, 189, 248, 0.1);
 		border-color: rgba(56, 189, 248, 0.25);
-		color: #38bdf8;
+		color: #67e8f9;
 		font-weight: 600;
 	}
 
@@ -1105,7 +1096,7 @@
 		background: var(--proj-accent);
 		color: #030712;
 		border-color: var(--proj-accent);
-		box-shadow: 0 0 16px var(--proj-accent);
+		box-shadow: none;
 	}
 	.arrow-glyph {
 		transition: transform 0.2s;
@@ -1121,7 +1112,7 @@
 		background: rgba(212, 175, 55, 0.12);
 		border: 1px solid rgba(212, 175, 55, 0.35);
 		border-radius: 10px;
-		color: #d4af37;
+		color: #e4c988;
 		font-family: var(--font-mono);
 		font-size: 0.78rem;
 		font-weight: 700;
@@ -1130,7 +1121,7 @@
 		transition: all 0.2s;
 	}
 	.btn-card-doc:hover {
-		background: #d4af37;
+		background: #e4c988;
 		color: #030712;
 	}
 
@@ -1163,7 +1154,7 @@
 		border: 1px solid rgba(56, 189, 248, 0.25);
 		padding: 2.2rem 2.5rem;
 		border-radius: 20px;
-		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+		box-shadow: none;
 	}
 	.cta-inner {
 		display: flex;
@@ -1189,11 +1180,10 @@
 	}
 
 	/* 🔍 MODAL STYLING */
-	.modal-backdrop {
+	.specs-modal::backdrop {
 		position: fixed;
 		inset: 0;
 		background: rgba(3, 7, 18, 0.85);
-		backdrop-filter: blur(14px);
 		z-index: 1000;
 	}
 	.specs-modal {
@@ -1201,14 +1191,15 @@
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
+		margin: 0;
+		padding: 0;
+		color: inherit;
 		width: min(720px, calc(100vw - 2.5rem));
 		max-height: calc(100vh - 4rem);
 		background: rgba(10, 18, 35, 0.97);
 		border: 1px solid var(--modal-accent);
 		border-radius: 20px;
-		box-shadow:
-			0 25px 80px rgba(0, 0, 0, 0.85),
-			0 0 50px rgba(56, 189, 248, 0.2);
+		box-shadow: none;
 		z-index: 1001;
 		display: flex;
 		flex-direction: column;
@@ -1319,7 +1310,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 1.25rem;
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+		box-shadow: none;
 	}
 	.modal-preview-img {
 		max-height: 220px;
@@ -1406,5 +1397,131 @@
 		.modal-footer {
 			padding: 1.2rem;
 		}
+	}
+	/* Static signal rail: indices stay stable when filtering. */
+	.projects-section {
+		background: #050d16;
+	}
+	.section-header {
+		text-align: left;
+	}
+	.section-desc {
+		margin-left: 0;
+	}
+	.section-title .text-gradient {
+		background: none;
+		-webkit-text-fill-color: currentColor;
+		color: #edf3f7;
+	}
+	.section-divider {
+		margin-left: 0;
+		height: 1px;
+	}
+	.projects-grid {
+		position: relative;
+		padding-left: 1.25rem;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+		border-left: 1px solid #67e8f944;
+	}
+	.project-card {
+		background: #111a23;
+		border-radius: 6px;
+		padding: 1.5rem;
+		overflow: visible;
+	}
+	.project-card::before {
+		content: '';
+		position: absolute;
+		left: -1.3rem;
+		top: 1.6rem;
+		width: 1rem;
+		border-top: 1px solid #67e8f955;
+	}
+	.project-card:hover {
+		transform: none;
+		border-color: #67e8f977;
+	}
+	.project-index {
+		font: 0.68rem var(--font-mono);
+		color: #a5b4fc;
+		margin-bottom: 1rem;
+		letter-spacing: 0.08em;
+	}
+	.project-search-input,
+	.project-search-input:focus,
+	.pill-btn,
+	.pill-btn:hover,
+	.pill-btn.active,
+	.empty-state,
+	.projects-cta,
+	.specs-modal,
+	.modal-header,
+	.modal-footer,
+	.modal-context-strip,
+	.modal-preview-box {
+		background: #111a23;
+	}
+	.project-search-input,
+	.projects-cta,
+	.specs-modal {
+		border-radius: 6px;
+	}
+	.pill-btn.active {
+		color: #67e8f9;
+		border-color: #67e8f9;
+	}
+	.pill-btn,
+	.btn-card-specs,
+	.btn-card-doc {
+		min-height: 44px;
+	}
+	.clear-search-btn,
+	.modal-close-btn {
+		width: 44px;
+		height: 44px;
+		flex-shrink: 0;
+	}
+	.clear-search-btn {
+		right: 0.25rem;
+		background: transparent;
+	}
+	.project-search-input {
+		padding-right: 3.2rem;
+	}
+	.btn-card-specs:hover {
+		background: #67e8f9;
+		color: #050d16;
+	}
+	.badge-enterprise,
+	.badge-innovation {
+		color: #67e8f9;
+		background: #67e8f912;
+		border-color: #67e8f944;
+	}
+	.badge-academic {
+		color: #a5b4fc;
+		background: #a5b4fc12;
+		border-color: #a5b4fc44;
+	}
+	.modal-sub {
+		line-height: 1.6;
+	}
+	.specs-modal::backdrop {
+		background: #050d16eb;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		*,
+		*::before,
+		*::after {
+			animation: none !important;
+			transition: none !important;
+		}
+	}
+	.btn,
+	.btn:hover {
+		box-shadow: none;
+		transform: none;
+		filter: none;
+		min-height: 44px;
 	}
 </style>

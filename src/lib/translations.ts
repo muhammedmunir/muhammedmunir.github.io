@@ -33,7 +33,7 @@ export const translations = {
 
 		// Experience
 		experience: {
-			label: 'Perjalanan Kerjaya',
+			label: '01 / Perjalanan Kerjaya',
 			title: 'Pengalaman Kerja',
 			desc: 'Daripada pertahanan keselamatan siber hingga kejuruteraan sistem perusahaan & sektor awam',
 			active: '● Aktif',
@@ -90,7 +90,7 @@ export const translations = {
 
 		// Projects
 		projects: {
-			label: 'Portfolio Sistem & Aplikasi',
+			label: '02 / Portfolio Sistem & Aplikasi',
 			title: 'Koleksi Projek & Inovasi Perisian',
 			desc: '18+ sistem produksi merangkumi platform sektor awam berimpak tinggi, ejen autonomi AI, aplikasi mudah alih Flutter, dan enjin simulasi web.',
 			context_label: 'Organisasi / Konteks',
@@ -356,8 +356,8 @@ export const translations = {
 
 		// Skills
 		skills: {
-			label: 'Kepakaran Teknikal',
-			title: 'Senjata & Penguasaan Teknologi',
+			label: '03 / Kepakaran Teknikal',
+			title: 'Kemahiran & Teknologi',
 			desc: 'Kemahiran pelbagai disiplin merangkumi pembangunan full-stack, automasi sistem, infrastruktur awan, dan keselamatan siber',
 			frontend: 'Frontend, Mudah Alih & 3D',
 			backend: 'Backend & Pengkomputeran Awan',
@@ -427,7 +427,7 @@ export const translations = {
 
 		// Contact
 		contact: {
-			label: 'Hubungi Saya',
+			label: '04 / Hubungi Saya',
 			title: 'Mari Bincang Kerjasama',
 			desc: 'Terbuka untuk tawaran kerjaya sepenuh masa, projek kontrak perusahaan, atau perundingan teknikal',
 			intro_title: 'Bersedia membina penyelesaian berimpak tinggi?',
@@ -435,6 +435,8 @@ export const translations = {
 				'Sama ada anda memerlukan sistem perusahaan sektor awam yang mematuhi keselamatan ketat, aplikasi SaaS yang berskala, atau automasi berkuasa tinggi — saya sedia memberikan mutu kerja yang profesional dan teliti.',
 			avail_status: 'Tersedia Sekarang',
 			avail_sub: 'Terbuka untuk peluang Sepenuh Masa, Kontrak & Bebas',
+			channels_label: 'SALURAN HUBUNGAN',
+			form_sub: 'PERTANYAAN KERJAYA & KERJASAMA',
 			form_title: 'Hantar Mesej Terus',
 			name_label: 'Nama Penuh',
 			name_placeholder: 'Nama anda atau syarikat',
@@ -447,8 +449,7 @@ export const translations = {
 			send_btn: 'Hantar Mesej Sekarang',
 			sending: 'Menghantar...',
 			success_title: 'Mesej Berjaya Dihantar!',
-			success_msg:
-				'Terima kasih atas mesej anda. Saya akan meneliti dan membalas dalam tempoh 24 jam.',
+			success_msg: 'Terima kasih atas mesej anda. Saya akan meneliti dan membalas pertanyaan anda.',
 			send_another: 'Hantar Mesej Baharu'
 		},
 
@@ -462,7 +463,7 @@ export const translations = {
 		jarvis: {
 			hud_badge: 'J.A.R.V.I.S · NEURAL ASSISTANT',
 			status_title: 'JARVIS CORE AKTIF · FASIH BAHASA MELAYU',
-			telemetry: 'SISTEM: OPTIMAL · TELEMETRI: 18+ PROJEK · LOKASI: PUCHONG, SELANGOR',
+			telemetry: 'PORTFOLIO · PROJEK & PENGALAMAN · PUCHONG, SELANGOR',
 			greeting:
 				'Salam perkenalan! Saya J.A.R.V.I.S, pembantu kecerdasan portfolio Muhammed Munir. Saya fasih berbahasa Melayu dan sedia membantu anda meneliti rekod kepakaran, 3 sistem sektor kerajaan, 15+ aplikasi inovasi, statistik ekosistem, atau memuat turun resume ATS. Apa yang boleh saya bantu anda hari ini?',
 			input_placeholder: 'Tanya apa sahaja dalam Bahasa Melayu atau klik cadangan...',
@@ -515,7 +516,7 @@ export const translations = {
 			}
 		},
 		experience: {
-			label: 'Career Journey',
+			label: '01 / Career Journey',
 			title: 'Work Experience',
 			desc: 'From cybersecurity threat defense to enterprise full-stack engineering & public sector systems',
 			active: '● Active',
@@ -568,7 +569,7 @@ export const translations = {
 			}
 		},
 		projects: {
-			label: 'Featured Systems & Applications',
+			label: '02 / Systems & Applications',
 			title: 'Featured Systems & Engineering Projects',
 			desc: '18+ production systems spanning public sector platforms, autonomous AI agents, Flutter mobile solutions, and web simulation engines.',
 			context_label: 'Organization / Context',
@@ -833,8 +834,8 @@ export const translations = {
 
 		// Skills
 		skills: {
-			label: 'Technical Expertise',
-			title: 'Technical Arsenal & Mastery',
+			label: '03 / Technical Expertise',
+			title: 'Skills & Technologies',
 			desc: 'Multi-disciplinary capabilities spanning full-stack development, desktop automation, cloud architecture, and cybersecurity',
 			frontend: 'Frontend, Mobile & 3D',
 			backend: 'Backend & Cloud Computing',
@@ -904,7 +905,7 @@ export const translations = {
 
 		// Contact
 		contact: {
-			label: 'Contact Me',
+			label: '04 / Get In Touch',
 			title: "Let's Connect & Collaborate",
 			desc: 'Available for full-time opportunities, enterprise contracts, or technical consultations',
 			intro_title: 'Ready to build high-impact solutions?',
@@ -912,6 +913,8 @@ export const translations = {
 				'Whether you require high-security enterprise systems, scalable cloud platforms, or advanced computer vision automation — I bring dedicated craftsmanship, technical depth, and professional rigor.',
 			avail_status: 'Available Now',
 			avail_sub: 'Open to Full-Time, Contract & Freelance Opportunities',
+			channels_label: 'CONTACT CHANNELS',
+			form_sub: 'CAREER & COLLABORATION ENQUIRIES',
 			form_title: 'Send a Direct Message',
 			name_label: 'Full Name',
 			name_placeholder: 'Your name or organization',
@@ -922,10 +925,10 @@ export const translations = {
 			msg_label: 'Message',
 			msg_placeholder: 'Tell me about your project requirements or the opportunity...',
 			send_btn: 'Send Message Now',
-			sending: 'Transmitting...',
-			success_title: 'Transmission Received!',
+			sending: 'Sending...',
+			success_title: 'Message Sent!',
 			success_msg:
-				'Thank you for getting in touch. I will review your inquiry and respond within 24 hours.',
+				'Thank you for getting in touch. I will review your inquiry and get back to you.',
 			send_another: 'Send Another Message'
 		},
 
@@ -939,7 +942,7 @@ export const translations = {
 		jarvis: {
 			hud_badge: 'J.A.R.V.I.S · NEURAL ASSISTANT',
 			status_title: 'JARVIS CORE ACTIVE · BILINGUAL ENG & MALAY',
-			telemetry: 'SYSTEM: OPTIMAL · TELEMETRY: 18+ SYSTEMS · LOCATION: PUCHONG, SELANGOR',
+			telemetry: 'PORTFOLIO · PROJECTS & EXPERIENCE · PUCHONG, SELANGOR',
 			greeting:
 				"Greetings! I am J.A.R.V.I.S — the neural interface for Muhammed Munir's portfolio. I am fully fluent in both Bahasa Melayu and English. I am ready to walk you through Munir's 3 government enterprise systems, 15+ innovation apps, ecosystem telemetry, or download his ATS Resume. How may I assist you today?",
 			input_placeholder: 'Ask me anything in English or Malay, or choose a prompt...',
