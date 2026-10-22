@@ -4,10 +4,10 @@ export const translations = {
 		nav: {
 			home: 'Utama',
 			experience: 'Pengalaman',
-			projects: 'Projek & Sistem',
+			projects: 'Hasil Kerja',
 			skills: 'Kemahiran',
 			contact: 'Hubungi',
-			hire: 'Ambil Saya',
+			hire: 'Mari Berbincang',
 			resume: 'Resume ATS'
 		},
 
@@ -21,7 +21,7 @@ export const translations = {
 			cta_projects: 'Jelajah 18+ Projek',
 			cta_resume: 'Muat Turun CV (ATS)',
 			cta_contact: 'Hubungi Saya',
-			cta_jarvis: 'Buka J.A.R.V.I.S HUD',
+			cta_jarvis: 'Cari portfolio',
 			scroll: 'Tatal untuk jelajahi ekosistem',
 			stats: {
 				exp: 'Tahun Pengalaman',
@@ -36,7 +36,7 @@ export const translations = {
 			label: '01 / Perjalanan Kerjaya',
 			title: 'Pengalaman Kerja',
 			desc: 'Daripada pertahanan keselamatan siber hingga kejuruteraan sistem perusahaan & sektor awam',
-			active: '● Aktif',
+			active: 'Jawatan semasa',
 			present: 'Kini'
 		},
 
@@ -90,17 +90,17 @@ export const translations = {
 
 		// Projects
 		projects: {
-			label: '02 / Portfolio Sistem & Aplikasi',
-			title: 'Koleksi Projek & Inovasi Perisian',
-			desc: '18+ sistem produksi merangkumi platform sektor awam berimpak tinggi, ejen autonomi AI, aplikasi mudah alih Flutter, dan enjin simulasi web.',
+			label: '02 / Hasil Kerja',
+			title: 'Sistem dengan tujuan.',
+			desc: 'Daripada sistem sektor awam dan aplikasi pelanggan kepada projek peribadi. Setiap hasil kerja bermula dengan keperluan yang berbeza.',
 			context_label: 'Organisasi / Konteks',
 			cta: 'Berminat untuk melihat demonstrasi sistem atau bekerjasama?',
 			cta_btn: 'Hubungi Munir',
 			view_doc: 'Kajian Kes (PDF)',
-			specs_btn: 'Spesifikasi Sistem',
-			close_modal: 'Tutup Spesifikasi [ESC]',
+			specs_btn: 'Lihat butiran',
+			close_modal: 'Tutup butiran',
 			specs_modal_title: 'Spesifikasi Teknikal Terperinci',
-			specs_arch: 'Seni Bina & Aliran Data',
+			specs_arch: 'Tentang sistem',
 			specs_modules: 'Pecahan Modul & Keupayaan',
 			specs_security: 'Protokol Keselamatan & Integriti',
 			search_placeholder:
@@ -124,7 +124,7 @@ export const translations = {
 			enterprise: 'Sektor Awam / Perusahaan',
 			production: 'Produksi Langsung',
 			academic: 'Akademik',
-			innovation: 'Inovasi',
+			innovation: 'Projek peribadi / Eksperimen',
 
 			// Government Projects (YHCM)
 			emesys: {
@@ -357,8 +357,8 @@ export const translations = {
 		// Skills
 		skills: {
 			label: '03 / Kepakaran Teknikal',
-			title: 'Kemahiran & Teknologi',
-			desc: 'Kemahiran pelbagai disiplin merangkumi pembangunan full-stack, automasi sistem, infrastruktur awan, dan keselamatan siber',
+			title: 'Alatan, dengan konteks.',
+			desc: 'Teknologi yang saya gunakan dan tempat ia digunakan. Pengalaman pengeluaran dibezakan daripada pembelajaran dan eksperimen.',
 			frontend: 'Frontend, Mudah Alih & 3D',
 			backend: 'Backend & Pengkomputeran Awan',
 			security: 'Keselamatan Rangkaian & DevOps',
@@ -428,12 +428,12 @@ export const translations = {
 		// Contact
 		contact: {
 			label: '04 / Hubungi Saya',
-			title: 'Mari Bincang Kerjasama',
-			desc: 'Terbuka untuk tawaran kerjaya sepenuh masa, projek kontrak perusahaan, atau perundingan teknikal',
-			intro_title: 'Bersedia membina penyelesaian berimpak tinggi?',
+			title: 'Mari bincangkan sistem anda.',
+			desc: 'Ada projek, peranan atau masalah teknikal untuk dibincangkan? Ceritakan keperluan anda melalui saluran yang paling sesuai.',
+			intro_title: 'Perbualan yang baik bermula dengan soalan.',
 			intro_desc:
-				'Sama ada anda memerlukan sistem perusahaan sektor awam yang mematuhi keselamatan ketat, aplikasi SaaS yang berskala, atau automasi berkuasa tinggi — saya sedia memberikan mutu kerja yang profesional dan teliti.',
-			avail_status: 'Tersedia Sekarang',
+				'Kongsi konteks, cabaran dan perkara yang anda mahu capai. Untuk pertanyaan tentang peluang atau ketersediaan semasa, hubungi saya terus.',
+			avail_status: 'Bincangkan ketersediaan',
 			avail_sub: 'Terbuka untuk peluang Sepenuh Masa, Kontrak & Bebas',
 			channels_label: 'SALURAN HUBUNGAN',
 			form_sub: 'PERTANYAAN KERJAYA & KERJASAMA',
@@ -455,8 +455,8 @@ export const translations = {
 
 		// Footer
 		footer: {
-			sub: 'Muhammed Munir Bin Mohd Azmi · Full-Stack Developer · Network Security Specialist',
-			copy: 'Hak cipta terpelihara. Dibina dengan SvelteKit 5, TypeScript, Tailwind & GSAP.'
+			sub: 'Full-Stack Developer · IT & Network Security',
+			copy: 'Muhammed Munir. Hak cipta terpelihara.'
 		},
 
 		// JARVIS AI System
@@ -491,10 +491,10 @@ export const translations = {
 		nav: {
 			home: 'Home',
 			experience: 'Experience',
-			projects: 'Projects & Systems',
+			projects: 'Selected Work',
 			skills: 'Skills',
 			contact: 'Contact',
-			hire: 'Hire Me',
+			hire: 'Let’s Talk',
 			resume: 'ATS Resume'
 		},
 		hero: {
@@ -506,7 +506,7 @@ export const translations = {
 			cta_projects: 'Explore 18+ Projects',
 			cta_resume: 'Download CV (ATS)',
 			cta_contact: 'Get In Touch',
-			cta_jarvis: 'Launch J.A.R.V.I.S HUD',
+			cta_jarvis: 'Search portfolio',
 			scroll: 'Scroll to explore the ecosystem',
 			stats: {
 				exp: 'Years Experience',
@@ -519,7 +519,7 @@ export const translations = {
 			label: '01 / Career Journey',
 			title: 'Work Experience',
 			desc: 'From cybersecurity threat defense to enterprise full-stack engineering & public sector systems',
-			active: '● Active',
+			active: 'Current role',
 			present: 'Present'
 		},
 		exp: {
@@ -569,17 +569,17 @@ export const translations = {
 			}
 		},
 		projects: {
-			label: '02 / Systems & Applications',
-			title: 'Featured Systems & Engineering Projects',
-			desc: '18+ production systems spanning public sector platforms, autonomous AI agents, Flutter mobile solutions, and web simulation engines.',
+			label: '02 / Selected Work',
+			title: 'Systems with a purpose.',
+			desc: 'From public-sector systems and client applications to personal projects. Each piece of work starts with a different need.',
 			context_label: 'Organization / Context',
 			cta: 'Interested in collaborating or scheduling a live walkthrough?',
 			cta_btn: 'Contact Munir',
 			view_doc: 'Case Study (PDF)',
-			specs_btn: 'System Specs',
-			close_modal: 'Close Specs [ESC]',
+			specs_btn: 'View details',
+			close_modal: 'Close details',
 			specs_modal_title: 'Detailed Technical Specifications',
-			specs_arch: 'Architecture & Data Flow',
+			specs_arch: 'About the system',
 			specs_modules: 'Core Modules & Capabilities',
 			specs_security: 'Security Protocols & Governance',
 			search_placeholder:
@@ -603,7 +603,7 @@ export const translations = {
 			enterprise: 'Public Sector / Enterprise',
 			production: 'Live Production',
 			academic: 'Academic',
-			innovation: 'Innovation',
+			innovation: 'Personal / Experimental',
 
 			// Government Projects (YHCM)
 			emesys: {
@@ -835,8 +835,8 @@ export const translations = {
 		// Skills
 		skills: {
 			label: '03 / Technical Expertise',
-			title: 'Skills & Technologies',
-			desc: 'Multi-disciplinary capabilities spanning full-stack development, desktop automation, cloud architecture, and cybersecurity',
+			title: 'Tools, in context.',
+			desc: 'The technologies I use and where I use them. Production experience is distinguished from learning and experiments.',
 			frontend: 'Frontend, Mobile & 3D',
 			backend: 'Backend & Cloud Computing',
 			security: 'Network Security & DevOps',
@@ -906,12 +906,12 @@ export const translations = {
 		// Contact
 		contact: {
 			label: '04 / Get In Touch',
-			title: "Let's Connect & Collaborate",
-			desc: 'Available for full-time opportunities, enterprise contracts, or technical consultations',
-			intro_title: 'Ready to build high-impact solutions?',
+			title: 'Let’s talk about your system.',
+			desc: 'A project, a role or a technical challenge? Share what you have in mind through the channel that suits you.',
+			intro_title: 'A good conversation starts with a question.',
 			intro_desc:
-				'Whether you require high-security enterprise systems, scalable cloud platforms, or advanced computer vision automation — I bring dedicated craftsmanship, technical depth, and professional rigor.',
-			avail_status: 'Available Now',
+				'Share the context, the challenge and what you want to achieve. For opportunities or current availability, please contact me directly.',
+			avail_status: 'Discuss availability',
 			avail_sub: 'Open to Full-Time, Contract & Freelance Opportunities',
 			channels_label: 'CONTACT CHANNELS',
 			form_sub: 'CAREER & COLLABORATION ENQUIRIES',
@@ -934,8 +934,8 @@ export const translations = {
 
 		// Footer
 		footer: {
-			sub: 'Muhammed Munir Bin Mohd Azmi · Full-Stack Developer · Network Security Specialist',
-			copy: 'All rights reserved. Engineered with SvelteKit 5, TypeScript, Tailwind & GSAP.'
+			sub: 'Full-Stack Developer · IT & Network Security',
+			copy: 'Muhammed Munir. All rights reserved.'
 		},
 
 		// JARVIS AI System

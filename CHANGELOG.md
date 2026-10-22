@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-10-22 — Complete six-chapter spatial homepage
+
+- Added a shared spatial UI for `/` and `/spatial`, with root canonical metadata and a layout gate that excludes editorial chrome/listeners on both routes.
+- Introduced Muhammed Munir’s full-stack identity and Puchong location, eMesys, OnboardX, Computer Vision & Win32 Automation Suite, background/career and complete contact access.
+- Connected six direct native chapter buttons, next/back, six-step progress, bilingual announcements and project readers using every documented layer and portfolio evidence by project key.
+- Reused unmodified Experience and Contact once in one native reader dialog, with initial heading focus, Escape/close, opener restoration and shared scroll locking.
+- Added finite intro controls, live reduced-motion handling, loading-intent reconciliation after controller assignment, guarded asynchronous teardown, and static fallback with the same facts/navigation.
+- Recorded the approved spatial tokens, compositions and downstream verification requirements in DESIGN.md. Browser/build verification remains parent-owned; this entry does not claim runtime acceptance.
+
+## 2026-10-21 — Di Sebalik Sistem editorial integration
+
+- Replaced the tactical navigation, mesh, telemetry footer and floating presentation control with a warm-paper editorial shell, M. identity, local search entry and accessible mobile dialog.
+- Restyled experience, charcoal selected work, contextual skills/education and contact; retained existing project inventory, bilingual content, section anchors, resume and case-study links.
+- Connected the existing search and five-chapter story events without visible legacy assistant labels. Removed decorative emoji, neon tiers and invented performance/availability framing from the new sections.
+- Preserved native modal focus/scroll ownership and Web3Forms boolean honeypot; added native form validation, a request timeout, clear privacy text and success focus handling.
+- Design direction and interaction rules are recorded in DESIGN.md. Historical entries below describe earlier versions, not the current interface.
+
 - 2026-10-21 - feat(redesign): Full-Bleed Bioluminescent Neural Cortex, De-collision & Visual Soul Elevation
   - Removed 12,000px distorted SVG spine (`src/routes/+page.svelte`) which previously collided with headings, buttons, and content across viewports; replaced with high-performance ambient neural matrix mesh.
   - Full-Bleed Living Neural Cortex (`src/lib/NeuralCortexCanvas.svelte`): Expanded from a cramped 440px side-box into an ambient neuro-synaptic canvas spanning the entire Hero with 9 strategic somas, 245 dendrites, traveling electrical pulse trails (cyan/violet/gold), mouse interactivity, DPR cap, and pause toggle.

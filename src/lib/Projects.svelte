@@ -8,7 +8,6 @@
 	import { lang } from '$lib/i18n';
 	import { translations } from '$lib/translations';
 	import { derived } from 'svelte/store';
-	import { playBlip, playConfirm } from '$lib/sound';
 
 	let activeFilter = $state<string>('all');
 	let searchQuery = $state<string>('');
@@ -22,12 +21,9 @@
 		context: string;
 		category: 'gov' | 'ai' | 'mobile' | 'web' | 'sim';
 		badgeKey: 'enterprise' | 'production' | 'innovation' | 'academic';
-		accent: string;
-		icon: string;
 		image?: string;
 		docHref?: string;
 		demoHref?: string;
-		gradient: string;
 		tags: string[];
 		isGov?: boolean;
 	}
@@ -40,10 +36,7 @@
 			context: 'YHCM Sdn Bhd • Platform Pengurusan Aset',
 			category: 'gov',
 			badgeKey: 'enterprise',
-			accent: '#67e8f9',
-			icon: '🛡️',
 			isGov: true,
-			gradient: 'linear-gradient(135deg, rgba(56,189,248,0.14) 0%, rgba(10,25,48,0.7) 100%)',
 			tags: [
 				'Laravel 11',
 				'Vue.js 3',
@@ -60,10 +53,7 @@
 			context: 'YHCM Sdn Bhd • Operasi & Penyelenggaraan',
 			category: 'gov',
 			badgeKey: 'enterprise',
-			accent: '#67e8f9',
-			icon: '⚙️',
 			isGov: true,
-			gradient: 'linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(8,30,22,0.7) 100%)',
 			tags: [
 				'Laravel 11',
 				'Vue.js 3',
@@ -80,10 +70,7 @@
 			context: 'YHCM Sdn Bhd • Arkib & Rekod Digital',
 			category: 'gov',
 			badgeKey: 'enterprise',
-			accent: '#a5b4fc',
-			icon: '📦',
 			isGov: true,
-			gradient: 'linear-gradient(135deg, rgba(168,85,247,0.14) 0%, rgba(24,12,38,0.7) 100%)',
 			tags: [
 				'Laravel 12',
 				'PHP 8.5',
@@ -104,9 +91,6 @@
 			context: 'Inovasi Peribadi • Seni Bina Android Pintar',
 			category: 'ai',
 			badgeKey: 'innovation',
-			accent: '#67e8f9',
-			icon: '⚡',
-			gradient: 'linear-gradient(135deg, rgba(0,240,255,0.14) 0%, rgba(6,25,45,0.7) 100%)',
 			tags: [
 				'Flutter',
 				'Android Share Intent',
@@ -122,10 +106,7 @@
 			context: 'Autonomous AI Orchestration & Virtual Office',
 			category: 'ai',
 			badgeKey: 'innovation',
-			accent: '#a5b4fc',
-			icon: '🏢',
 			image: '/images/9router_office_3d.png',
-			gradient: 'linear-gradient(135deg, rgba(129,140,248,0.14) 0%, rgba(15,18,48,0.7) 100%)',
 			tags: [
 				'Node.js 22+',
 				'Three.js 3D',
@@ -140,9 +121,6 @@
 			context: 'Desktop Automation & Systems Engineering',
 			category: 'ai',
 			badgeKey: 'innovation',
-			accent: '#67e8f9',
-			icon: '👁️',
-			gradient: 'linear-gradient(135deg, rgba(236,72,153,0.14) 0%, rgba(30,10,35,0.7) 100%)',
 			tags: [
 				'Python 3',
 				'OpenCV',
@@ -158,10 +136,7 @@
 			context: 'Kesihatan Ibu Mengandung • Aplikasi Mudah Alih',
 			category: 'mobile',
 			badgeKey: 'production',
-			accent: '#67e8f9',
-			icon: '👶',
 			image: '/images/baby_kicking_logo.png',
-			gradient: 'linear-gradient(135deg, rgba(244,63,94,0.14) 0%, rgba(35,10,20,0.7) 100%)',
 			tags: [
 				'Flutter Cross-Platform',
 				'Dart',
@@ -176,9 +151,6 @@
 			context: 'Fintech • Pengiraan Percukaian LHDN Malaysia',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#67e8f9',
-			icon: '📊',
-			gradient: 'linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(8,30,22,0.7) 100%)',
 			tags: [
 				'Node.js',
 				'TypeScript',
@@ -193,9 +165,6 @@
 			context: 'Agri-Tech • IoT Smart Farming Telemetry',
 			category: 'mobile',
 			badgeKey: 'innovation',
-			accent: '#67e8f9',
-			icon: '🌱',
-			gradient: 'linear-gradient(135deg, rgba(132,204,22,0.14) 0%, rgba(20,30,8,0.7) 100%)',
 			tags: [
 				'Python FastAPI',
 				'IoT Telemetry',
@@ -210,9 +179,6 @@
 			context: 'Lumina Glass Studio & Custom Contracting',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#67e8f9',
-			icon: '🪞',
-			gradient: 'linear-gradient(135deg, rgba(56,189,248,0.14) 0%, rgba(10,25,48,0.7) 100%)',
 			tags: [
 				'SvelteKit',
 				'Laravel 11 API',
@@ -227,9 +193,6 @@
 			context: 'Enjin Fizik Permainan & Pelanjutan Pelayar',
 			category: 'sim',
 			badgeKey: 'innovation',
-			accent: '#e4c988',
-			icon: '🎱',
-			gradient: 'linear-gradient(135deg, rgba(245,158,11,0.14) 0%, rgba(35,20,5,0.7) 100%)',
 			tags: [
 				'Manifest V3',
 				'Canvas 2D Physics',
@@ -244,10 +207,7 @@
 			context: 'Nova Bitara Development Sdn Bhd',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#e4c988',
-			icon: '🔐',
 			docHref: '/docs/iwa001-case-study.pdf',
-			gradient: 'linear-gradient(135deg, rgba(212,175,55,0.14) 0%, rgba(25,20,5,0.7) 100%)',
 			tags: ['SvelteKit 2', 'TypeScript', 'Supabase RLS', 'JWT Auth', 'Admin Panel', 'Vercel Edge']
 		},
 		{
@@ -256,9 +216,6 @@
 			context: 'Tenaga Nasional Berhad (TNB)',
 			category: 'web',
 			badgeKey: 'enterprise',
-			accent: '#67e8f9',
-			icon: '⚡',
-			gradient: 'linear-gradient(135deg, rgba(34,197,94,0.14) 0%, rgba(8,28,15,0.7) 100%)',
 			tags: [
 				'Flutter Multiplatform',
 				'Firebase Realtime',
@@ -274,10 +231,7 @@
 			context: 'Nova Bitara Development Sdn Bhd',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#67e8f9',
-			icon: '🌐',
 			docHref: '/docs/infinity-landing-case-study.pdf',
-			gradient: 'linear-gradient(135deg, rgba(96,165,250,0.14) 0%, rgba(12,24,45,0.7) 100%)',
 			tags: ['SvelteKit', 'i18n Store (3 Bahasa)', 'Redis Cache', 'Resend API', 'Vercel Edge']
 		},
 		{
@@ -286,9 +240,6 @@
 			context: 'Infrastruktur & Pemantauan Telemetri Pelayan',
 			category: 'sim',
 			badgeKey: 'innovation',
-			accent: '#67e8f9',
-			icon: '📡',
-			gradient: 'linear-gradient(135deg, rgba(225,29,72,0.14) 0%, rgba(35,6,15,0.7) 100%)',
 			tags: [
 				'Server Health Tracking',
 				'Latency Ping Tracker',
@@ -302,9 +253,6 @@
 			context: 'Aplikasi Produktiviti & Pengurusan Tugasan',
 			category: 'web',
 			badgeKey: 'production',
-			accent: '#e4c988',
-			icon: '🎯',
-			gradient: 'linear-gradient(135deg, rgba(251,191,36,0.14) 0%, rgba(35,25,5,0.7) 100%)',
 			tags: ['Modular Kanban', 'Pomodoro Focus Timer', 'Local State Machine', 'Zero Bloat']
 		},
 		{
@@ -313,9 +261,6 @@
 			context: 'Algoritma Sains Komputer & Pelanjutan Pelayar',
 			category: 'sim',
 			badgeKey: 'innovation',
-			accent: '#67e8f9',
-			icon: '🧩',
-			gradient: 'linear-gradient(135deg, rgba(56,189,248,0.14) 0%, rgba(8,25,45,0.7) 100%)',
 			tags: ['Procedural Generator', 'Backtracking Solver', 'Chromium Extension', 'Dark UI']
 		},
 		{
@@ -324,9 +269,6 @@
 			context: 'Universiti Teknologi Malaysia (UTM FYP)',
 			category: 'web',
 			badgeKey: 'academic',
-			accent: '#a5b4fc',
-			icon: '🗺️',
-			gradient: 'linear-gradient(135deg, rgba(167,139,250,0.14) 0%, rgba(22,12,38,0.7) 100%)',
 			tags: [
 				'Google Maps API',
 				'Marker Clustering',
@@ -337,7 +279,33 @@
 		}
 	];
 
-	// All 19 Shipped Systems in one clean list
+	type ProjectCopy = {
+		title: string;
+		subtitle: string;
+		desc: string;
+		features?: readonly string[];
+	};
+	function projectCopy(project: ProjectItem): ProjectCopy {
+		return translations[$lang].projects[project.key] as ProjectCopy;
+	}
+	const categories = ['all', 'gov', 'ai', 'mobile', 'web', 'sim'] as const;
+	const contexts: Record<string, string> = {
+		emesys: 'YHCM · Asset management',
+		sutera: 'YHCM · Operations & maintenance',
+		adims: 'YHCM · Digital archives',
+		tindak: 'Personal project · Android automation',
+		nine_router: 'AI orchestration & virtual office',
+		cv_bot: 'Desktop automation & computer vision',
+		baby_kicking: 'Maternal health · Mobile application',
+		tax_relief: 'Fintech · Malaysian tax calculation',
+		jiofarm: 'Agri-tech · Smart farming',
+		lumina: 'Lumina Glass Studio',
+		foony_9ball: 'Game physics · Browser extension',
+		sudoku: 'Algorithms · Browser extension'
+	};
+	const context = (project: ProjectItem) =>
+		$lang === 'en' ? (contexts[project.id] ?? project.context) : project.context;
+	// Existing project inventory; production and experimental work retain their own labels.
 	const allProjects: ProjectItem[] = [...govProjects, ...innovationProjects];
 
 	// Filtered list
@@ -354,9 +322,7 @@
 			if (!searchQuery.trim()) return matchesCategory;
 
 			const q = searchQuery.toLowerCase().trim();
-			const projectTrans = translations[$lang].projects[
-				p.key as keyof typeof translations.ms.projects
-			] as any;
+			const projectTrans = projectCopy(p);
 			const title = projectTrans?.title?.toLowerCase() || '';
 			const subtitle = projectTrans?.subtitle?.toLowerCase() || '';
 			const desc = projectTrans?.desc?.toLowerCase() || '';
@@ -375,12 +341,10 @@
 
 	function openSpecs(project: ProjectItem) {
 		if (selectedProject || hasOpenModal()) return;
-		playConfirm();
 		selectedProject = project;
 	}
 
 	function closeSpecs() {
-		playBlip(440, 0.04);
 		selectedProject = null;
 	}
 
@@ -399,1136 +363,429 @@
 	}
 </script>
 
-<section id="projects" class="section projects-section">
-	<!-- Section Header -->
-	<div class="section-header">
-		<span class="section-label">{$t.label}</span>
-		<h2 class="section-title">
-			<span class="text-gradient">{$t.title}</span>
-		</h2>
-		<p class="section-desc">{$t.desc}</p>
-		<div class="section-divider" aria-hidden="true"></div>
-	</div>
-
-	<!-- 🎛️ CONTROLS: SEARCH BAR & CATEGORY TABS -->
-	<div class="project-controls-bar">
-		<!-- Search Input -->
-		<div class="search-wrap">
-			<span class="search-icon" aria-hidden="true">
-				<svg
-					width="18"
-					height="18"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				>
-					<circle cx="11" cy="11" r="8"></circle>
-					<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-				</svg>
-			</span>
-			<input
-				type="text"
-				class="project-search-input"
-				placeholder={$t.search_placeholder}
-				bind:value={searchQuery}
-				aria-label={$lang === 'ms' ? 'Cari projek' : 'Search projects'}
-			/>
-			{#if searchQuery}
-				<button
-					class="clear-search-btn"
-					onclick={() => (searchQuery = '')}
-					aria-label={$lang === 'ms' ? 'Padam carian' : 'Clear search'}>✕</button
-				>
-			{/if}
-		</div>
-
-		<!-- Category Filter Pills -->
-		<div
-			class="category-pills"
-			role="group"
-			aria-label={$lang === 'ms' ? 'Kategori projek' : 'Project categories'}
-		>
-			<button
-				class="pill-btn"
-				class:active={activeFilter === 'all'}
-				aria-pressed={activeFilter === 'all'}
-				onclick={() => {
-					activeFilter = 'all';
-					playBlip(550, 0.03);
-				}}
+<section id="projects" class="selected-work" aria-labelledby="projects-title">
+	<div class="section">
+		<header class="section-header">
+			<p class="section-label">{$t.label}</p>
+			<h2 id="projects-title">{$t.title}</h2>
+			<p class="section-desc">{$t.desc}</p>
+		</header>
+		<div class="project-controls">
+			<label class="search-label" for="project-search"
+				>{$lang === 'ms' ? 'Cari hasil kerja' : 'Search the work'}<input
+					id="project-search"
+					type="search"
+					bind:value={searchQuery}
+					placeholder={$lang === 'ms' ? 'Nama projek atau teknologi' : 'Project name or technology'}
+				/></label
 			>
-				{$t.filter_all}
-				<span class="pill-count">{allProjects.length}</span>
-			</button>
-			<button
-				class="pill-btn"
-				class:active={activeFilter === 'gov'}
-				aria-pressed={activeFilter === 'gov'}
-				onclick={() => {
-					activeFilter = 'gov';
-					playBlip(570, 0.03);
-				}}
+			<div
+				class="filters"
+				role="group"
+				aria-label={$lang === 'ms' ? 'Kategori projek' : 'Project categories'}
 			>
-				🏛️ {$t.filter_gov}
-				<span class="pill-count">{govProjects.length}</span>
-			</button>
-			<button
-				class="pill-btn"
-				class:active={activeFilter === 'ai'}
-				aria-pressed={activeFilter === 'ai'}
-				onclick={() => {
-					activeFilter = 'ai';
-					playBlip(590, 0.03);
-				}}
-			>
-				⚡ {$t.filter_ai}
-				<span class="pill-count">{allProjects.filter((p) => p.category === 'ai').length}</span>
-			</button>
-			<button
-				class="pill-btn"
-				class:active={activeFilter === 'mobile'}
-				aria-pressed={activeFilter === 'mobile'}
-				onclick={() => {
-					activeFilter = 'mobile';
-					playBlip(610, 0.03);
-				}}
-			>
-				📱 {$t.filter_mobile}
-				<span class="pill-count">{allProjects.filter((p) => p.category === 'mobile').length}</span>
-			</button>
-			<button
-				class="pill-btn"
-				class:active={activeFilter === 'web'}
-				aria-pressed={activeFilter === 'web'}
-				onclick={() => {
-					activeFilter = 'web';
-					playBlip(630, 0.03);
-				}}
-			>
-				🌐 {$t.filter_web}
-				<span class="pill-count">{allProjects.filter((p) => p.category === 'web').length}</span>
-			</button>
-			<button
-				class="pill-btn"
-				class:active={activeFilter === 'sim'}
-				aria-pressed={activeFilter === 'sim'}
-				onclick={() => {
-					activeFilter = 'sim';
-					playBlip(650, 0.03);
-				}}
-			>
-				🎮 {$t.filter_sim}
-				<span class="pill-count">{allProjects.filter((p) => p.category === 'sim').length}</span>
-			</button>
-		</div>
-	</div>
-
-	<!-- 📦 PROJECTS GRID (18+ ALL PROJECTS) -->
-	<div class="projects-grid">
-		{#if filteredProjects.length === 0}
-			<div class="empty-state">
-				<div class="empty-glyph">📡</div>
-				<h4>{$lang === 'ms' ? 'Tiada projek ditemui' : 'No projects found'}: “{searchQuery}”</h4>
-				<p>
-					{$lang === 'ms'
-						? 'Cuba kata kunci lain atau set semula penapis.'
-						: 'Try another keyword or reset the filters.'}
-				</p>
-				<button
-					class="btn btn-outline"
-					onclick={() => {
-						activeFilter = 'all';
-						searchQuery = '';
-					}}
-				>
-					{$lang === 'ms' ? 'Set semula penapis' : 'Reset filters'}
-				</button>
+				{#each categories as category}<button
+						type="button"
+						aria-pressed={activeFilter === category}
+						onclick={() => (activeFilter = category)}>{$t[`filter_${category}`]}</button
+					>{/each}
 			</div>
-		{:else}
+		</div>
+		<p class="results-count" role="status">
+			{filteredProjects.length}
+			{$lang === 'ms' ? 'projek dipaparkan' : 'projects shown'}
+		</p>
+		<div class="projects-grid">
 			{#each filteredProjects as project (project.id)}
-				{@const itemData = $t[project.key as keyof typeof $t] as any}
-				<article class="project-card" style="--proj-accent: {project.accent};">
-					<span class="project-index" aria-hidden="true"
-						>P/{String(allProjects.indexOf(project) + 1).padStart(2, '0')}</span
-					>
-
-					<!-- Header: Icon & Category Badge -->
-					<div class="card-header-row">
-						<div class="card-icon-avatar" style="border-color: {project.accent};">
-							{#if project.image}
-								<img src={project.image} alt="" class="card-avatar-img" />
-							{:else}
-								<span>{project.icon}</span>
-							{/if}
-						</div>
-						<div class="card-badges">
-							{#if project.isGov}
-								<span class="badge badge-gov">{$t.filter_gov}</span>
-							{:else}
-								<span class="badge badge-type badge-{project.badgeKey}">
-									{$t[project.badgeKey]}
-								</span>
-							{/if}
-						</div>
+				{@const data = projectCopy(project)}
+				<article class="project-card">
+					<div class="card-top">
+						<span class="project-number"
+							>{String(allProjects.indexOf(project) + 1).padStart(2, '0')}</span
+						><span>{$t[project.badgeKey]}</span>
 					</div>
-
-					<!-- Body: Context, Title, Subtitle, 2-line Desc -->
-					<div class="card-body">
-						<div class="card-context">
-							{project.context}
-						</div>
-
-						<h3 class="card-title">{itemData.title}</h3>
-						<p class="card-subtitle">{itemData.subtitle}</p>
-						<p class="card-desc">{itemData.desc}</p>
-
-						<!-- Clean Tag Pills (first 4 tags, +N if more) -->
-						<div class="tags-cloud">
-							{#each project.tags.slice(0, 4) as tag}
-								<span class="tag proj-tag">{tag}</span>
-							{/each}
-							{#if project.tags.length > 4}
-								<span class="tag proj-tag tag-more">+{project.tags.length - 4}</span>
-							{/if}
-						</div>
+					<p class="context">{context(project)}</p>
+					<h3>{data.title}</h3>
+					<p class="subtitle">{data.subtitle}</p>
+					<p class="description">{data.desc}</p>
+					<div class="tags">
+						{#each project.tags.slice(0, 4) as tag}<span>{tag}</span>{/each}
 					</div>
-
-					<!-- Footer Actions: Specs Modal Button & optional PDF -->
-					<div class="card-footer-row">
-						<button class="btn-card-specs" onclick={() => openSpecs(project)}>
-							<span>{$t.specs_btn}</span>
-							<span class="arrow-glyph">➔</span>
-						</button>
-
-						{#if project.docHref}
-							<a
+					<div class="card-actions">
+						<button
+							type="button"
+							onclick={() => openSpecs(project)}
+							aria-label={`${$t.specs_btn}: ${data.title}`}
+							>{$t.specs_btn} <span aria-hidden="true">↗</span></button
+						>{#if project.docHref}<a
 								href={project.docHref}
 								target="_blank"
-								rel="noopener noreferrer"
-								class="btn-card-doc"
-								download
-								title={$t.view_doc}
-							>
-								<span>PDF</span>
-							</a>
-						{/if}
+								rel="noreferrer"
+								aria-label={`PDF ↗ — ${$t.view_doc}: ${data.title} (${$lang === 'ms' ? 'tab baharu' : 'new tab'})`}
+								>PDF ↗</a
+							>{/if}
 					</div>
 				</article>
+			{:else}
+				<div class="empty-state">
+					<h3>{$lang === 'ms' ? 'Tiada projek ditemui.' : 'No projects found.'}</h3>
+					<p>
+						{$lang === 'ms'
+							? 'Cuba kata kunci lain atau tetapkan semula penapis.'
+							: 'Try another keyword or reset the filters.'}
+					</p>
+					<button
+						type="button"
+						onclick={() => {
+							searchQuery = '';
+							activeFilter = 'all';
+						}}>{$lang === 'ms' ? 'Tetapkan semula' : 'Reset filters'}</button
+					>
+				</div>
 			{/each}
-		{/if}
-	</div>
-
-	<!-- CTA Bottom Banner -->
-	<div class="projects-cta">
-		<div class="cta-inner">
-			<div class="cta-text">
-				<h3>{$t.cta}</h3>
-				<p>
-					{$lang === 'ms'
-						? 'Mari bincangkan peluang kerjaya, kerjasama atau demonstrasi sistem.'
-						: 'Let’s discuss career opportunities, collaboration or a system walkthrough.'}
-				</p>
-			</div>
-			<a href="#contact" class="btn btn-primary cta-btn" onclick={() => playConfirm()}>
-				{$t.cta_btn} ➔
-			</a>
+		</div>
+		<div class="work-note">
+			<p>
+				{$lang === 'ms'
+					? 'Sistem sektor awam diterangkan secara umum untuk menjaga kerahsiaan. Projek peribadi dan eksperimen dilabel berasingan daripada sistem pengeluaran.'
+					: 'Public-sector systems are described at a high level to respect confidentiality. Personal projects and experiments are labelled separately from production systems.'}
+			</p>
+			<a href="#contact">{$t.cta_btn} ↗</a>
 		</div>
 	</div>
 </section>
 
-<!-- 🔍 FULL TECHNICAL SPECIFICATION MODAL -->
 {#if selectedProject}
-	{@const modalData = $t[selectedProject.key as keyof typeof $t] as any}
+	{@const data = projectCopy(selectedProject)}
 	<dialog
-		class="specs-modal"
-		style="--modal-accent: {selectedProject.accent};"
-		aria-label={$t.specs_modal_title}
+		class="project-dialog"
+		aria-labelledby="project-dialog-title"
 		use:focusDialog
-		tabindex="-1"
 		oncancel={(event) => {
 			event.preventDefault();
 			closeSpecs();
 		}}
 	>
-		<!-- Modal Header -->
 		<header class="modal-header">
-			<div class="modal-brand">
-				<span class="modal-icon">{selectedProject.icon}</span>
-				<div>
-					<div class="modal-badge-row">
-						{#if selectedProject.isGov}
-							<span class="badge badge-gov">{$t.filter_gov}</span>
-						{/if}
-						<span class="badge badge-modal">{$t[selectedProject.badgeKey]}</span>
-					</div>
-					<h2 class="modal-title">{modalData.title}</h2>
-					<p class="modal-sub">{modalData.subtitle}</p>
-				</div>
+			<div>
+				<p class="modal-label">{$t[selectedProject.badgeKey]}</p>
+				<h2 id="project-dialog-title">{data.title}</h2>
+				<p>{data.subtitle}</p>
 			</div>
 			<button
 				class="modal-close-btn"
+				type="button"
 				onclick={closeSpecs}
-				aria-label={$lang === 'ms' ? 'Tutup dialog' : 'Close dialog'}
-				><span aria-hidden="true">✕</span></button
+				aria-label={$lang === 'ms' ? 'Tutup dialog' : 'Close dialog'}>×</button
 			>
 		</header>
-
-		<!-- Modal Body -->
-		<div class="modal-body" role="region" aria-label={$t.specs_arch} use:keyboardScrollRegion>
-			<!-- Context Card -->
-			<div class="modal-context-strip">
-				<span class="dim">{$t.context_label}:</span>
-				<strong>{selectedProject.context}</strong>
-			</div>
-
-			<!-- System Visual Preview (if available) -->
-			{#if selectedProject.image}
-				<div class="modal-preview-box">
-					<img
-						src={selectedProject.image}
-						alt={modalData.title}
-						class="modal-preview-img"
-						loading="lazy"
-					/>
-				</div>
-			{/if}
-
-			<!-- System Description -->
-			<div class="modal-section">
-				<h3 class="modal-section-title">{$t.specs_arch}</h3>
-				<p class="modal-long-desc">{modalData.desc}</p>
-			</div>
-
-			<!-- Core Modules / Features -->
-			{#if modalData.features && modalData.features.length > 0}
-				<div class="modal-section">
-					<h3 class="modal-section-title">{$t.specs_modules}</h3>
-					<ul class="modal-feature-list">
-						{#each modalData.features as feat}
-							<li>
-								<span class="feature-check" style="color: {selectedProject.accent};">✓</span>
-								<span>{feat}</span>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{/if}
-
-			<!-- Tech Stack Badges -->
-			<div class="modal-section">
-				<h3 class="modal-section-title">
-					{$lang === 'ms' ? 'Teknologi & alatan' : 'Technologies & tools'}
-				</h3>
-				<div class="modal-tags-grid">
-					{#each selectedProject.tags as tag}
-						<span class="tag modal-tag">{tag}</span>
-					{/each}
-				</div>
+		<div class="modal-body" use:keyboardScrollRegion role="region" aria-label={$t.specs_arch}>
+			<p class="modal-context">{context(selectedProject)}</p>
+			{#if selectedProject.image}<img
+					src={selectedProject.image}
+					alt={data.title}
+					loading="lazy"
+				/>{/if}
+			<h3>{$t.specs_arch}</h3>
+			<p>{data.desc}</p>
+			{#if data.features?.length}<h3>{$t.specs_modules}</h3>
+				<ul>
+					{#each data.features as feature}<li>{feature}</li>{/each}
+				</ul>{/if}
+			<h3>{$lang === 'ms' ? 'Teknologi & alatan' : 'Technologies & tools'}</h3>
+			<div class="modal-tags">
+				{#each selectedProject.tags as tag}<span class="tag">{tag}</span>{/each}
 			</div>
 		</div>
-
-		<!-- Modal Footer Actions -->
 		<footer class="modal-footer">
-			{#if selectedProject.docHref}
-				<a
+			{#if selectedProject.docHref}<a
+					class="btn"
 					href={selectedProject.docHref}
 					target="_blank"
-					rel="noopener noreferrer"
-					class="btn btn-primary"
-					download
-				>
-					{$t.view_doc}
-				</a>
-			{/if}
-			<button class="btn btn-outline" onclick={closeSpecs}>
-				{$t.close_modal}
-			</button>
+					rel="noreferrer"
+					>{$t.view_doc} ↗<span class="sr-only">{$lang === 'ms' ? 'tab baharu' : 'new tab'}</span
+					></a
+				>{/if}<button type="button" class="btn btn-primary" onclick={closeSpecs}
+				>{$t.close_modal}</button
+			>
 		</footer>
 	</dialog>
 {/if}
 
 <style>
-	.project-search-input:focus-visible,
-	.modal-body:focus-visible {
-		outline: 2px solid #efd18c;
-		outline-offset: 3px;
-	}
-	.projects-section {
-		position: relative;
-		padding: 6rem 1.5rem;
-		max-width: 1280px;
-		margin: 0 auto;
-	}
-
-	/* Section Header */
-	.section-header {
-		text-align: center;
-		margin-bottom: 3.5rem;
+	.selected-work {
+		background: #262520;
+		color: #f3eee6;
+		--line: #656158;
 	}
 	.section-label {
-		display: inline-block;
-		font-family: var(--font-mono);
-		font-size: 0.8rem;
-		font-weight: 700;
-		text-transform: uppercase;
-		letter-spacing: 0.15em;
-		color: #67e8f9;
-		margin-bottom: 0.5rem;
-	}
-	.section-title {
-		font-family: var(--font-heading);
-		font-size: clamp(2.2rem, 4vw, 3.2rem);
-		font-weight: 800;
-		letter-spacing: -0.025em;
-		margin: 0.4rem 0 1rem;
-		color: #f8fafc;
+		color: #dfb79c;
 	}
 	.section-desc {
-		max-width: 680px;
-		margin: 0 auto;
-		color: #94a3b8;
-		font-size: 1.05rem;
-		line-height: 1.7;
+		color: #c8bfb2;
 	}
-	.section-divider {
-		width: 60px;
-		height: 3px;
-		background: linear-gradient(90deg, #67e8f9, #a5b4fc);
-		border-radius: 3px;
-		margin: 1.8rem auto 0;
-	}
-
-	/* 🎛️ CONTROLS BAR: SEARCH & TABS */
-	.project-controls-bar {
-		margin-bottom: 3rem;
+	.project-controls {
 		display: flex;
 		flex-direction: column;
-		gap: 1.2rem;
+		gap: 1.25rem;
 	}
-
-	.search-wrap {
-		position: relative;
-		width: 100%;
-		max-width: 640px;
-		margin: 0 auto;
-	}
-	.search-icon {
-		position: absolute;
-		left: 1.1rem;
-		top: 50%;
-		transform: translateY(-50%);
-		display: flex;
-		align-items: center;
-		color: #a6b5c6;
-		pointer-events: none;
-	}
-	.project-search-input {
-		width: 100%;
-		padding: 0.85rem 2.8rem 0.85rem 3rem;
-		background: rgba(15, 23, 42, 0.7);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		border-radius: 14px;
-		color: #f8fafc;
-		font-family: var(--font-body);
-		font-size: 0.95rem;
-		outline: none;
-		box-shadow: none;
-		transition: all 0.25s ease;
-	}
-	.project-search-input:focus {
-		border-color: #67e8f9;
-		box-shadow: none;
-		background: rgba(15, 23, 42, 0.9);
-	}
-	.project-search-input::placeholder {
-		color: #a6b5c6;
-	}
-	.clear-search-btn {
-		position: absolute;
-		right: 1rem;
-		top: 50%;
-		transform: translateY(-50%);
-		background: rgba(255, 255, 255, 0.08);
-		border: none;
-		color: #94a3b8;
-		width: 22px;
-		height: 22px;
-		border-radius: 50%;
+	.search-label {
 		font-size: 0.75rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: all 0.2s;
+		width: min(100%, 480px);
 	}
-	.clear-search-btn:hover {
-		background: rgba(255, 255, 255, 0.2);
-		color: #fff;
+	input {
+		width: 100%;
+		display: block;
+		margin-top: 0.5rem;
+		min-height: 48px;
+		border: 1px solid #8c8376;
+		border-radius: 0;
+		background: #302e28;
+		color: #f3eee6;
+		padding: 0.75rem;
+		font-size: 1rem;
 	}
-
-	.category-pills {
+	input::placeholder {
+		color: #c8bfb2;
+	}
+	.filters {
 		display: flex;
 		flex-wrap: wrap;
-		justify-content: center;
 		gap: 0.5rem;
 	}
-	.pill-btn {
-		background: rgba(15, 23, 42, 0.65);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		color: #94a3b8;
-		padding: 0.5rem 1.1rem;
-		border-radius: 100px;
-		font-family: var(--font-body);
-		font-size: 0.85rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
+	.filters button,
+	.empty-state button {
+		border: 1px solid #8c8376;
+		color: #f3eee6;
+		background: transparent;
+		min-height: 44px;
+		padding: 0.5rem 0.9rem;
+		font-size: 0.8rem;
 	}
-	.pill-btn:hover {
-		border-color: rgba(56, 189, 248, 0.4);
-		color: #e2e8f0;
-		background: rgba(30, 41, 59, 0.8);
-		transform: translateY(-1px);
+	.filters button[aria-pressed='true'],
+	.filters button:hover {
+		color: #262520;
+		background: #f3eee6;
+		border-color: #f3eee6;
 	}
-	.pill-btn.active {
-		background: linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(129, 140, 248, 0.2) 100%);
-		border-color: #67e8f9;
-		color: #67e8f9;
-		box-shadow: none;
+	.results-count {
+		color: #c8bfb2;
+		font-size: 0.75rem;
+		margin: 1.5rem 0 1rem;
 	}
-	.pill-count {
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
-		padding: 0.1rem 0.45rem;
-		border-radius: 100px;
-		background: rgba(255, 255, 255, 0.08);
-		color: inherit;
-	}
-
-	/* 📦 PROJECTS GRID */
 	.projects-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-		gap: 1.8rem;
-		margin-bottom: 4rem;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0 2rem;
 	}
-
 	.project-card {
-		position: relative;
-		border-radius: 16px;
-		padding: 1.75rem;
-		background: rgba(12, 21, 38, 0.75);
-		border: 1px solid rgba(148, 163, 184, 0.14);
+		min-width: 0;
+		border-top: 1px solid #8c8376;
+		padding: 1.5rem 0 2rem;
 		display: flex;
 		flex-direction: column;
+	}
+	.card-top {
+		display: flex;
 		justify-content: space-between;
-		overflow: hidden;
-		backdrop-filter: blur(14px);
-		-webkit-backdrop-filter: blur(14px);
-		box-shadow:
-			0 14px 40px -10px rgba(0, 0, 0, 0.6),
-			inset 0 1px 0 rgba(255, 255, 255, 0.08);
-		transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-	.project-card:hover {
-		transform: translateY(-4px);
-		border-color: var(--proj-accent);
-		box-shadow:
-			0 20px 48px -10px rgba(0, 0, 0, 0.75),
-			0 0 24px color-mix(in srgb, var(--proj-accent) 20%, transparent),
-			inset 0 1px 0 rgba(255, 255, 255, 0.16);
-	}
-
-	.card-header-row {
-		position: relative;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		margin-bottom: 1.2rem;
-		z-index: 1;
-	}
-	.card-icon-avatar {
-		width: 46px;
-		height: 46px;
-		border-radius: 12px;
-		border: 1.5px solid;
-		background: rgba(15, 23, 42, 0.9);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.4rem;
-		box-shadow: none;
-		overflow: hidden;
-	}
-	.card-avatar-img {
-		width: 100%;
-		height: 100%;
-		object-fit: contain;
-		padding: 4px;
-		border-radius: 10px;
-	}
-	.card-badges {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.4rem;
-	}
-	.badge {
-		font-family: var(--font-mono);
+		gap: 1rem;
+		align-items: baseline;
 		font-size: 0.68rem;
-		font-weight: 700;
-		padding: 0.25rem 0.65rem;
-		border-radius: 100px;
-		letter-spacing: 0.04em;
+		color: #dfb79c;
+		margin-bottom: 1.5rem;
 	}
-	.badge-gov {
-		background: rgba(56, 189, 248, 0.14);
-		color: #67e8f9;
-		border: 1px solid rgba(56, 189, 248, 0.35);
+	.project-number {
+		font:
+			2rem/1 Georgia,
+			serif;
 	}
-	.badge-enterprise {
-		background: rgba(34, 197, 94, 0.14);
-		color: #4ade80;
-		border: 1px solid rgba(34, 197, 94, 0.35);
+	.context {
+		color: #c8bfb2;
+		font-size: 0.68rem;
+		margin-bottom: 0.7rem;
 	}
-	.badge-production {
-		background: rgba(212, 175, 55, 0.14);
-		color: #e4c988;
-		border: 1px solid rgba(212, 175, 55, 0.35);
+	h3 {
+		font-size: 1.9rem;
+		overflow-wrap: anywhere;
 	}
-	.badge-innovation {
-		background: rgba(0, 240, 255, 0.14);
-		color: #00f0ff;
-		border: 1px solid rgba(0, 240, 255, 0.35);
+	.subtitle {
+		color: #dfb79c;
+		font-size: 0.8rem;
+		margin-top: 0.6rem;
 	}
-	.badge-academic {
-		background: rgba(168, 85, 247, 0.14);
-		color: #c084fc;
-		border: 1px solid rgba(168, 85, 247, 0.35);
-	}
-
-	.card-body {
-		position: relative;
-		z-index: 1;
-		margin-bottom: 1.2rem;
-	}
-	.card-context {
-		font-family: var(--font-mono);
-		font-size: 0.72rem;
-		font-weight: 600;
-		color: #94a3b8;
-		margin-bottom: 0.4rem;
-		letter-spacing: 0.02em;
-	}
-
-	.card-title {
-		font-family: var(--font-heading);
-		font-size: 1.25rem;
-		font-weight: 700;
-		color: #f8fafc;
-		line-height: 1.35;
-		margin-bottom: 0.3rem;
-	}
-	.card-subtitle {
+	.description {
+		color: #d5cdbf;
 		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--proj-accent);
-		margin-bottom: 0.75rem;
+		margin-top: 1rem;
 	}
-	.card-desc {
-		font-size: 0.88rem;
-		color: #94a3b8;
-		line-height: 1.6;
-		margin-bottom: 1.1rem;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-	}
-
-	.tags-cloud {
+	.tags {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.35rem;
+		gap: 0.3rem 0.7rem;
+		margin-top: 1.25rem;
+		padding-bottom: 1.5rem;
+		font-size: 0.67rem;
+		color: #c8bfb2;
 	}
-	.proj-tag {
-		font-family: var(--font-mono);
-		font-size: 0.7rem;
-		padding: 0.2rem 0.55rem;
-		border-radius: 6px;
-		background: rgba(15, 23, 42, 0.8);
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		color: #cbd5e1;
-	}
-	.tag-more {
-		background: rgba(56, 189, 248, 0.1);
-		border-color: rgba(56, 189, 248, 0.25);
-		color: #67e8f9;
-		font-weight: 600;
-	}
-
-	.card-footer-row {
-		position: relative;
-		z-index: 1;
+	.card-actions {
 		display: flex;
+		justify-content: space-between;
 		align-items: center;
-		gap: 0.6rem;
-		padding-top: 1rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.06);
+		gap: 1rem;
+		margin-top: auto;
 	}
-	.btn-card-specs {
-		flex: 1;
+	.card-actions button,
+	.card-actions a,
+	.work-note a {
 		display: inline-flex;
 		align-items: center;
-		justify-content: center;
-		gap: 0.5rem;
-		padding: 0.6rem 1rem;
-		background: rgba(255, 255, 255, 0.05);
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		border-radius: 10px;
-		color: #f8fafc;
-		font-family: var(--font-body);
-		font-size: 0.82rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.25s ease;
-	}
-	.btn-card-specs:hover {
-		background: var(--proj-accent);
-		color: #030712;
-		border-color: var(--proj-accent);
-		box-shadow: none;
-	}
-	.arrow-glyph {
-		transition: transform 0.2s;
-	}
-	.btn-card-specs:hover .arrow-glyph {
-		transform: translateX(3px);
-	}
-
-	.btn-card-doc {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.6rem 0.9rem;
-		background: rgba(212, 175, 55, 0.12);
-		border: 1px solid rgba(212, 175, 55, 0.35);
-		border-radius: 10px;
-		color: #e4c988;
-		font-family: var(--font-mono);
-		font-size: 0.78rem;
-		font-weight: 700;
+		justify-content: space-between;
+		min-height: 44px;
+		gap: 1rem;
+		color: #f3eee6;
+		background: none;
+		border: 0;
+		border-bottom: 1px solid #8c8376;
+		padding: 0.5rem 0;
+		font-size: 0.8rem;
 		text-decoration: none;
-		cursor: pointer;
-		transition: all 0.2s;
 	}
-	.btn-card-doc:hover {
-		background: #e4c988;
-		color: #030712;
+	.card-actions button:hover,
+	.card-actions a:hover,
+	.work-note a:hover {
+		color: #dfb79c;
 	}
-
+	.work-note {
+		display: flex;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		gap: 1rem 3rem;
+		border-top: 1px solid #8c8376;
+		padding-top: 2rem;
+		margin-top: 2rem;
+	}
+	.work-note p {
+		color: #c8bfb2;
+		max-width: 78ch;
+		font-size: 0.8rem;
+	}
 	.empty-state {
 		grid-column: 1 / -1;
-		text-align: center;
-		padding: 4rem 1.5rem;
-		background: rgba(11, 20, 38, 0.5);
-		border: 1px dashed rgba(255, 255, 255, 0.12);
-		border-radius: 16px;
-	}
-	.empty-glyph {
-		font-size: 2.5rem;
-		margin-bottom: 1rem;
-	}
-	.empty-state h4 {
-		font-size: 1.2rem;
-		color: #f8fafc;
-		margin-bottom: 0.5rem;
+		padding: 3rem 0;
 	}
 	.empty-state p {
-		color: #94a3b8;
-		margin-bottom: 1.5rem;
-		font-size: 0.95rem;
+		margin: 1rem 0;
 	}
-
-	/* Bottom CTA */
-	.projects-cta {
-		background: linear-gradient(135deg, rgba(14, 25, 48, 0.85) 0%, rgba(7, 13, 26, 0.95) 100%);
-		border: 1px solid rgba(56, 189, 248, 0.25);
-		padding: 2.2rem 2.5rem;
-		border-radius: 20px;
-		box-shadow: none;
+	.selected-work :focus-visible {
+		outline-color: #e2b89a;
 	}
-	.cta-inner {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 2rem;
-		flex-wrap: wrap;
-	}
-	.cta-text h3 {
-		font-family: var(--font-heading);
-		font-size: 1.35rem;
-		font-weight: 700;
-		color: #f8fafc;
-		margin-bottom: 0.35rem;
-	}
-	.cta-text p {
-		color: #94a3b8;
-		font-size: 0.92rem;
-		line-height: 1.6;
-	}
-	.cta-btn {
-		white-space: nowrap;
-	}
-
-	/* 🔍 MODAL STYLING */
-	.specs-modal::backdrop {
-		position: fixed;
-		inset: 0;
-		background: rgba(3, 7, 18, 0.85);
-		z-index: 1000;
-	}
-	.specs-modal {
-		position: fixed;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
-		margin: 0;
+	.project-dialog {
+		width: min(820px, calc(100% - 32px));
+		max-width: none;
+		max-height: calc(100dvh - 32px);
+		margin: auto;
 		padding: 0;
-		color: inherit;
-		width: min(720px, calc(100vw - 2.5rem));
-		max-height: calc(100vh - 4rem);
-		background: rgba(10, 18, 35, 0.97);
-		border: 1px solid var(--modal-accent);
-		border-radius: 20px;
-		box-shadow: none;
-		z-index: 1001;
+		border: 1px solid #897b6b;
+		background: #f3eee6;
+		color: #201e1b;
+	}
+	.project-dialog[open] {
 		display: flex;
 		flex-direction: column;
-		overflow: hidden;
-		animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 	}
-	@keyframes modalFadeIn {
-		from {
-			opacity: 0;
-			transform: translate(-50%, -47%) scale(0.97);
-		}
-		to {
-			opacity: 1;
-			transform: translate(-50%, -50%) scale(1);
-		}
+	.project-dialog::backdrop {
+		background: #201e1baa;
 	}
-
 	.modal-header {
 		display: flex;
-		align-items: flex-start;
 		justify-content: space-between;
-		padding: 1.6rem 2rem;
-		background: rgba(15, 23, 42, 0.85);
-		border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+		gap: 1rem;
+		padding: 2rem;
+		border-bottom: 1px solid #c8bfb2;
 	}
-	.modal-brand {
-		display: flex;
-		align-items: flex-start;
-		gap: 1.1rem;
+	.modal-header h2 {
+		font-size: clamp(2rem, 5vw, 3rem);
 	}
-	.modal-icon {
-		font-size: 2.2rem;
-		line-height: 1;
-	}
-	.modal-badge-row {
-		display: flex;
-		gap: 0.45rem;
-		margin-bottom: 0.45rem;
-	}
-	.badge-modal {
-		background: rgba(255, 255, 255, 0.08);
-		color: #e2e8f0;
-	}
-	.modal-title {
-		font-family: var(--font-heading);
-		font-size: 1.35rem;
-		font-weight: 800;
-		color: #f8fafc;
-		line-height: 1.3;
-	}
-	.modal-sub {
-		font-size: 0.88rem;
-		font-weight: 600;
-		color: var(--modal-accent);
-		margin-top: 0.2rem;
-	}
-	.modal-close-btn {
-		background: rgba(255, 255, 255, 0.08);
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		color: #cbd5e1;
-		width: 34px;
-		height: 34px;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		font-size: 1rem;
-		transition: all 0.2s;
-	}
-	.modal-close-btn:hover {
-		background: #ef4444;
-		border-color: #ef4444;
-		color: #fff;
-	}
-
-	.modal-body {
-		flex: 1;
-		padding: 1.8rem 2rem;
-		overflow-y: auto;
-		display: flex;
-		flex-direction: column;
-		gap: 1.6rem;
-		scrollbar-width: thin;
-	}
-
-	.modal-context-strip {
-		background: rgba(5, 12, 24, 0.7);
-		border: 1px solid rgba(255, 255, 255, 0.06);
-		border-radius: 10px;
-		padding: 0.75rem 1rem;
-		font-family: var(--font-mono);
-		font-size: 0.84rem;
-		color: #cbd5e1;
-	}
-	.modal-context-strip .dim {
-		color: #94a3b8;
-		margin-right: 0.4rem;
-	}
-
-	.modal-preview-box {
-		width: 100%;
-		border-radius: 12px;
-		overflow: hidden;
-		background: radial-gradient(circle, rgba(15, 23, 42, 0.95) 0%, rgba(3, 7, 18, 0.98) 100%);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		padding: 1.25rem;
-		box-shadow: none;
-	}
-	.modal-preview-img {
-		max-height: 220px;
-		max-width: 100%;
-		object-fit: contain;
-		border-radius: 8px;
-	}
-
-	.modal-section-title {
-		font-family: var(--font-mono);
+	.modal-header p {
+		color: #645a4f;
 		font-size: 0.85rem;
-		font-weight: 700;
-		color: #f8fafc;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		margin-bottom: 0.75rem;
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
+		margin-top: 0.5rem;
 	}
-	.modal-long-desc {
-		font-size: 0.92rem;
-		line-height: 1.7;
-		color: #cbd5e1;
+	.modal-header .modal-label {
+		color: #75442b;
+		margin: 0 0 0.75rem;
+		font-size: 0.7rem;
 	}
-
-	.modal-feature-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.55rem;
-	}
-	.modal-feature-list li {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.65rem;
-		font-size: 0.88rem;
-		color: #cbd5e1;
-		line-height: 1.5;
-	}
-	.feature-check {
-		font-weight: 900;
-		font-size: 1rem;
-		flex-shrink: 0;
-	}
-
-	.modal-tags-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-	.modal-tag {
-		font-family: var(--font-mono);
-		font-size: 0.78rem;
-		padding: 0.3rem 0.75rem;
-		border-radius: 6px;
-		background: rgba(15, 23, 42, 0.9);
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		color: #e2e8f0;
-	}
-
-	.modal-footer {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		gap: 0.8rem;
-		padding: 1.2rem 2rem;
-		background: rgba(11, 20, 38, 0.95);
-		border-top: 1px solid rgba(255, 255, 255, 0.08);
-	}
-
-	@media (max-width: 768px) {
-		.projects-section {
-			padding: 4rem 1rem;
-		}
-		.projects-grid {
-			grid-template-columns: 1fr;
-			gap: 1.2rem;
-		}
-		.modal-header,
-		.modal-body,
-		.modal-footer {
-			padding: 1.2rem;
-		}
-	}
-	/* Static signal rail: indices stay stable when filtering. */
-	.projects-section {
-		background: #050d16;
-	}
-	.section-header {
-		text-align: left;
-	}
-	.section-desc {
-		margin-left: 0;
-	}
-	.section-title .text-gradient {
-		background: none;
-		-webkit-text-fill-color: currentColor;
-		color: #edf3f7;
-	}
-	.section-divider {
-		margin-left: 0;
-		height: 1px;
-	}
-	.projects-grid {
-		position: relative;
-		padding-left: 1.25rem;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
-		border-left: 1px solid #67e8f944;
-	}
-	.project-card {
-		background: #111a23;
-		border-radius: 6px;
-		padding: 1.5rem;
-		overflow: visible;
-	}
-	.project-card::before {
-		content: '';
-		position: absolute;
-		left: -1.3rem;
-		top: 1.6rem;
-		width: 1rem;
-		border-top: 1px solid #67e8f955;
-	}
-	.project-card:hover {
-		transform: none;
-		border-color: #67e8f977;
-	}
-	.project-index {
-		font: 0.68rem var(--font-mono);
-		color: #a5b4fc;
-		margin-bottom: 1rem;
-		letter-spacing: 0.08em;
-	}
-	.project-search-input,
-	.project-search-input:focus,
-	.pill-btn,
-	.pill-btn:hover,
-	.pill-btn.active,
-	.empty-state,
-	.projects-cta,
-	.specs-modal,
-	.modal-header,
-	.modal-footer,
-	.modal-context-strip,
-	.modal-preview-box {
-		background: #111a23;
-	}
-	.project-search-input,
-	.projects-cta,
-	.specs-modal {
-		border-radius: 6px;
-	}
-	.pill-btn.active {
-		color: #67e8f9;
-		border-color: #67e8f9;
-	}
-	.pill-btn,
-	.btn-card-specs,
-	.btn-card-doc {
-		min-height: 44px;
-	}
-	.clear-search-btn,
 	.modal-close-btn {
+		background: none;
+		border: 1px solid #897b6b;
 		width: 44px;
 		height: 44px;
 		flex-shrink: 0;
+		font-size: 1.5rem;
 	}
-	.clear-search-btn {
-		right: 0.25rem;
-		background: transparent;
+	.modal-body {
+		overflow-y: auto;
+		min-height: 0;
+		padding: 2rem;
+		overscroll-behavior: contain;
 	}
-	.project-search-input {
-		padding-right: 3.2rem;
+	.modal-body img {
+		max-height: 280px;
+		display: block;
+		object-fit: contain;
+		margin: 1.5rem auto;
 	}
-	.btn-card-specs:hover {
-		background: #67e8f9;
-		color: #050d16;
+	.modal-context {
+		color: #75442b;
+		font-size: 0.8rem;
 	}
-	.badge-enterprise,
-	.badge-innovation {
-		color: #67e8f9;
-		background: #67e8f912;
-		border-color: #67e8f944;
+	.modal-body h3 {
+		font-size: 1.5rem;
+		margin: 1.5rem 0 0.75rem;
 	}
-	.badge-academic {
-		color: #a5b4fc;
-		background: #a5b4fc12;
-		border-color: #a5b4fc44;
+	.modal-body p,
+	.modal-body li {
+		font-size: 0.9rem;
 	}
-	.modal-sub {
-		line-height: 1.6;
+	.modal-body ul {
+		padding-left: 1.2rem;
 	}
-	.specs-modal::backdrop {
-		background: #050d16eb;
+	.modal-body li {
+		margin-block: 0.6rem;
 	}
-	@media (prefers-reduced-motion: reduce) {
-		*,
-		*::before,
-		*::after {
-			animation: none !important;
-			transition: none !important;
+	.modal-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.modal-footer {
+		display: flex;
+		justify-content: flex-end;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		padding: 1.25rem 2rem;
+		border-top: 1px solid #c8bfb2;
+	}
+	@media (max-width: 1000px) {
+		.projects-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
 		}
 	}
-	.btn,
-	.btn:hover {
-		box-shadow: none;
-		transform: none;
-		filter: none;
-		min-height: 44px;
+	@media (max-width: 599px) {
+		.projects-grid {
+			grid-template-columns: 1fr;
+		}
+		.modal-header,
+		.modal-body {
+			padding: 1.25rem;
+		}
+		.modal-footer {
+			padding: 1rem;
+		}
+		.project-dialog {
+			width: calc(100% - 16px);
+			max-height: calc(100dvh - 16px);
+		}
 	}
 </style>
