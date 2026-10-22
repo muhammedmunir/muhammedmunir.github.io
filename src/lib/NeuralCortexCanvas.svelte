@@ -1,526 +1,497 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { lang } from '$lib/i18n';
-	import * as THREE from 'three';
+	import { motionPaused } from '$lib/motion';
+	import { systemProjects, type SystemProject } from '$lib/system-projects';
 
-	let { active = 0 }: { active?: number } = $props();
-	let canvas: HTMLCanvasElement;
+	let { project = systemProjects[0] }: { project?: SystemProject } = $props();
 	let host: HTMLDivElement;
-	let ready = $state(false);
-	let paused = $state(false);
+	let expanded = $state(false);
+	let traced = $state(-1);
+	let tracing = $state(false);
 	let reduced = $state(false);
-	let setCameraTarget: ((index: number) => void) | undefined;
+	let mounted = $state(false);
+	let lastKey = '';
+	let stopTrace: (() => void) | undefined;
+	const layers = $derived(project.layers);
 
 	$effect(() => {
-		if (setCameraTarget) {
-			setCameraTarget(active);
+		if (lastKey !== project.key) {
+			lastKey = project.key;
+			stopTrace?.();
+			tracing = false;
+			traced = -1;
+		}
+	});
+
+	// Pause actual in-flight CSS animations/transitions, not just future transitions.
+	$effect(() => {
+		const paused = $motionPaused;
+		// Also catch new transitions requested while the shared preference is paused.
+		expanded;
+		project.key;
+		if (!mounted || !host) return;
+		for (const animation of host.getAnimations({ subtree: true })) {
+			if (reduced) animation.finish();
+			else if (paused) animation.pause();
+			else if (animation.playState === 'paused') animation.play();
 		}
 	});
 
 	onMount(() => {
 		const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-		reduced = media.matches;
-
-		let renderer: THREE.WebGLRenderer | null = null;
-		let animId = 0;
-		let visible = false;
-		let destroyed = false;
-
-		// 1. Scene, Camera, Renderer
-		const scene = new THREE.Scene();
-		const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-		camera.position.set(0, 0, 8.5);
-
-		renderer = new THREE.WebGLRenderer({
-			canvas,
-			alpha: true,
-			antialias: true,
-			powerPreference: 'high-performance'
-		});
-		renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-
-		// Palette
-		const palette = [
-			new THREE.Color('#38bdf8'), // 0: Core Full-Stack (Cyan)
-			new THREE.Color('#818cf8'), // 1: AI Vision (Indigo)
-			new THREE.Color('#00f0ff'), // 2: Cloud Infra (Bright Cyan)
-			new THREE.Color('#e2b857'), // 3: Cybersecurity (Gold)
-			new THREE.Color('#34d399') // 4: Synaptic Bridge (Emerald)
-		];
-
-		// 2. 3D Node Topology (coordinates in 3D world space)
-		const nodeDefs = [
-			{ pos: new THREE.Vector3(-2.6, 1.2, 0.4), color: palette[0], size: 0.32, name: 'CORE-01' },
-			{ pos: new THREE.Vector3(-1.1, 2.0, -0.6), color: palette[1], size: 0.28, name: 'AI-02' },
-			{ pos: new THREE.Vector3(-2.2, -1.3, 0.6), color: palette[2], size: 0.3, name: 'INFRA-03' },
-			{ pos: new THREE.Vector3(-0.7, -1.8, -0.4), color: palette[3], size: 0.28, name: 'SEC-04' },
-			{ pos: new THREE.Vector3(1.8, 0.2, 0.5), color: palette[0], size: 0.42, name: 'CORTEX-HUB' },
-			{ pos: new THREE.Vector3(3.2, 1.4, -0.3), color: palette[1], size: 0.3, name: 'NODE-A' },
-			{ pos: new THREE.Vector3(3.4, -1.2, 0.3), color: palette[3], size: 0.3, name: 'NODE-B' }
-		];
-
-		const nodeGroup = new THREE.Group();
-		scene.add(nodeGroup);
-
-		interface NodeMesh {
-			core: THREE.Mesh;
-			halo: THREE.Mesh;
-			ring: THREE.Mesh;
-			baseScale: number;
-			color: THREE.Color;
-			targetPos: THREE.Vector3;
-		}
-
-		const nodeMeshes: NodeMesh[] = [];
-
-		const sphereGeo = new THREE.IcosahedronGeometry(1, 2);
-		const ringGeo = new THREE.TorusGeometry(1.4, 0.035, 8, 32);
-
-		nodeDefs.forEach((def) => {
-			// Inner glowing core
-			const coreMat = new THREE.MeshBasicMaterial({
-				color: def.color,
-				wireframe: true,
-				transparent: true,
-				opacity: 0.85
-			});
-			const core = new THREE.Mesh(sphereGeo, coreMat);
-
-			// Outer glowing membrane
-			const haloMat = new THREE.MeshBasicMaterial({
-				color: def.color,
-				transparent: true,
-				opacity: 0.25,
-				blending: THREE.AdditiveBlending
-			});
-			const halo = new THREE.Mesh(sphereGeo, haloMat);
-			halo.scale.setScalar(1.35);
-
-			// Orbiting synaptic ring
-			const ringMat = new THREE.MeshBasicMaterial({
-				color: def.color,
-				transparent: true,
-				opacity: 0.6,
-				blending: THREE.AdditiveBlending
-			});
-			const ring = new THREE.Mesh(ringGeo, ringMat);
-
-			const nodeContainer = new THREE.Group();
-			nodeContainer.position.copy(def.pos);
-			nodeContainer.scale.setScalar(def.size);
-			nodeContainer.add(core);
-			nodeContainer.add(halo);
-			nodeContainer.add(ring);
-			nodeGroup.add(nodeContainer);
-
-			nodeMeshes.push({
-				core,
-				halo,
-				ring,
-				baseScale: def.size,
-				color: def.color,
-				targetPos: def.pos
-			});
-		});
-
-		// 3. 3D Neural Axons (Curves connecting nodes in 3D)
-		const connections: [number, number, THREE.Vector3][] = [
-			[0, 1, new THREE.Vector3(-1.8, 1.8, 0.2)],
-			[0, 2, new THREE.Vector3(-2.6, -0.1, 0.8)],
-			[1, 3, new THREE.Vector3(-1.0, 0.1, -0.7)],
-			[2, 3, new THREE.Vector3(-1.4, -1.9, 0.3)],
-			[0, 4, new THREE.Vector3(-0.3, 0.9, 0.8)],
-			[1, 4, new THREE.Vector3(0.5, 1.3, -0.2)],
-			[2, 4, new THREE.Vector3(-0.2, -0.6, 0.7)],
-			[3, 4, new THREE.Vector3(0.7, -0.9, -0.1)],
-			[4, 5, new THREE.Vector3(2.6, 0.9, 0.3)],
-			[4, 6, new THREE.Vector3(2.7, -0.6, 0.6)],
-			[5, 6, new THREE.Vector3(3.6, 0.1, -0.2)]
-		];
-
-		const axonCurves: THREE.QuadraticBezierCurve3[] = [];
-		const axonGroup = new THREE.Group();
-		scene.add(axonGroup);
-
-		connections.forEach(([fromIdx, toIdx, ctrl]) => {
-			const p0 = nodeDefs[fromIdx].pos;
-			const p2 = nodeDefs[toIdx].pos;
-			const curve = new THREE.QuadraticBezierCurve3(p0, ctrl, p2);
-			axonCurves.push(curve);
-
-			const pts = curve.getPoints(36);
-			const geom = new THREE.BufferGeometry().setFromPoints(pts);
-			const mat = new THREE.LineBasicMaterial({
-				color: nodeDefs[fromIdx].color,
-				transparent: true,
-				opacity: 0.3,
-				blending: THREE.AdditiveBlending
-			});
-			const line = new THREE.Line(geom, mat);
-			axonGroup.add(line);
-		});
-
-		// 4. Traveling Action Potentials (3D Pulses)
-		interface Pulse {
-			curveIdx: number;
-			progress: number;
-			speed: number;
-			mesh: THREE.Mesh;
-		}
-
-		const pulseGroup = new THREE.Group();
-		scene.add(pulseGroup);
-
-		const pulseGeo = new THREE.SphereGeometry(0.065, 8, 8);
-		const pulseMat = new THREE.MeshBasicMaterial({
-			color: 0xffffff,
-			blending: THREE.AdditiveBlending
-		});
-
-		const pulses: Pulse[] = [];
-		const pulseCount = 18;
-
-		for (let i = 0; i < pulseCount; i++) {
-			const curveIdx = i % axonCurves.length;
-			const mesh = new THREE.Mesh(pulseGeo, pulseMat);
-			pulseGroup.add(mesh);
-			pulses.push({
-				curveIdx,
-				progress: Math.random(),
-				speed: 0.18 + Math.random() * 0.22,
-				mesh
-			});
-		}
-
-		// 5. 3D Synaptic Starfield / Ambient Particle Cloud
-		const particleCount = 650;
-		const particleGeo = new THREE.BufferGeometry();
-		const positions = new Float32Array(particleCount * 3);
-		const colorsArr = new Float32Array(particleCount * 3);
-
-		for (let i = 0; i < particleCount; i++) {
-			positions[i * 3] = (Math.random() - 0.5) * 14;
-			positions[i * 3 + 1] = (Math.random() - 0.5) * 9;
-			positions[i * 3 + 2] = (Math.random() - 0.5) * 8 - 1;
-
-			const c = palette[Math.floor(Math.random() * palette.length)];
-			colorsArr[i * 3] = c.r;
-			colorsArr[i * 3 + 1] = c.g;
-			colorsArr[i * 3 + 2] = c.b;
-		}
-
-		particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-		particleGeo.setAttribute('color', new THREE.BufferAttribute(colorsArr, 3));
-
-		// Soft circular particle texture generated via tiny canvas
-		const pCanvas = document.createElement('canvas');
-		pCanvas.width = 32;
-		pCanvas.height = 32;
-		const pCtx = pCanvas.getContext('2d');
-		if (pCtx) {
-			const grad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
-			grad.addColorStop(0, 'rgba(255,255,255,1)');
-			grad.addColorStop(0.3, 'rgba(255,255,255,0.7)');
-			grad.addColorStop(1, 'rgba(255,255,255,0)');
-			pCtx.fillStyle = grad;
-			pCtx.fillRect(0, 0, 32, 32);
-		}
-		const pTexture = new THREE.CanvasTexture(pCanvas);
-
-		const particleMat = new THREE.PointsMaterial({
-			size: 0.12,
-			map: pTexture,
-			vertexColors: true,
-			transparent: true,
-			opacity: 0.65,
-			blending: THREE.AdditiveBlending,
-			depthWrite: false
-		});
-
-		const particleField = new THREE.Points(particleGeo, particleMat);
-		scene.add(particleField);
-
-		// 6. Interactive Mouse Parallax & Camera Tracking
-		let targetCameraX = 0;
-		let targetCameraY = 0;
-		let mouseNormX = 0;
-		let mouseNormY = 0;
-
-		const onMouseMove = (e: MouseEvent) => {
-			if (reduced || paused) return;
-			const rect = canvas.getBoundingClientRect();
-			mouseNormX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-			mouseNormY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-
-			targetCameraX = mouseNormX * 0.7;
-			targetCameraY = mouseNormY * 0.45;
-		};
-
-		window.addEventListener('mousemove', onMouseMove, { passive: true });
-
-		// Camera focus shifts smoothly based on active domain
-		setCameraTarget = (idx: number) => {
-			if (idx >= 0 && idx < 4) {
-				const n = nodeMeshes[idx];
-				// Highlight target node
-				nodeMeshes.forEach((m, i) => {
-					const isTarget = i === idx;
-					m.ring.scale.setScalar(isTarget ? 1.6 : 1.0);
-					(m.core.material as THREE.MeshBasicMaterial).opacity = isTarget ? 1.0 : 0.75;
-					(m.halo.material as THREE.MeshBasicMaterial).opacity = isTarget ? 0.5 : 0.2;
-				});
+		const sync = () => {
+			reduced = media.matches;
+			if (reduced && tracing) {
+				stopTrace?.();
+				traced = 3;
+				tracing = false;
 			}
 		};
-
-		// 7. Resize handling
-		const resize = () => {
-			if (!canvas || !renderer) return;
-			const w = host.clientWidth || window.innerWidth;
-			const h = host.clientHeight || window.innerHeight;
-			camera.aspect = w / h;
-			camera.updateProjectionMatrix();
-			renderer.setSize(w, h, false);
-		};
-
-		const ro = new ResizeObserver(resize);
-		ro.observe(host);
-		resize();
-
-		// 8. Visibility & Intersection handling (100% battery efficient)
-		const io = new IntersectionObserver(
-			(entries) => {
-				visible = entries.some((e) => e.isIntersecting);
-				if (visible && !paused && !reduced) {
-					startLoop();
-				} else {
-					cancelAnimationFrame(animId);
-				}
-			},
-			{ threshold: 0.05 }
-		);
-		io.observe(canvas);
-
-		const onVisibility = () => {
-			if (document.hidden) {
-				cancelAnimationFrame(animId);
-			} else if (visible && !paused && !reduced) {
-				startLoop();
-			}
-		};
-		document.addEventListener('visibilitychange', onVisibility);
-
-		// 9. Animation Loop
-		let lastTime = performance.now();
-
-		function renderFrame(now: number) {
-			const dt = Math.min((now - lastTime) / 1000, 0.1);
-			lastTime = now;
-
-			// Camera smooth damping
-			camera.position.x += (targetCameraX - camera.position.x) * 0.05;
-			camera.position.y += (targetCameraY - camera.position.y) * 0.05;
-			camera.lookAt(0, 0, 0);
-
-			// Rotate particle field gently
-			particleField.rotation.y += 0.0008;
-			particleField.rotation.x += 0.0004;
-
-			// Animate nodes & rings
-			nodeMeshes.forEach((mesh, i) => {
-				mesh.core.rotation.y += 0.012 * (i % 2 === 0 ? 1 : -1);
-				mesh.core.rotation.x += 0.008;
-				mesh.ring.rotation.x += 0.015;
-				mesh.ring.rotation.z += 0.01;
-			});
-
-			// Move action potential pulses along 3D axons
-			pulses.forEach((p) => {
-				p.progress += p.speed * dt;
-				if (p.progress >= 1) {
-					p.progress = 0;
-					p.curveIdx = (p.curveIdx + 1) % axonCurves.length;
-				}
-				const curve = axonCurves[p.curveIdx];
-				const pos = curve.getPoint(p.progress);
-				p.mesh.position.copy(pos);
-			});
-
-			if (renderer) {
-				renderer.render(scene, camera);
-			}
-		}
-
-		function loop(now: number) {
-			renderFrame(now);
-			if (visible && !paused && !reduced && !destroyed) {
-				animId = requestAnimationFrame(loop);
-			}
-		}
-
-		function startLoop() {
-			cancelAnimationFrame(animId);
-			lastTime = performance.now();
-			animId = requestAnimationFrame(loop);
-		}
-
-		ready = true;
-		startLoop();
-
-		// Cleanup on unmount
+		sync();
+		mounted = true;
+		media.addEventListener('change', sync);
 		return () => {
-			destroyed = true;
-			cancelAnimationFrame(animId);
-			ro.disconnect();
-			io.disconnect();
-			window.removeEventListener('mousemove', onMouseMove);
-			document.removeEventListener('visibilitychange', onVisibility);
-
-			scene.clear();
-			sphereGeo.dispose();
-			ringGeo.dispose();
-			pulseGeo.dispose();
-			pulseMat.dispose();
-			particleGeo.dispose();
-			particleMat.dispose();
-			pTexture.dispose();
-			renderer?.dispose();
+			stopTrace?.();
+			media.removeEventListener('change', sync);
 		};
 	});
+
+	function assemble() {
+		stopTrace?.();
+		tracing = false;
+		traced = -1;
+		expanded = false;
+	}
+
+	function trace() {
+		stopTrace?.();
+		expanded = true;
+		traced = 0;
+		if (reduced) {
+			traced = 3;
+			return;
+		}
+		tracing = true;
+		let elapsed = 0;
+		let previous = performance.now();
+		let frame = 0;
+		const tick = (now: number) => {
+			if (!$motionPaused) elapsed += Math.min(now - previous, 80);
+			previous = now;
+			traced = Math.min(3, Math.floor(elapsed / 650));
+			if (elapsed < 2600) frame = requestAnimationFrame(tick);
+			else tracing = false;
+		};
+		frame = requestAnimationFrame(tick);
+		stopTrace = () => cancelAnimationFrame(frame);
+	}
 </script>
 
-<div class="cortex-host" bind:this={host} class:is-ready={ready}>
-	<canvas bind:this={canvas} class="cortex-gl"></canvas>
-
-	<!-- Ambient Bioluminescent Depth Halos -->
-	<div class="ambient-glow cyan-halo" aria-hidden="true"></div>
-	<div class="ambient-glow violet-halo" aria-hidden="true"></div>
-
-	<!-- Accessible 3D Controls -->
-	<div class="canvas-telemetry">
+<div class="system-model" class:paused={$motionPaused} class:reduced bind:this={host}>
+	<div class="model-heading">
+		<span>{$lang === 'ms' ? 'Di sebalik sistem' : 'Behind the system'}</span>
+		<span class="model-index">{$lang === 'ms' ? 'Model interaktif' : 'Interactive model'}</span>
+	</div>
+	<figure>
+		<div class="object-stage" class:expanded class:tracing style="--material: {project.accent}">
+			<svg class="system-object" viewBox="0 0 600 500" width="600" height="500" aria-hidden="true">
+				<defs>
+					<linearGradient id="system-ivory" x1="0" y1="0" x2="1" y2="1">
+						<stop offset="0" stop-color="#fffdf8" /><stop offset="1" stop-color="#d8cfc0" />
+					</linearGradient>
+					<linearGradient id="system-copper" x1="0" y1="0" x2="1" y2="1">
+						<stop offset="0" stop-color="#e7c4aa" /><stop offset="1" stop-color={project.accent} />
+					</linearGradient>
+					<filter id="system-shadow" x="-50%" y="-50%" width="200%" height="220%">
+						<feGaussianBlur stdDeviation="13" />
+					</filter>
+				</defs>
+				<ellipse
+					cx="300"
+					cy="420"
+					rx="159"
+					ry="27"
+					fill="#201e1b"
+					opacity=".14"
+					filter="url(#system-shadow)"
+				/>
+				<path d="M95 389 300 490 505 389" fill="none" stroke="#c5bbae" stroke-width="1" />
+				{#each [3, 2, 1, 0] as index}
+					{@const layer = layers[index]}
+					<g
+						class="physical-layer"
+						class:highlighted={traced >= index}
+						style="transform: translate({300 +
+							(expanded ? (index - 1.5) * project.spread : 0)}px, {expanded
+							? 136 + index * 79
+							: 243 + index * 21}px)"
+					>
+						<path
+							d="M-174 14 0 100 174 14 174 28 0 114 -174 28Z"
+							fill={index === 0 ? '#987055' : index === 3 ? '#393630' : '#aea497'}
+							stroke="#74685b"
+							stroke-width=".8"
+						/>
+						<path d="M0 100V114" stroke="#74685b" stroke-width="1" />
+						<path
+							class="layer-top"
+							d="M0-72 174 14 0 100 -174 14Z"
+							fill={index === 0
+								? 'url(#system-copper)'
+								: index === 3
+									? '#454139'
+									: 'url(#system-ivory)'}
+							stroke={index === 3 ? '#201e1b' : '#a79580'}
+							stroke-width="1"
+						/>
+						<g
+							transform="matrix(.89 .44 -.89 .44 -65 -24)"
+							fill={index === 3 ? '#f3eee6' : '#302b25'}
+						>
+							<text x="0" y="0" font-size="12" font-family="Arial, sans-serif"
+								>0{index + 1} / {layer.label[$lang]}</text
+							>
+							<text x="0" y="27" font-size="18" font-weight="600" font-family="Arial, sans-serif"
+								>{layer.technology}</text
+							>
+						</g>
+						{#if index === 0}
+							<path
+								d="M-101 31-56 53M-87 24-42 46M54-32 94-12 65 2 25-18Z"
+								fill="none"
+								stroke="#6c4933"
+								stroke-width="3"
+							/>
+						{:else if index === 1}
+							<path
+								d="M-98 29-65 45-33 29 0 45 31 29"
+								fill="none"
+								stroke="#8d7560"
+								stroke-width="4"
+							/>
+						{:else if index === 2}
+							<path
+								d="M-91 27-45 50 2 27M-77 20-31 43 16 20"
+								fill="none"
+								stroke="#8d7560"
+								stroke-width="3"
+							/>
+						{:else}
+							<path
+								d="M-83 23-39 45 5 23M-67 15-23 37 21 15"
+								fill="none"
+								stroke="#ce9473"
+								stroke-width="3"
+							/>
+						{/if}
+						<circle
+							class="trace-point"
+							cx="0"
+							cy="92"
+							r={traced === index ? 5 : 3}
+							fill={traced >= index ? '#663b25' : index === 3 ? '#ce9473' : '#8b7a67'}
+						/>
+					</g>
+				{/each}
+				{#if expanded && traced >= 0}
+					<polyline
+						class="trace-thread"
+						points={layers
+							.slice(0, traced + 1)
+							.map((_, index) => `${300 + (index - 1.5) * project.spread},${228 + index * 79}`)
+							.join(' ')}
+						fill="none"
+						stroke="#75442b"
+						stroke-width="3"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				{/if}
+			</svg>
+			<span class="object-name"
+				>{project.name}<span>{$lang === 'ms' ? 'Kajian berlapis' : 'A study in layers'}</span></span
+			>
+		</div>
+		<figcaption>
+			{$lang === 'ms'
+				? 'Rajah ilustratif. Bukan topologi sebenar atau telemetri langsung.'
+				: 'Illustrative diagram. Not a verified topology or live telemetry.'}
+		</figcaption>
+	</figure>
+	<div
+		class="model-controls"
+		role="group"
+		aria-label={$lang === 'ms' ? 'Kawalan model sistem' : 'System model controls'}
+	>
 		<button
 			type="button"
-			class="cortex-ctrl-btn"
-			aria-pressed={paused}
+			aria-pressed={expanded}
 			onclick={() => {
-				paused = !paused;
+				stopTrace?.();
+				tracing = false;
+				expanded = !expanded;
+				traced = -1;
 			}}
 		>
-			<span class="ctrl-indicator" class:active={!paused}></span>
-			<span class="ctrl-text">
-				{paused
-					? $lang === 'ms'
-						? '3D JEDA'
-						: '3D PAUSED'
-					: $lang === 'ms'
-						? '3D REALTIME'
-						: '3D REALTIME'}
-			</span>
+			<span aria-hidden="true">{expanded ? '−' : '+'}</span>
+			{$lang === 'ms' ? 'Buka lapisan' : 'Open layers'}
 		</button>
+		<button type="button" onclick={trace} aria-pressed={tracing}
+			>{$lang === 'ms' ? 'Jejak laluan' : 'Trace path'}</button
+		>
+		<button type="button" onclick={assemble}
+			>{$lang === 'ms' ? 'Susun semula' : 'Reassemble'}</button
+		>
 	</div>
+	<div class="layer-key">
+		<p class="layer-key-heading">
+			{$lang === 'ms' ? 'Lapisan & peranan' : 'Layers & responsibilities'}
+		</p>
+		<ol>
+			{#each layers as layer, index}
+				<li class:current={traced === index}>
+					<span class="layer-number">0{index + 1}</span>
+					<div>
+						<strong>{layer.label[$lang]} <span>{layer.technology}</span></strong>
+						<p>{layer.detail[$lang]}</p>
+					</div>
+				</li>
+			{/each}
+		</ol>
+	</div>
+	<p class="trace-status" role="status">
+		{traced >= 0
+			? `${$lang === 'ms' ? 'Jejak konseptual' : 'Conceptual trace'}: ${layers[traced].label[$lang]} — ${layers[traced].technology}${!tracing && traced === 3 ? ($lang === 'ms' ? '. Selesai.' : '. Complete.') : ''}`
+			: $lang === 'ms'
+				? 'Buka lapisan untuk meneroka, atau jejak satu laluan konseptual.'
+				: 'Open the layers to explore, or follow a conceptual path.'}
+	</p>
 </div>
 
 <style>
-	.cortex-host {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		overflow: hidden;
-		pointer-events: none;
-		z-index: 1;
-		opacity: 0;
-		transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+	.system-model {
+		min-width: 0;
+		color: #201e1b;
+		font-family: Arial, Helvetica, sans-serif;
 	}
-	.cortex-host.is-ready {
-		opacity: 1;
+	p {
+		color: #201e1b;
+		margin: 0;
 	}
-
-	.cortex-gl {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
+	.model-heading {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		gap: 1rem;
+		border-bottom: 1px solid #c8bfb2;
+		padding-bottom: 0.75rem;
+		font-size: 0.9rem;
+	}
+	.model-heading > span:first-child {
+		font-weight: 600;
+	}
+	.model-index {
+		font-size: 0.72rem;
+		color: #645a4f;
+	}
+	figure {
+		margin: 0;
+	}
+	.object-stage {
+		position: relative;
+		margin: 0 auto;
+		max-width: 38rem;
+	}
+	.system-object {
 		display: block;
-		pointer-events: auto;
+		width: 100%;
+		height: auto;
+		max-width: 100%;
 	}
-
-	/* Ambient Depth Lighting */
-	.ambient-glow {
+	.physical-layer {
+		transition: transform 850ms cubic-bezier(0.2, 1.32, 0.35, 1);
+	}
+	.layer-top {
+		transition:
+			stroke 280ms cubic-bezier(0.16, 1, 0.3, 1),
+			stroke-width 280ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
+	.highlighted .layer-top {
+		stroke: #663b25;
+		stroke-width: 2.5;
+	}
+	.object-name {
 		position: absolute;
-		border-radius: 50%;
-		pointer-events: none;
-		filter: blur(80px);
-		opacity: 0.18;
-		mix-blend-mode: screen;
-		z-index: 0;
+		left: 0;
+		bottom: 1rem;
+		font-size: 0.78rem;
+		font-weight: 600;
 	}
-	.cyan-halo {
-		width: 480px;
-		height: 480px;
-		top: 10%;
-		left: 15%;
-		background: radial-gradient(circle, rgba(56, 189, 248, 0.4) 0%, transparent 70%);
-	}
-	.violet-halo {
-		width: 540px;
-		height: 540px;
-		bottom: 12%;
-		right: 15%;
-		background: radial-gradient(circle, rgba(129, 140, 248, 0.35) 0%, transparent 70%);
-	}
-
-	/* Telemetry Toggle Button */
-	.canvas-telemetry {
-		position: absolute;
-		bottom: 1.5rem;
-		left: 2rem;
-		z-index: 10;
-		pointer-events: auto;
-	}
-	.cortex-ctrl-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.4rem 0.85rem;
-		border-radius: 999px;
-		background: rgba(12, 21, 38, 0.8);
-		border: 1px solid rgba(148, 163, 184, 0.2);
-		color: var(--text-muted);
-		font-family: var(--font-mono);
+	.object-name span {
+		display: block;
 		font-size: 0.68rem;
-		font-weight: 700;
-		letter-spacing: 0.08em;
+		font-weight: 400;
+		color: #645a4f;
+	}
+	figcaption {
+		color: #645a4f;
+		font-size: 0.7rem;
+		line-height: 1.5;
+		margin: 0.25rem 0 0.9rem;
+	}
+	.model-controls {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	button {
+		min-height: 44px;
+		padding: 0.5rem 0.7rem;
+		background: transparent;
+		color: #201e1b;
+		border: 1px solid #897b6b;
+		border-radius: 3px;
+		font: inherit;
+		font-size: 0.75rem;
 		cursor: pointer;
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-		transition: all 0.2s ease;
+		transition:
+			transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+			background 160ms cubic-bezier(0.16, 1, 0.3, 1);
 	}
-	.cortex-ctrl-btn:hover {
-		border-color: var(--cyan);
-		color: var(--white);
-		transform: translateY(-1px);
+	button:hover {
+		background: #e4dacd;
+		box-shadow: inset 0 1px #fffdf8;
 	}
-	.cortex-ctrl-btn:focus-visible {
-		outline: 2px solid var(--cyan);
-		outline-offset: 2px;
+	button[aria-pressed='true'] {
+		background: #201e1b;
+		color: #f3eee6;
+		border-color: #201e1b;
 	}
-	.ctrl-indicator {
-		width: 6px;
-		height: 6px;
-		border-radius: 50%;
-		background: #64748b;
-		transition: all 0.25s ease;
+	button:active {
+		transform: scale(0.97) translateY(1px);
 	}
-	.ctrl-indicator.active {
-		background: var(--cyan);
-		box-shadow: 0 0 8px var(--cyan);
+	button:focus-visible {
+		outline: 3px solid #75442b;
+		outline-offset: 3px;
 	}
-
-	@media (max-width: 768px) {
-		.canvas-telemetry {
-			bottom: 1rem;
-			left: 1rem;
+	button span {
+		margin-right: 0.2rem;
+	}
+	.layer-key {
+		margin-top: 1.1rem;
+	}
+	.layer-key-heading {
+		font-size: 0.75rem;
+		font-weight: 600;
+		margin-bottom: 0.55rem;
+	}
+	ol {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.65rem 1rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+	li {
+		display: flex;
+		align-items: baseline;
+		gap: 0.45rem;
+		border-top: 1px solid #c8bfb2;
+		padding-top: 0.5rem;
+	}
+	.layer-number {
+		font-size: 0.67rem;
+		color: #645a4f;
+		font-variant-numeric: tabular-nums;
+	}
+	strong {
+		font-size: 0.74rem;
+		font-weight: 600;
+		display: block;
+		line-height: 1.5;
+	}
+	strong span {
+		display: block;
+		color: #645a4f;
+		font-size: 0.69rem;
+		font-weight: 400;
+	}
+	li p {
+		font-size: 0.7rem;
+		line-height: 1.5;
+		margin-top: 0.15rem;
+		color: #645a4f;
+	}
+	li.current {
+		border-color: #75442b;
+		border-top-width: 2px;
+		padding-top: calc(0.5rem - 1px);
+	}
+	.trace-status {
+		font-size: 0.7rem;
+		color: #645a4f;
+		line-height: 1.5;
+		min-height: 2.2em;
+		margin-top: 0.8rem;
+	}
+	.reduced .physical-layer,
+	.reduced button,
+	.reduced .layer-top {
+		transition: none;
+	}
+	@media (max-width: 599px) {
+		.model-heading {
+			font-size: 0.82rem;
+		}
+		.layer-key {
+			margin-top: 0.8rem;
+		}
+		.trace-status {
+			margin-top: 0.5rem;
+		}
+		.model-index {
+			font-size: 0.67rem;
+		}
+		.object-stage {
+			width: min(100%, 19rem);
+			margin-block: -0.35rem;
+		}
+		.object-name {
+			bottom: 0.2rem;
+			font-size: 0.7rem;
+		}
+		.object-name span {
+			font-size: 0.65rem;
+		}
+		.model-controls {
+			display: grid;
+			grid-template-columns: 1fr 1fr 1fr;
+		}
+		button {
+			padding: 0.4rem 0.3rem;
+			font-size: 0.69rem;
+			line-height: 1.3;
+		}
+		button span {
+			display: none;
+		}
+		ol {
+			gap: 0.55rem 0.7rem;
+		}
+		li p {
+			font-size: 0.68rem;
+		}
+		figcaption {
+			margin-top: 0.6rem;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.physical-layer,
+		button,
+		.layer-top {
+			transition: none;
 		}
 	}
 </style>
