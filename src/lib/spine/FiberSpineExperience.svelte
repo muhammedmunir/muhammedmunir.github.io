@@ -28,7 +28,7 @@
 
 	let activeStationIndex = $state(0);
 	let spineProgress = $state(0);
-	let selectedHotspotId = $state<string | null>(STATIONS[0].hotspots[0]?.id ?? null);
+	let selectedHotspotId = $state<string | null>(null);
 	let hoveredHotspotId = $state<string | null>(null);
 	let hoveredIslandLabel = $state<string | null>(null);
 	let oceanWeatherIndex = $state(0);
@@ -52,12 +52,27 @@
 		return map[presetId]?.[loc] ?? (loc === 'ms' ? 'Atmosfera Laut' : 'Sea Atmosphere');
 	}
 
+	const fallbackHotspot: HotspotItem = {
+		id: 'default',
+		code: 'EXP-00',
+		pinLabel: { ms: 'Pameran', en: 'Exhibit' },
+		title: { ms: 'Maklumat Pameran', en: 'Exhibit Information' },
+		subtitle: { ms: 'Sistem Kejuruteraan', en: 'Engineering System' },
+		summary: { ms: 'Penerangan terperinci pameran.', en: 'Detailed exhibit description.' },
+		tech: ['SvelteKit', 'TypeScript', 'Three.js']
+	};
+
 	const activeHotspot = $derived.by<HotspotItem>(() => {
 		for (const st of STATIONS) {
 			const found = st.hotspots.find((h) => h.id === selectedHotspotId);
 			if (found) return found;
 		}
-		return currentStation.hotspots[0];
+		return currentStation.hotspots[0] ?? fallbackHotspot;
+	});
+
+	const currentHotspotIndex = $derived.by<number>(() => {
+		const idx = currentStation.hotspots.findIndex((h) => h.id === selectedHotspotId);
+		return idx >= 0 ? idx : 0;
 	});
 
 	const hoveredPromptText = $derived.by<string | null>(() => {
@@ -98,6 +113,12 @@
 		const clamped = ((index % STATIONS.length) + STATIONS.length) % STATIONS.length;
 		syncStationSelection(clamped);
 		spineProgress = clamped / STATIONS.length;
+		if (exhibitDialogOpen && selectedHotspotId) {
+			const currentList = STATIONS[clamped]?.hotspots ?? [];
+			if (!currentList.some((h) => h.id === selectedHotspotId)) {
+				closeExhibit();
+			}
+		}
 		world?.goToStation(clamped);
 	}
 
@@ -134,6 +155,10 @@
 
 	function toggleViewMode() {
 		const next = viewMode === '3d' ? 'editorial' : '3d';
+		if (next === 'editorial') {
+			if (exhibitDialogOpen) closeExhibit();
+			if (dossierOpen) closeDossier();
+		}
 		viewMode = next;
 		world?.setActive?.(next === '3d');
 		world?.setInputEnabled?.(next === '3d' && !dossierOpen && !exhibitDialogOpen);
@@ -145,6 +170,9 @@
 	}
 
 	function openDossier() {
+		if (exhibitDialogOpen) {
+			closeExhibit();
+		}
 		dossierOpen = true;
 		world?.setInputEnabled?.(false);
 	}
@@ -155,17 +183,47 @@
 	}
 
 	function openExhibit(id: string, stationIdx: number) {
+		if (!id) {
+			closeExhibit();
+			return;
+		}
+		if (dossierOpen) {
+			closeDossier();
+		}
+		hoveredHotspotId = null;
+		hoveredIslandLabel = null;
 		if (stationIdx !== activeStationIndex) {
 			jumpToStation(stationIdx);
 		}
 		selectedHotspotId = id;
 		exhibitDialogOpen = true;
+		world?.selectHotspot(id);
 		world?.setInputEnabled?.(false);
 	}
 
 	function closeExhibit() {
 		exhibitDialogOpen = false;
+		selectedHotspotId = null;
+		hoveredHotspotId = null;
+		hoveredIslandLabel = null;
+		world?.selectHotspot(null);
 		world?.setInputEnabled?.(viewMode === '3d' && !dossierOpen);
+	}
+
+	function nextHotspot() {
+		const list = currentStation.hotspots;
+		if (list.length <= 1) return;
+		const curIdx = list.findIndex((h) => h.id === selectedHotspotId);
+		const nextIdx = curIdx >= 0 ? (curIdx + 1) % list.length : 0;
+		openExhibit(list[nextIdx].id, activeStationIndex);
+	}
+
+	function prevHotspot() {
+		const list = currentStation.hotspots;
+		if (list.length <= 1) return;
+		const curIdx = list.findIndex((h) => h.id === selectedHotspotId);
+		const prevIdx = curIdx >= 0 ? (curIdx - 1 + list.length) % list.length : list.length - 1;
+		openExhibit(list[prevIdx].id, activeStationIndex);
 	}
 
 	function handleWheel(e: WheelEvent) {
@@ -178,17 +236,37 @@
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		resetIdleTimer();
-		if (dossierOpen || exhibitDialogOpen) return;
+		if (dossierOpen) return;
 		if (viewMode !== '3d') return;
 		if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
 
 		const target = e.target as HTMLElement | null;
 		if (target) {
 			const tag = target.tagName;
-			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable) return;
+			if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable)
+				return;
 			if (tag === 'BUTTON' || tag === 'A') {
 				if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') return;
 			}
+		}
+
+		if (exhibitDialogOpen) {
+			if (e.key === 'Escape') {
+				e.preventDefault();
+				closeExhibit();
+				return;
+			}
+			if (e.key === 'ArrowRight') {
+				e.preventDefault();
+				nextHotspot();
+				return;
+			}
+			if (e.key === 'ArrowLeft') {
+				e.preventDefault();
+				prevHotspot();
+				return;
+			}
+			return;
 		}
 
 		if (e.key === 'ArrowRight') {
@@ -309,8 +387,12 @@
 		aria-hidden="true"
 	></div>
 
-	<!-- Pengepala Kaca Minimalis (HUD Terpelihara, Tiada Pudar Keterlaluan) -->
-	<header class="minimal-topbar" class:ui-idle={uiIdle && viewMode === '3d'}>
+	<!-- Pengepala Kaca Minimalis (HUD Terpelihara; Sembunyi semasa mod periksa atau arkib aktif) -->
+	<header
+		class="minimal-topbar"
+		class:ui-idle={uiIdle && viewMode === '3d' && !exhibitDialogOpen && !dossierOpen}
+		class:hidden-on-inspect={exhibitDialogOpen || dossierOpen}
+	>
 		<div class="brand-cluster">
 			<img
 				src={PROFILE.profilePhoto}
@@ -336,7 +418,17 @@
 						? `Atmosfera: ${getWeatherConditionLabel(currentWeather.id, locale)}`
 						: `Atmosphere: ${getWeatherConditionLabel(currentWeather.id, locale)}`}
 				>
-					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<svg
+						width="13"
+						height="13"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
 						<path d="M2 12h20M12 2v20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07" />
 					</svg>
 					<span>{getWeatherConditionLabel(currentWeather.id, locale)}</span>
@@ -348,11 +440,19 @@
 					class:active={motionPaused}
 					onclick={toggleMotionPause}
 					aria-label={motionPaused
-						? (locale === 'ms' ? 'Sambung semula simulasi gerakan 3D' : 'Resume 3D motion simulation')
-						: (locale === 'ms' ? 'Jeda simulasi gerakan 3D' : 'Pause 3D motion simulation')}
+						? locale === 'ms'
+							? 'Sambung semula simulasi gerakan 3D'
+							: 'Resume 3D motion simulation'
+						: locale === 'ms'
+							? 'Jeda simulasi gerakan 3D'
+							: 'Pause 3D motion simulation'}
 					title={motionPaused
-						? (locale === 'ms' ? 'Sambung semula gerakan 3D' : 'Resume 3D motion')
-						: (locale === 'ms' ? 'Jeda gerakan 3D' : 'Pause 3D motion')}
+						? locale === 'ms'
+							? 'Sambung semula gerakan 3D'
+							: 'Resume 3D motion'
+						: locale === 'ms'
+							? 'Jeda gerakan 3D'
+							: 'Pause 3D motion'}
 				>
 					{#if motionPaused}
 						<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -370,11 +470,7 @@
 			{/if}
 
 			{#if webglReady}
-				<button
-					type="button"
-					class="util-pill mode-switch"
-					onclick={toggleViewMode}
-				>
+				<button type="button" class="util-pill mode-switch" onclick={toggleViewMode}>
 					{viewMode === '3d'
 						? locale === 'ms'
 							? 'Baca Mod Editorial CV'
@@ -405,12 +501,32 @@
 				aria-label={locale === 'ms' ? 'Tukar tema gelap atau cerah' : 'Toggle dark or light theme'}
 			>
 				{#if theme === 'dark'}
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<svg
+						width="12"
+						height="12"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
 						<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
 					</svg>
 					<span>Dark</span>
 				{:else}
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<svg
+						width="12"
+						height="12"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
 						<circle cx="12" cy="12" r="5"></circle>
 						<line x1="12" y1="1" x2="12" y2="3"></line>
 						<line x1="12" y1="21" x2="12" y2="23"></line>
@@ -429,7 +545,7 @@
 
 	{#if viewMode === '3d'}
 		<!-- Petunjuk Halus Apabila Kursor Menyentuh Terminal 3D atau Pulau di Seberang Laut -->
-		{#if hoveredPromptText && !exhibitDialogOpen}
+		{#if hoveredPromptText && !exhibitDialogOpen && !dossierOpen}
 			<div class="hover-reticle-badge" role="status">
 				<span class="reticle-pulse"></span>
 				<span>{hoveredPromptText}</span>
@@ -437,21 +553,47 @@
 		{/if}
 
 		<!-- Kompas Radar Kepulauan Orbital 360° Minimalis Beraksesibiliti -->
-		<footer class="bottom-compass" class:ui-idle={uiIdle && !exhibitDialogOpen}>
+		<footer
+			class="bottom-compass"
+			class:ui-idle={uiIdle && !exhibitDialogOpen && !dossierOpen}
+			class:hidden-on-inspect={exhibitDialogOpen || dossierOpen}
+		>
 			<button
 				type="button"
 				class="compass-arrow"
 				onclick={() => jumpToStation(activeStationIndex - 1)}
 				aria-label={locale === 'ms' ? 'Pulau sebelumnya' : 'Previous island'}
 			>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
 					<polyline points="15 18 9 12 15 6"></polyline>
 				</svg>
 			</button>
 
 			<!-- Radar Orbital 360° Boleh Akses (Native Button Nodes >=24px) -->
-			<div class="orbital-radar-cluster" role="group" aria-label={locale === 'ms' ? 'Peta Radar Kepulauan 360 Darjah' : '360-Degree Archipelago Radar Map'}>
-				<svg viewBox="0 0 84 84" width="84" height="84" class="radar-orbit-backdrop" aria-hidden="true">
+			<div
+				class="orbital-radar-cluster"
+				role="group"
+				aria-label={locale === 'ms'
+					? 'Peta Radar Kepulauan 360 Darjah'
+					: '360-Degree Archipelago Radar Map'}
+			>
+				<svg
+					viewBox="0 0 84 84"
+					width="84"
+					height="84"
+					class="radar-orbit-backdrop"
+					aria-hidden="true"
+				>
 					<circle cx="42" cy="42" r="30" class="radar-orbit-track" />
 					<circle cx="42" cy="42" r="4" class="radar-core-node" />
 					{#each STATIONS as _, idx (idx)}
@@ -504,7 +646,17 @@
 				onclick={() => jumpToStation(activeStationIndex + 1)}
 				aria-label={locale === 'ms' ? 'Pulau seterusnya' : 'Next island'}
 			>
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<svg
+					width="16"
+					height="16"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2.5"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
 					<polyline points="9 18 15 12 9 6"></polyline>
 				</svg>
 			</button>
@@ -512,12 +664,10 @@
 
 		<!-- Dialog Rekod Pameran (Hanya Muncul Apabila Pengguna Mengklik Papan Pameran 3D) -->
 		{#if exhibitDialogOpen}
-			<div
-				class="exhibit-modal-backdrop"
-				role="presentation"
-			>
+			<div class="exhibit-modal-backdrop" role="presentation">
 				<button
 					type="button"
+					tabindex="-1"
 					class="exhibit-backdrop-close"
 					onclick={closeExhibit}
 					aria-label={locale === 'ms' ? 'Tutup dialog pameran' : 'Close exhibit dialog'}
@@ -527,19 +677,94 @@
 					class="exhibit-dialog-card"
 					role="dialog"
 					aria-modal="true"
-					aria-label={activeHotspot.title[locale]}
+					aria-labelledby="exhibit-dialog-title"
 					tabindex="-1"
-					use:trapFocus={{ enabled: exhibitDialogOpen, onClose: closeExhibit, initialFocusSelector: '.dialog-close-btn' }}
+					use:trapFocus={{
+						enabled: exhibitDialogOpen,
+						onClose: closeExhibit,
+						initialFocusSelector: '.dialog-close-btn'
+					}}
 				>
+					<div class="dialog-sheet-handle" aria-hidden="true"></div>
+
 					<div class="dialog-top-row">
 						<span class="dialog-code-badge">{activeHotspot.code}</span>
+
+						{#if currentStation.hotspots.length > 1}
+							<div
+								class="dialog-nav-group"
+								role="group"
+								aria-label={locale === 'ms' ? 'Navigasi Pameran' : 'Exhibit Navigation'}
+							>
+								<button
+									type="button"
+									class="dialog-nav-btn"
+									onclick={prevHotspot}
+									aria-label={locale === 'ms'
+										? 'Pameran sebelumnya (Anak panah kiri)'
+										: 'Previous exhibit (Left arrow)'}
+									title={locale === 'ms' ? 'Pameran sebelumnya (←)' : 'Previous exhibit (←)'}
+								>
+									<svg
+										width="12"
+										height="12"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										aria-hidden="true"
+									>
+										<polyline points="15 18 9 12 15 6"></polyline>
+									</svg>
+								</button>
+								<span class="dialog-nav-counter">
+									{currentHotspotIndex + 1} / {currentStation.hotspots.length}
+								</span>
+								<button
+									type="button"
+									class="dialog-nav-btn"
+									onclick={nextHotspot}
+									aria-label={locale === 'ms'
+										? 'Pameran seterusnya (Anak panah kanan)'
+										: 'Next exhibit (Right arrow)'}
+									title={locale === 'ms' ? 'Pameran seterusnya (→)' : 'Next exhibit (→)'}
+								>
+									<svg
+										width="12"
+										height="12"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2.5"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										aria-hidden="true"
+									>
+										<polyline points="9 18 15 12 9 6"></polyline>
+									</svg>
+								</button>
+							</div>
+						{/if}
+
 						<button
 							type="button"
 							class="dialog-close-btn"
 							onclick={closeExhibit}
 							aria-label={locale === 'ms' ? 'Tutup dialog (ESC)' : 'Close dialog (ESC)'}
 						>
-							<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+							<svg
+								width="13"
+								height="13"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
 								<line x1="18" y1="6" x2="6" y2="18"></line>
 								<line x1="6" y1="6" x2="18" y2="18"></line>
 							</svg>
@@ -547,7 +772,7 @@
 						</button>
 					</div>
 
-					<h2 class="dialog-title">{activeHotspot.title[locale]}</h2>
+					<h2 id="exhibit-dialog-title" class="dialog-title">{activeHotspot.title[locale]}</h2>
 					<p class="dialog-subtitle">{activeHotspot.subtitle[locale]}</p>
 					<p class="dialog-summary">{activeHotspot.summary[locale]}</p>
 
@@ -561,8 +786,7 @@
 						{#if activeHotspot.link}
 							<a
 								href={activeHotspot.link}
-								target={activeHotspot.link.startsWith('http') ||
-								activeHotspot.link.endsWith('.pdf')
+								target={activeHotspot.link.startsWith('http') || activeHotspot.link.endsWith('.pdf')
 									? '_blank'
 									: undefined}
 								rel="noopener noreferrer"
@@ -629,20 +853,10 @@
 			<p class="editorial-summary">{PROFILE.summary[locale]}</p>
 
 			<div class="hero-cta-row">
-				<a
-					href={PROFILE.resumeUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="primary-cta"
-				>
+				<a href={PROFILE.resumeUrl} target="_blank" rel="noopener noreferrer" class="primary-cta">
 					{locale === 'ms' ? 'Muat Turun Resume PDF' : 'Download Resume PDF'}
 				</a>
-				<a
-					href={PROFILE.githubUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="secondary-cta"
-				>
+				<a href={PROFILE.githubUrl} target="_blank" rel="noopener noreferrer" class="secondary-cta">
 					GitHub (@muhammedmunir) ↗
 				</a>
 				<a
@@ -765,7 +979,9 @@
 									rel="noopener noreferrer"
 									class="inline-link"
 								>
-									{locale === 'ms' ? 'Repositori / Pautan Tambahan ↗' : 'Additional Repository / Link ↗'}
+									{locale === 'ms'
+										? 'Repositori / Pautan Tambahan ↗'
+										: 'Additional Repository / Link ↗'}
 								</a>
 							{/if}
 						</div>
@@ -792,12 +1008,7 @@
 							{edu.fypTitle[locale]} — {edu.fypSummary[locale]}
 						</p>
 						{#if edu.fypRepo}
-							<a
-								href={edu.fypRepo}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="inline-link"
-							>
+							<a href={edu.fypRepo} target="_blank" rel="noopener noreferrer" class="inline-link">
 								{locale === 'ms' ? 'Repositori FYP GitHub ↗' : 'FYP GitHub Repository ↗'}
 							</a>
 						{/if}
@@ -815,7 +1026,8 @@
 					<div class="editorial-card cert-mini">
 						<span class="meta-badge">
 							{cert.category.toUpperCase()}
-							{#if cert.period} · {cert.period}{/if}
+							{#if cert.period}
+								· {cert.period}{/if}
 						</span>
 						<h4>{cert.title}</h4>
 						<p>{cert.issuer}</p>
@@ -830,6 +1042,7 @@
 		{locale}
 		onClose={closeDossier}
 		onJumpStation={(idx) => {
+			closeDossier();
 			viewMode = '3d';
 			jumpToStation(idx);
 		}}
@@ -867,6 +1080,7 @@
 		position: fixed;
 		inset: 0;
 		z-index: 1;
+		touch-action: none;
 	}
 
 	.webgl-stage.hidden {
@@ -892,7 +1106,9 @@
 		border: 1px solid var(--spatial-hud-border, var(--surface-border));
 		backdrop-filter: blur(var(--blur-glass, 16px));
 		box-shadow: var(--shadow-md, 0 12px 32px rgba(0, 0, 0, 0.25));
-		transition: opacity var(--duration-normal, 300ms) ease, transform var(--duration-normal, 300ms) ease;
+		transition:
+			opacity var(--duration-normal, 300ms) ease,
+			transform var(--duration-normal, 300ms) ease;
 	}
 
 	.minimal-topbar.ui-idle {
@@ -904,6 +1120,12 @@
 	.minimal-topbar:focus-within {
 		opacity: 1;
 		transform: translateY(0);
+	}
+
+	.minimal-topbar.hidden-on-inspect {
+		opacity: 0;
+		pointer-events: none;
+		transform: translateY(-16px);
 	}
 
 	.brand-cluster {
@@ -958,7 +1180,9 @@
 		font-size: 0.76rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: background var(--duration-fast, 150ms) ease, border-color var(--duration-fast, 150ms) ease;
+		transition:
+			background var(--duration-fast, 150ms) ease,
+			border-color var(--duration-fast, 150ms) ease;
 	}
 
 	.util-pill:hover {
@@ -1029,7 +1253,9 @@
 		border: 1px solid var(--spatial-hud-border, var(--surface-border));
 		backdrop-filter: blur(var(--blur-glass, 16px));
 		box-shadow: var(--shadow-md, 0 14px 36px rgba(0, 0, 0, 0.35));
-		transition: opacity var(--duration-normal, 300ms) ease, transform var(--duration-normal, 300ms) ease;
+		transition:
+			opacity var(--duration-normal, 300ms) ease,
+			transform var(--duration-normal, 300ms) ease;
 	}
 
 	.bottom-compass.ui-idle {
@@ -1043,6 +1269,12 @@
 		transform: translateX(-50%) translateY(0);
 	}
 
+	.bottom-compass.hidden-on-inspect {
+		opacity: 0;
+		pointer-events: none;
+		transform: translateX(-50%) translateY(16px);
+	}
+
 	.compass-arrow {
 		width: var(--size-avatar-sm, 36px);
 		height: var(--size-avatar-sm, 36px);
@@ -1054,7 +1286,9 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		transition: border-color var(--duration-fast, 150ms) ease, background var(--duration-fast, 150ms) ease;
+		transition:
+			border-color var(--duration-fast, 150ms) ease,
+			background var(--duration-fast, 150ms) ease;
 	}
 
 	.compass-arrow:hover {
@@ -1135,7 +1369,9 @@
 		height: var(--size-dot-sm, 8px);
 		border-radius: var(--radius-pill, 9999px);
 		background: var(--spatial-radar-node, #676d78);
-		transition: background var(--duration-fast, 150ms) ease, transform var(--duration-fast, 150ms) ease;
+		transition:
+			background var(--duration-fast, 150ms) ease,
+			transform var(--duration-fast, 150ms) ease;
 	}
 
 	.radar-station-node.active .radar-node-pip {
@@ -1173,16 +1409,36 @@
 	}
 
 	/* Dialog Pameran Apabila Papan 3D Diklik */
+	.dialog-sheet-handle {
+		display: none;
+	}
+
 	.exhibit-modal-backdrop {
 		position: fixed;
 		inset: 0;
 		z-index: 60;
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		padding: 1.25rem;
-		background: var(--spatial-backdrop, rgba(7, 8, 10, 0.72));
-		backdrop-filter: blur(var(--blur-glass-sm, 10px));
+		justify-content: flex-end;
+		padding: 2rem 2.5rem 2rem 1.5rem;
+		background: linear-gradient(
+			to right,
+			transparent 0%,
+			transparent 42%,
+			rgba(7, 8, 10, 0.45) 72%,
+			rgba(7, 8, 10, 0.85) 100%
+		);
+		pointer-events: auto;
+	}
+
+	:global([data-theme='light']) .exhibit-modal-backdrop {
+		background: linear-gradient(
+			to right,
+			transparent 0%,
+			transparent 42%,
+			rgba(240, 243, 248, 0.55) 72%,
+			rgba(240, 243, 248, 0.92) 100%
+		);
 	}
 
 	.exhibit-backdrop-close {
@@ -1196,15 +1452,87 @@
 	.exhibit-dialog-card {
 		position: relative;
 		z-index: 1;
-		width: min(var(--size-dialog-max, 580px), 100%);
-		max-height: 84vh;
+		width: min(490px, 100%);
+		max-height: min(86vh, calc(100vh - 3.5rem));
 		overflow-y: auto;
+		overscroll-behavior: contain;
+		-webkit-overflow-scrolling: touch;
 		padding: 1.5rem 1.65rem;
 		border-radius: var(--radius-2xl, 22px);
 		background: var(--spatial-card-bg, var(--surface));
 		border: 1px solid var(--spatial-card-border, var(--surface-border));
 		color: var(--spatial-hud-ink, var(--ink));
 		box-shadow: var(--shadow-lg, 0 28px 72px rgba(0, 0, 0, 0.45));
+		backdrop-filter: blur(var(--blur-glass, 16px));
+		-webkit-backdrop-filter: blur(var(--blur-glass, 16px));
+		animation: dialogSlideIn 240ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@keyframes dialogSlideIn {
+		from {
+			opacity: 0;
+			transform: translateX(20px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0) scale(1);
+		}
+	}
+
+	@media (max-width: 991px) {
+		.dialog-sheet-handle {
+			display: block;
+			width: 38px;
+			height: 4px;
+			margin: 0 auto 0.85rem;
+			border-radius: var(--radius-pill, 9999px);
+			background: var(--spatial-hud-muted, var(--ink-secondary));
+			opacity: 0.45;
+		}
+
+		.exhibit-modal-backdrop {
+			align-items: flex-end;
+			justify-content: center;
+			padding: 0;
+			background: linear-gradient(
+				to bottom,
+				transparent 0%,
+				transparent 20%,
+				rgba(7, 8, 10, 0.6) 45%,
+				rgba(7, 8, 10, 0.95) 100%
+			);
+		}
+
+		:global([data-theme='light']) .exhibit-modal-backdrop {
+			background: linear-gradient(
+				to bottom,
+				transparent 0%,
+				transparent 20%,
+				rgba(240, 243, 248, 0.65) 45%,
+				rgba(240, 243, 248, 0.96) 100%
+			);
+		}
+
+		.exhibit-dialog-card {
+			width: 100%;
+			max-height: 60vh;
+			border-bottom-left-radius: 0;
+			border-bottom-right-radius: 0;
+			border-bottom: 0;
+			padding: 0.95rem 1.25rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+			animation: dialogSlideUp 240ms cubic-bezier(0.16, 1, 0.3, 1);
+		}
+
+		@keyframes dialogSlideUp {
+			from {
+				opacity: 0;
+				transform: translateY(24px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
 	}
 
 	.dialog-top-row {
@@ -1224,6 +1552,47 @@
 		color: var(--spatial-chip-ink, var(--badge-ink));
 		border: 1px solid var(--spatial-chip-border, var(--badge-border));
 		font-weight: 700;
+	}
+
+	.dialog-nav-group {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.2rem 0.45rem;
+		border-radius: var(--radius-pill, 9999px);
+		border: 1px solid var(--spatial-pill-border, var(--surface-border));
+		background: var(--spatial-pill-bg, var(--surface-hover));
+	}
+
+	.dialog-nav-btn {
+		width: 28px;
+		height: 28px;
+		min-width: 28px;
+		min-height: 28px;
+		border-radius: var(--radius-pill, 9999px);
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--spatial-hud-ink, var(--ink));
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		transition:
+			border-color var(--duration-fast, 150ms) ease,
+			background var(--duration-fast, 150ms) ease;
+	}
+
+	.dialog-nav-btn:hover {
+		border-color: var(--spatial-accent, var(--accent));
+		background: var(--spatial-card-bg, var(--surface));
+	}
+
+	.dialog-nav-counter {
+		font-family: var(--font-mono, monospace);
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: var(--spatial-hud-muted, var(--ink-secondary));
+		padding: 0 0.25rem;
 	}
 
 	.dialog-close-btn {
@@ -1301,7 +1670,9 @@
 		font-weight: 700;
 		text-decoration: none;
 		cursor: pointer;
-		transition: background var(--duration-fast, 150ms) ease, border-color var(--duration-fast, 150ms) ease;
+		transition:
+			background var(--duration-fast, 150ms) ease,
+			border-color var(--duration-fast, 150ms) ease;
 	}
 
 	.dialog-primary-cta {
@@ -1412,7 +1783,9 @@
 		font-size: 0.84rem;
 		font-weight: 700;
 		text-decoration: none;
-		transition: background var(--duration-fast, 150ms) ease, border-color var(--duration-fast, 150ms) ease;
+		transition:
+			background var(--duration-fast, 150ms) ease,
+			border-color var(--duration-fast, 150ms) ease;
 	}
 
 	.primary-cta {
@@ -1550,6 +1923,26 @@
 			border-radius: var(--radius-lg, 18px);
 			gap: 0.5rem;
 			padding: 0.4rem 0.65rem;
+		}
+		.dialog-actions-row {
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+		.dialog-primary-cta,
+		.dialog-secondary-cta {
+			width: 100%;
+			min-height: 44px;
+			text-align: center;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.exhibit-dialog-card {
+			animation: none;
+		}
+		.minimal-topbar,
+		.bottom-compass {
+			transition: none;
 		}
 	}
 </style>
