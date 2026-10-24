@@ -37,6 +37,7 @@ export interface ExhibitScreenState {
 	hoveredId: string | null;
 	focusedId: string | null;
 	pressedId: string | null;
+	avatar?: CanvasImageSource | null;
 }
 
 export const EXHIBIT_MIN_WIDTH = 320;
@@ -293,6 +294,51 @@ function paintControl(
 	});
 }
 
+/** Rounded rectangle yang selamat untuk konteks 2D terhad (mock ujian, pelayar lama). */
+function roundedRect(
+	ctx: CanvasRenderingContext2D,
+	x: number,
+	y: number,
+	width: number,
+	height: number,
+	radius: number
+) {
+	const r = Math.max(0, Math.min(radius, width / 2, height / 2));
+	if (typeof ctx.roundRect === 'function') {
+		ctx.beginPath();
+		ctx.roundRect(x, y, width, height, r);
+		return;
+	}
+	if (typeof ctx.arc !== 'function') {
+		// Konteks terhad (ujian): bina laluan segi empat mudah tanpa lengkok.
+		if (typeof ctx.rect === 'function') {
+			ctx.rect(x, y, width, height);
+			return;
+		}
+		if (typeof ctx.moveTo === 'function' && typeof ctx.lineTo === 'function') {
+			ctx.beginPath();
+			ctx.moveTo(x, y);
+			ctx.lineTo(x + width, y);
+			ctx.lineTo(x + width, y + height);
+			ctx.lineTo(x, y + height);
+			ctx.closePath();
+		}
+		return;
+	}
+	ctx.beginPath();
+	ctx.moveTo(x + r, y);
+	ctx.lineTo(x + width - r, y);
+	ctx.arc(x + width - r, y + r, r, -Math.PI / 2, 0);
+	ctx.lineTo(x + width, y + height - r);
+	ctx.arc(x + width - r, y + height - r, r, 0, Math.PI / 2);
+	ctx.lineTo(x + r, y + height);
+	ctx.arc(x + r, y + height - r, r, Math.PI / 2, Math.PI);
+	ctx.lineTo(x, y + r);
+	ctx.arc(x + r, y + r, r, Math.PI, Math.PI * 1.5);
+	ctx.closePath();
+}
+
+/** Papan pameran sentiasa memaparkan butiran penuh yang boleh dibaca tanpa klik. */
 function preview(
 	ctx: CanvasRenderingContext2D,
 	state: ExhibitScreenState,
@@ -305,50 +351,165 @@ function preview(
 	title: TypeStyle,
 	meta: TypeStyle
 ) {
-	setType(ctx, meta, palette);
-	paintText(ctx, excerpt(ctx, state.view.code, width), x, padding, meta, palette);
-	const titleY = padding + meta.line + 16;
+	const labels = words[state.locale];
+	const ruleY = padding + meta.line + 10;
 	const hintY = height - padding - EXHIBIT_TOUCH_SIZE;
-	const available = hintY - GAP - titleY;
-	const titleCount = Math.max(1, Math.min(2, Math.floor((available - body.line - GAP) / title.line)));
+	const roomBelowRule = hintY - ruleY - 20;
+	const avatarSize = state.avatar && roomBelowRule >= 100 && width >= 340
+		? Math.min(68, Math.max(44, Math.round(Math.min(width * 0.12, height * 0.16))))
+		: 0;
+
+	setType(ctx, meta, palette);
+	paintText(ctx, excerpt(ctx, state.view.code, width * 0.62), x, padding, meta, palette);
+	const counter = `${state.total ? Math.min(state.total, Math.max(1, state.index + 1)) : 0} / ${state.total}`;
+	const counterWidth = ctx.measureText(counter).width;
+	paintText(ctx, counter, x + width - counterWidth, padding, meta, palette);
+
+	ctx.fillStyle = palette.border;
+	ctx.fillRect(x, ruleY, width, 1);
+	ctx.fillStyle = palette.accent;
+	ctx.fillRect(x, ruleY, Math.min(width, Math.round(width * 0.18)), 2);
+
+	const avatarY = ruleY + 14;
+	if (avatarSize > 0 && state.avatar) {
+		paintAvatar(ctx, state.avatar, x + width - avatarSize, avatarY, avatarSize, palette);
+	}
+
+	let cursorY = ruleY + 18;
+	const titleWidth = avatarSize > 0 ? width - avatarSize - 16 : width;
+
+	// Tajuk besar: elemen utama papan, bukan teks kecil di sudut.
 	setType(ctx, title, palette);
-	const titleLines = wrap(ctx, state.view.title[state.locale], width);
-	for (let index = 0; index < Math.min(titleCount, titleLines.length); index++) {
-		const last = index === titleCount - 1 && titleLines.length > titleCount;
+	const titleLines = wrap(ctx, state.view.title[state.locale], titleWidth);
+	const titleRoom = hintY - cursorY;
+	const maxTitleLines = Math.max(1, Math.min(3, Math.floor(titleRoom / (title.line * 1.35))));
+	const titleCount = Math.min(maxTitleLines, titleLines.length);
+	for (let index = 0; index < titleCount; index++) {
+		const isLast = index === titleCount - 1 && titleLines.length > titleCount;
 		paintText(
 			ctx,
-			last ? excerpt(ctx, `${titleLines[index]} ${titleLines[index + 1]}`, width) : titleLines[index],
+			isLast ? excerpt(ctx, `${titleLines[index]} ${titleLines[index + 1]}`, titleWidth) : titleLines[index],
 			x,
-			titleY + index * title.line,
+			cursorY,
 			title,
 			palette
 		);
+		cursorY += title.line;
 	}
-	const summaryY = titleY + Math.min(titleCount, titleLines.length) * title.line + GAP;
+	cursorY += 6;
+
+	// Subtajuk: konteks CV (syarikat, tempoh, lokasi).
+	const subtitle = state.view.subtitle[state.locale];
+	if (subtitle && cursorY + meta.line * 2 < hintY) {
+		const subStyle: TypeStyle = { ...body, size: Math.max(12, body.size - 4), tone: 'accent' };
+		setType(ctx, subStyle, palette);
+		const subLines = wrap(ctx, subtitle, titleWidth);
+		const subMax = Math.min(2, Math.floor((hintY - cursorY - body.line * 2) / subStyle.line));
+		for (let index = 0; index < Math.min(subMax, subLines.length); index++) {
+			paintText(ctx, subLines[index], x, cursorY, subStyle, palette);
+			cursorY += subStyle.line;
+		}
+		cursorY += 8;
+	}
+
+	// Pastikan ringkasan bermula di bawah avatar sekiranya tajuk/subtajuk lebih pendek daripada avatar.
+	if (avatarSize > 0) {
+		cursorY = Math.max(cursorY, avatarY + avatarSize + 12);
+	}
+
+	// Ringkasan: diisi mengikut ruang yang tinggal, bukan tetap 3 baris.
 	setType(ctx, body, palette);
 	const summaryLines = wrap(ctx, state.view.summary[state.locale].replace(/\s+/gu, ' '), width);
-	const summaryCount = Math.max(0, Math.min(3, Math.floor((hintY - GAP - summaryY) / body.line)));
-	for (let index = 0; index < Math.min(summaryCount, summaryLines.length); index++) {
-		const last = index === summaryCount - 1 && summaryLines.length > summaryCount;
+	const reserved = Math.min(body.line * 3, Math.round(height * 0.16));
+	const summaryRoom = hintY - cursorY - reserved;
+	const summaryCount = Math.max(0, Math.min(summaryLines.length, Math.floor(summaryRoom / body.line)));
+	for (let index = 0; index < summaryCount; index++) {
+		const isLast = index === summaryCount - 1 && summaryLines.length > summaryCount;
 		paintText(
 			ctx,
-			last ? excerpt(ctx, `${summaryLines[index]} ${summaryLines[index + 1]}`, width) : summaryLines[index],
+			isLast ? excerpt(ctx, `${summaryLines[index]} ${summaryLines[index + 1]}`, width) : summaryLines[index],
 			x,
-			summaryY + index * body.line,
+			cursorY,
 			{ ...body, tone: 'muted' },
 			palette
 		);
+		cursorY += body.line;
 	}
+
+	// Cip teknologi: pratonton visual (bukan kawasan klik) supaya kandungan kelihatan segera.
+	const chips = state.view.tech.slice(0, 8);
+	if (chips.length && cursorY + EXHIBIT_TOUCH_SIZE * 0.7 < hintY - EXHIBIT_TOUCH_SIZE - GAP) {
+		const chipStyle: TypeStyle = { ...meta, size: Math.max(11, Math.round(meta.size * 1.05)) };
+		setType(ctx, chipStyle, palette);
+		const chipY = Math.min(cursorY + 8, hintY - EXHIBIT_TOUCH_SIZE - chipStyle.line - 18);
+		let chipX = x;
+		for (const chip of chips) {
+			const label = excerpt(ctx, chip, width * 0.46);
+			const chipWidth = Math.min(width, ctx.measureText(label).width + 20);
+			if (chipX + chipWidth > x + width) break;
+			roundedRect(ctx, chipX + 0.5, chipY + 0.5, chipWidth - 1, chipStyle.line + 11, (chipStyle.line + 11) / 2);
+			ctx.strokeStyle = palette.border;
+			ctx.lineWidth = 1;
+			ctx.stroke();
+			paintText(ctx, label, chipX + 10, chipY + 5, chipStyle, palette);
+			chipX += chipWidth + 6;
+		}
+	}
+
+	// Bar tindakan bawah: satu-satunya gesaan, bukan blok penuh yang bersaing dengan tajuk.
+	roundedRect(ctx, x, hintY, width, EXHIBIT_TOUCH_SIZE, 6);
 	ctx.fillStyle = palette.surface;
-	ctx.fillRect(x, hintY, width, EXHIBIT_TOUCH_SIZE);
+	ctx.fill();
+	ctx.strokeStyle = palette.accent;
+	ctx.lineWidth = 1;
+	ctx.stroke();
 	paintText(
 		ctx,
-		`${words[state.locale].open} →`,
+		`${labels.open} →`,
 		x + CONTROL_PADDING,
 		hintY + (EXHIBIT_TOUCH_SIZE - body.line) / 2,
 		{ ...body, tone: 'accent' },
 		palette
 	);
+	const zoomHint = state.locale === 'ms' ? 'Klik untuk zoom' : 'Click to zoom';
+	setType(ctx, meta, palette);
+	if (ctx.measureText(zoomHint).width < width * 0.6) {
+		paintText(
+			ctx,
+			zoomHint,
+			x + width - CONTROL_PADDING - ctx.measureText(zoomHint).width,
+			hintY + (EXHIBIT_TOUCH_SIZE - meta.line) / 2,
+			meta,
+			palette
+		);
+	}
+}
+
+/** Potret profil dilukis sebagai sebahagian daripada kanvas supaya ia tidak hilang pada setiap lukisan semula. */
+function paintAvatar(
+	ctx: CanvasRenderingContext2D,
+	source: CanvasImageSource,
+	x: number,
+	y: number,
+	size: number,
+	palette: ExhibitPalette
+) {
+	if (typeof ctx.drawImage !== 'function') return;
+	ctx.save();
+	if (typeof ctx.beginPath === 'function' && typeof ctx.arc === 'function') {
+		ctx.beginPath();
+		ctx.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+		if (typeof ctx.clip === 'function') ctx.clip();
+	}
+	ctx.drawImage(source, x, y, size, size);
+	ctx.restore();
+	if (typeof ctx.beginPath === 'function' && typeof ctx.arc === 'function') {
+		ctx.strokeStyle = palette.accent;
+		ctx.lineWidth = Math.max(2, Math.round(size * 0.03));
+		ctx.beginPath();
+		ctx.arc(x + size / 2, y + size / 2, size / 2 - 1, 0, Math.PI * 2);
+		ctx.stroke();
+	}
 }
 
 /** Canvas.width/height ialah piksel logik; penskalaan DPR diurus oleh pemanggil. */
@@ -381,6 +542,12 @@ export function drawExhibitScreen(
 		ctx.clearRect(0, 0, width, height);
 		ctx.fillStyle = palette.background;
 		ctx.fillRect(0, 0, width, height);
+		// Jalur aksen & bingkai HUD: monitor kekal tajam pada semua sudut kamera.
+		ctx.fillStyle = palette.accent;
+		ctx.fillRect(0, 0, width, Math.max(3, Math.round(height * 0.006)));
+		ctx.strokeStyle = palette.border;
+		ctx.lineWidth = 1;
+		ctx.strokeRect(2.5, 2.5, width - 5, height - 5);
 		if (!state.inspecting) {
 			preview(ctx, state, palette, left, contentWidth, height, padding, body, title, meta);
 			return { regions: [], page: 0, pageCount: 1 };
@@ -391,11 +558,20 @@ export function drawExhibitScreen(
 		const footerLabelY = footerButtonsY - GAP - meta.line;
 		const contentBottom = footerLabelY - 16;
 		const contentHeight = contentBottom - contentTop;
+		const avatarSize = state.avatar && contentHeight >= 200 && contentWidth >= 460
+			? Math.min(96, Math.max(56, Math.round(Math.min(contentWidth * 0.12, contentHeight * 0.2))))
+			: 0;
 		const rows: FlowRow[] = [];
-		addText(rows, ctx, state.view.title[state.locale], contentWidth, title, palette);
+		const headerWidth = avatarSize > 0 ? contentWidth - avatarSize - GAP * 2 : contentWidth;
+		addText(rows, ctx, state.view.title[state.locale], headerWidth, title, palette);
 		rows.push({ kind: 'space', height: GAP });
-		addText(rows, ctx, state.view.subtitle[state.locale], contentWidth, { ...body, size: bodySize - 1, tone: 'muted' }, palette);
-		rows.push({ kind: 'space', height: 16 });
+		addText(rows, ctx, state.view.subtitle[state.locale], headerWidth, { ...body, size: bodySize - 1, tone: 'muted' }, palette);
+		// Elak ringkasan melimpah ke bawah avatar: tajuk/subtajuk yang pendek diberi ruang tambahan.
+		const headerHeight = rows.reduce((total, row) => total + row.height, 0);
+		rows.push({
+			kind: 'space',
+			height: avatarSize > headerHeight ? avatarSize - headerHeight + 16 : 16
+		});
 		addText(rows, ctx, state.view.summary[state.locale], contentWidth, body, palette);
 		if (state.view.tech.length) {
 			rows.push({ kind: 'space', height: 16 });
@@ -441,6 +617,10 @@ export function drawExhibitScreen(
 		}
 		const pages = paginate(rows, contentHeight);
 		const page = Number.isFinite(state.page) ? Math.max(0, Math.min(pages.length - 1, Math.floor(state.page))) : 0;
+		// Potret hanya pada halaman pertama: di bawah bar chrome, sejajar tajuk, tidak menyentuh butang Tutup.
+		if (page === 0 && avatarSize > 0 && state.avatar) {
+			paintAvatar(ctx, state.avatar, left + contentWidth - avatarSize, contentTop, avatarSize, palette);
+		}
 		let y = contentTop;
 		for (const row of pages[page]) {
 			if (row.kind === 'text') paintText(ctx, row.text, left, y, row.style, palette);

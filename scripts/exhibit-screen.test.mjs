@@ -85,6 +85,39 @@ function createMockCanvas(width, height) {
 		fillText(text, x, y) {
 			operations.push({ op: 'fillText', text, x, y, font: currentFont });
 		},
+		beginPath() {
+			operations.push({ op: 'beginPath' });
+		},
+		closePath() {
+			operations.push({ op: 'closePath' });
+		},
+		moveTo(x, y) {
+			operations.push({ op: 'moveTo', x, y });
+		},
+		lineTo(x, y) {
+			operations.push({ op: 'lineTo', x, y });
+		},
+		rect(x, y, w, h) {
+			operations.push({ op: 'rect', x, y, w, h });
+		},
+		roundRect(x, y, w, h, r) {
+			operations.push({ op: 'roundRect', x, y, w, h, r });
+		},
+		arc(x, y, r, start, end) {
+			operations.push({ op: 'arc', x, y, r, start, end });
+		},
+		clip() {
+			operations.push({ op: 'clip' });
+		},
+		fill() {
+			operations.push({ op: 'fill', fillStyle: this.fillStyle });
+		},
+		stroke() {
+			operations.push({ op: 'stroke', strokeStyle: this.strokeStyle });
+		},
+		drawImage(img, x, y, w, h) {
+			operations.push({ op: 'drawImage', x, y, w, h });
+		},
 		measureText(text) {
 			const sizeMatch = (currentFont || '').match(/(\d+(?:\.\d+)?)px/);
 			const size = sizeMatch ? parseFloat(sizeMatch[1]) : 16;
@@ -585,6 +618,83 @@ test('Ujian dwibahasa menyeluruh (Locale ms & en) pada semua paparan', () => {
 	const resEn = drawExhibitScreen(canvas, stateEn, testPalette);
 	const backEn = resEn.regions.find((r) => r.id === 'back');
 	assert.equal(backEn.label, 'Back');
+});
+
+test('Potret profil tidak bertindih dengan butang Tutup dan tidak melimpah ke halaman lain', () => {
+	const view = resolveExhibitView({ kind: 'hotspot', id: 'core-monolith' });
+	assert.ok(view);
+	const avatar = { width: 512, height: 512 };
+	const sizes = [[640, 380], [900, 575], [1200, 760], [1920, 1080]];
+
+	for (const [width, height] of sizes) {
+		const canvas = createMockCanvas(width, height);
+		const state = {
+			view,
+			locale: 'ms',
+			inspecting: true,
+			canBack: true,
+			index: 0,
+			total: 3,
+			page: 0,
+			hoveredId: null,
+			focusedId: null,
+			pressedId: null,
+			avatar
+		};
+		const result = drawExhibitScreen(canvas, state, testPalette);
+		const close = result.regions.find((region) => region.id === 'close');
+		assert.ok(close, 'Butang Tutup wajib wujud');
+		const draws = canvas._operations.filter((op) => op.op === 'drawImage');
+		assert.equal(draws.length, 1, `Potret mesti dilukis sekali pada ${width}x${height}`);
+		const image = draws[0];
+
+		// Butang Tutup berada di bar chrome atas; potret mesti bermula di bawahnya.
+		assert.ok(
+			image.y >= close.y + close.height,
+			`Potret (y=${image.y}) bertindih dengan butang Tutup (bawah=${close.y + close.height}) pada ${width}x${height}`
+		);
+		assert.ok(
+			image.y + image.h <= height,
+			`Potret melimpah bawah kanvas pada ${width}x${height}`
+		);
+		assert.ok(
+			image.x + image.w <= width,
+			`Potret melimpah kanan kanvas pada ${width}x${height}`
+		);
+
+		// Halaman kedua tidak lagi memaparkan potret.
+		const secondCanvas = createMockCanvas(width, height);
+		drawExhibitScreen(secondCanvas, { ...state, page: 1 }, testPalette);
+		const secondDraws = secondCanvas._operations.filter((op) => op.op === 'drawImage');
+		assert.equal(
+			secondDraws.length,
+			result.pageCount > 1 ? 0 : 1,
+			`Potret tidak boleh berulang pada halaman 2 (${width}x${height})`
+		);
+	}
+});
+
+test('Papan tanpa potret tidak melukis imej langsung', () => {
+	const view = resolveExhibitView({ kind: 'hotspot', id: 'ent-emesys' });
+	const canvas = createMockCanvas(1200, 760);
+	drawExhibitScreen(
+		canvas,
+		{
+			view,
+			locale: 'ms',
+			inspecting: true,
+			canBack: true,
+			index: 0,
+			total: 6,
+			page: 0,
+			hoveredId: null,
+			focusedId: null,
+			pressedId: null,
+			avatar: null
+		},
+		testPalette
+	);
+	assert.equal(canvas._operations.filter((op) => op.op === 'drawImage').length, 0);
 });
 
 // Tutup pelayan Vite selepas semua ujian selesai
