@@ -1,0 +1,2361 @@
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { STATIONS, PROFILE, type Locale, type HotspotItem, type SpineStation } from './spine-data';
+
+export type ThemeMode = 'dark' | 'light';
+
+export interface ProjectedMarker {
+	id: string;
+	stationIndex: number;
+	x: number;
+	y: number;
+	visible: boolean;
+}
+
+export interface WorldCallbacks {
+	onStationChange?: (stationIndex: number, progress: number) => void;
+	onHotspotHover?: (hotspotId: string | null, hoverLabel?: string | null) => void;
+	onHotspotSelect?: (hotspotId: string, stationIndex: number) => void;
+	onMarkersUpdate?: (markers: ProjectedMarker[]) => void;
+}
+
+interface HotspotRecord {
+	id: string;
+	stationIndex: number;
+	hotspot: HotspotItem;
+	mesh: THREE.Group;
+	propObject: THREE.Object3D;
+	anchorLocal: THREE.Vector3;
+	screenMat: THREE.MeshStandardMaterial;
+	frameMat: THREE.MeshPhysicalMaterial;
+	accentMat: THREE.MeshStandardMaterial;
+	canvas: HTMLCanvasElement;
+	texture: THREE.CanvasTexture;
+	baseY: number;
+	currentLift: number;
+}
+
+interface StationHeaderRecord {
+	station: SpineStation;
+	canvas: HTMLCanvasElement;
+	texture: THREE.CanvasTexture;
+}
+
+interface PBRSurfaceMaps {
+	normalMap: THREE.CanvasTexture;
+	roughnessMap: THREE.CanvasTexture;
+	metalnessMap: THREE.CanvasTexture;
+	deckNormalMap: THREE.CanvasTexture;
+}
+
+interface WeatherConfig {
+	sunElevation: number;
+	sunAzimuth: number;
+	waveScale: number;
+	choppiness: number;
+	skyZenith: THREE.Color;
+	skyHorizon: THREE.Color;
+	sunColor: THREE.Color;
+	waterDeep: THREE.Color;
+	waterShallow: THREE.Color;
+	waterScatter: THREE.Color;
+	fogColor: THREE.Color;
+	nightFactor: number;
+}
+
+// 360° ORBITAL ARCHIPELAGO GEOMETRY (Mengelilingi Teras Reaktor Pusat di (0,0,0) — BUKAN lorong lurus!)
+export const ORBIT_RADIUS = 38;
+const STATION_ANGLES = [0, 1, 2, 3, 4, 5].map((i) => (i / 6) * Math.PI * 2);
+
+const STATION_ANCHORS: THREE.Vector3[] = STATION_ANGLES.map(
+	(angle, idx) =>
+		new THREE.Vector3(
+			Math.sin(angle) * ORBIT_RADIUS,
+			idx % 2 === 0 ? 0.0 : 0.35,
+			Math.cos(angle) * ORBIT_RADIUS
+		)
+);
+
+const PULSE_COUNT = 72;
+const EXHIBIT_PROP_HEIGHT = 3.32;
+const EXHIBIT_PROP_BOB = 0.04;
+
+const OCEAN_VERTEX_SHADER = /* glsl */ `
+	uniform float uTime;
+	uniform float uWaveScale;
+	uniform float uChoppiness;
+
+	varying vec3 vWorldPos;
+	varying vec3 vNormal;
+	varying float vJacobian;
+	varying float vElevation;
+
+	void gerstnerWave(
+		vec2 xz,
+		vec2 dir,
+		float steepness,
+		float wavelength,
+		float speed,
+		inout vec3 displaced,
+		inout vec3 tangent,
+		inout vec3 binormal,
+		inout float jacobian
+	) {
+		float k = 6.28318530718 / wavelength;
+		float c = sqrt(9.81 / k) * speed;
+		vec2 d = normalize(dir);
+		float f = k * (dot(d, xz) - c * uTime);
+		float a = (steepness / k) * uWaveScale;
+
+		float cosF = cos(f);
+		float sinF = sin(f);
+
+		displaced.x += d.x * (a * cosF * uChoppiness);
+		displaced.y += a * sinF;
+		displaced.z += d.y * (a * cosF * uChoppiness);
+
+		float wa = k * a;
+		tangent += vec3(
+			-d.x * d.x * (wa * sinF * uChoppiness),
+			d.x * (wa * cosF),
+			-d.x * d.y * (wa * sinF * uChoppiness)
+		);
+		binormal += vec3(
+			-d.x * d.y * (wa * sinF * uChoppiness),
+			d.y * (wa * cosF),
+			-d.y * d.y * (wa * sinF * uChoppiness)
+		);
+		jacobian -= wa * sinF * 0.52;
+	}
+
+	void main() {
+		vec4 worldInitial = modelMatrix * vec4(position, 1.0);
+		vec3 displaced = worldInitial.xyz;
+		vec3 tangent = vec3(1.0, 0.0, 0.0);
+		vec3 binormal = vec3(0.0, 0.0, 1.0);
+		float jacobian = 1.0;
+
+		vec2 p = displaced.xz;
+		gerstnerWave(p, vec2(0.86, -0.51), 0.13, 28.0, 1.02, displaced, tangent, binormal, jacobian);
+		gerstnerWave(p, vec2(-0.62, -0.78), 0.11, 17.5, 1.08, displaced, tangent, binormal, jacobian);
+		gerstnerWave(p, vec2(0.32, -0.94), 0.085, 10.4, 1.15, displaced, tangent, binormal, jacobian);
+		gerstnerWave(p, vec2(-0.91, -0.41), 0.065, 6.2, 1.22, displaced, tangent, binormal, jacobian);
+		gerstnerWave(p, vec2(0.74, 0.67), 0.045, 3.5, 1.30, displaced, tangent, binormal, jacobian);
+		gerstnerWave(p, vec2(-0.45, 0.89), 0.03, 1.8, 1.42, displaced, tangent, binormal, jacobian);
+
+		// Redam ombak di sekitar cincin jambatan orbital (R=38) dan teras pusat (R=0)
+		float radialDist = length(displaced.xz);
+		float ringClearance = smoothstep(1.5, 6.5, abs(radialDist - 38.0));
+		float coreClearance = smoothstep(3.0, 10.0, radialDist);
+		displaced.y *= mix(0.25, 1.0, ringClearance * coreClearance);
+
+		vWorldPos = displaced;
+		vElevation = displaced.y;
+		vNormal = normalize(cross(binormal, tangent));
+		vJacobian = jacobian;
+
+		gl_Position = projectionMatrix * viewMatrix * vec4(displaced, 1.0);
+	}
+`;
+
+const OCEAN_FRAGMENT_SHADER = /* glsl */ `
+	uniform float uTime;
+	uniform vec3 uSunDir;
+	uniform vec3 uSunColor;
+	uniform vec3 uSkyZenith;
+	uniform vec3 uSkyHorizon;
+	uniform vec3 uWaterDeep;
+	uniform vec3 uWaterShallow;
+	uniform vec3 uWaterScatter;
+	uniform vec3 uFogColor;
+	uniform float uSunSpecScale;
+	uniform vec3 uIslands[6];
+
+	varying vec3 vWorldPos;
+	varying vec3 vNormal;
+	varying float vJacobian;
+	varying float vElevation;
+
+	float hash21(vec2 p) {
+		p = fract(p * vec2(234.34, 435.345));
+		p += dot(p, p + 34.23);
+		return fract(p.x * p.y);
+	}
+
+	float noise2D(vec2 p) {
+		vec2 i = floor(p);
+		vec2 f = fract(p);
+		float a = hash21(i);
+		float b = hash21(i + vec2(1.0, 0.0));
+		float c = hash21(i + vec2(0.0, 1.0));
+		float d = hash21(i + vec2(1.0, 1.0));
+		vec2 u = f * f * (3.0 - 2.0 * f);
+		return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+	}
+
+	float fbm(vec2 p) {
+		float v = 0.0;
+		float a = 0.5;
+		mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
+		for (int i = 0; i < 5; i++) {
+			v += a * noise2D(p);
+			p = rot * p * 2.04;
+			a *= 0.5;
+		}
+		return v;
+	}
+
+	void main() {
+		vec3 viewVec = cameraPosition - vWorldPos;
+		float dist = length(viewVec);
+		vec3 V = normalize(viewVec);
+
+		vec2 uv1 = vWorldPos.xz * 1.65 + vec2(uTime * 0.38, -uTime * 0.29);
+		vec2 uv2 = vWorldPos.xz * 4.20 - vec2(uTime * 0.52, uTime * 0.41);
+		vec2 uv3 = vWorldPos.xz * 9.80 + vec2(-uTime * 0.75, uTime * 0.63);
+		float n1 = fbm(uv1) * 2.0 - 1.0;
+		float n2 = noise2D(uv2) * 2.0 - 1.0;
+		float n3 = noise2D(uv3) * 2.0 - 1.0;
+
+		float distAtten = 1.0 / (1.0 + dist * 0.028);
+		vec3 microPerturb = vec3(
+			(n1 * 0.11 + n2 * 0.065 + n3 * 0.035) * distAtten,
+			0.0,
+			(n2 * 0.11 - n1 * 0.065 + n3 * 0.035) * distAtten
+		);
+		vec3 N = normalize(vNormal + microPerturb);
+
+		vec3 dNdx = dFdx(N);
+		vec3 dNdy = dFdy(N);
+		float slopeVar = clamp(dot(dNdx, dNdx) + dot(dNdy, dNdy), 0.0, 0.25);
+
+		float NoV = max(dot(N, V), 0.001);
+		float fresnel = clamp(0.02 + 0.96 * pow(1.0 - NoV, 5.0), 0.0, 1.0);
+
+		vec3 R = reflect(-V, N);
+		R.y = max(R.y, 0.015);
+		float skyGrad = clamp(pow(R.y, 0.55), 0.0, 1.0);
+		vec3 skyReflect = mix(uSkyHorizon, uSkyZenith, skyGrad);
+		float sunReflectAlign = max(dot(R, uSunDir), 0.0);
+		skyReflect += uSunColor * pow(sunReflectAlign, 24.0) * 0.38 * uSunSpecScale;
+
+		float heightFactor = smoothstep(-0.55, 0.65, vElevation);
+		vec3 baseWater = mix(uWaterDeep, uWaterShallow, heightFactor * 0.68);
+		float crestScatter = smoothstep(0.02, 0.58, vElevation) * pow(clamp(1.0 - NoV, 0.0, 1.0), 2.2);
+		float sunBacklight = max(dot(V, -vec3(uSunDir.x, -uSunDir.y * 0.25, uSunDir.z)), 0.0);
+		vec3 sss = uWaterScatter * (crestScatter * 0.72 + sunBacklight * crestScatter * 0.95);
+
+		// Jarak ke 6 pulau stesen & teras pusat (0,0)
+		float minIslandDist = length(vWorldPos.xz);
+		for (int i = 0; i < 6; i++) {
+			float d = length(vWorldPos.xz - uIslands[i].xz);
+			minIslandDist = min(minIslandDist, d);
+		}
+
+		// Cincin Koral &Tunjang Optik Bawah Laut pada R = 38m dan jejari ke pusat
+		float ringDist = abs(length(vWorldPos.xz) - 38.0);
+		float shallowLagoon = max(1.0 - smoothstep(4.2, 11.5, minIslandDist), (1.0 - smoothstep(1.5, 5.5, ringDist)) * 0.58);
+		baseWater = mix(baseWater, uWaterScatter * 0.78, shallowLagoon * 0.52);
+
+		float cablePulse = 0.65 + 0.35 * sin(length(vWorldPos.xz) * 0.5 - uTime * 3.8);
+		float ringGlow = exp(-ringDist * 0.85) * cablePulse;
+		vec3 subseaCableColor = vec3(0.08, 0.78, 0.96) * ringGlow * 0.42;
+
+		vec3 waterBody = baseWater + sss + subseaCableColor;
+		vec3 color = mix(waterBody, skyReflect, fresnel * 0.76);
+
+		// Sun specular & glints (dikawal oleh uSunSpecScale supaya Light Mode tidak silau)
+		vec3 H = normalize(uSunDir + V);
+		float NoH = max(dot(N, H), 0.0);
+		float specPower = mix(190.0, 32.0, clamp(slopeVar * 6.0, 0.0, 1.0));
+		float specBroad = pow(NoH, specPower) * 0.65 * uSunSpecScale;
+		float glintCell = smoothstep(0.78, 0.97, noise2D(vWorldPos.xz * 8.5 + vec2(uTime * 1.4, -uTime * 1.1)));
+		float specSparkle = (pow(NoH, 520.0) * 2.2 + pow(NoH, 72.0) * glintCell * 1.2) * uSunSpecScale;
+		color += uSunColor * (specBroad + specSparkle);
+
+		// Whitecaps & Shore Foam di sekeliling 6 Pulau & Teras Pusat
+		float foamLace = fbm(vWorldPos.xz * 1.55 + vec2(uTime * 0.16, -uTime * 0.12));
+		float whitecap = smoothstep(0.78, 0.44, vJacobian - foamLace * 0.24) * smoothstep(0.08, 0.48, vElevation);
+		float wakeWave = sin(minIslandDist * 3.1 - uTime * 2.4) * 0.5 + 0.5;
+		float shoreFoam = (1.0 - smoothstep(4.2, 6.8, minIslandDist)) * smoothstep(0.35, 0.78, wakeWave * foamLace * 1.45);
+		float totalFoam = clamp(whitecap * 0.55 + shoreFoam * 0.82, 0.0, 1.0);
+
+		vec3 foamColor = mix(vec3(0.88, 0.95, 1.0), uSunColor, 0.18);
+		color = mix(color, foamColor, totalFoam);
+
+		float fogFactor = smoothstep(48.0, 175.0, dist);
+		color = mix(color, uFogColor, fogFactor);
+
+		gl_FragColor = vec4(color, 1.0);
+	}
+`;
+
+const SKY_VERTEX_SHADER = /* glsl */ `
+	varying vec3 vWorldDir;
+	void main() {
+		vec4 wp = modelMatrix * vec4(position, 1.0);
+		vWorldDir = wp.xyz - cameraPosition;
+		gl_Position = projectionMatrix * viewMatrix * wp;
+	}
+`;
+
+const SKY_FRAGMENT_SHADER = /* glsl */ `
+	uniform float uTime;
+	uniform vec3 uSunDir;
+	uniform vec3 uSunColor;
+	uniform vec3 uSkyZenith;
+	uniform vec3 uSkyHorizon;
+	uniform float uNightFactor;
+
+	varying vec3 vWorldDir;
+
+	float hash21(vec2 p) {
+		p = fract(p * vec2(127.1, 311.7));
+		p += dot(p, p + 19.19);
+		return fract(p.x * p.y);
+	}
+
+	float noise2D(vec2 p) {
+		vec2 i = floor(p);
+		vec2 f = fract(p);
+		float a = hash21(i);
+		float b = hash21(i + vec2(1.0, 0.0));
+		float c = hash21(i + vec2(0.0, 1.0));
+		float d = hash21(i + vec2(1.0, 1.0));
+		vec2 u = f * f * (3.0 - 2.0 * f);
+		return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
+	}
+
+	float fbm(vec2 p) {
+		float v = 0.0;
+		float a = 0.5;
+		mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
+		for (int i = 0; i < 5; i++) {
+			v += a * noise2D(p);
+			p = rot * p * 2.02;
+			a *= 0.5;
+		}
+		return v;
+	}
+
+	void main() {
+		vec3 dir = normalize(vWorldDir);
+		float y = clamp(dir.y, 0.0, 1.0);
+
+		vec3 sky = mix(uSkyHorizon, uSkyZenith, pow(y, 0.55));
+
+		float sunCos = max(dot(dir, uSunDir), 0.0);
+		float mieGlow = pow(sunCos, 8.0) * 0.26 + pow(sunCos, 64.0) * 0.42;
+		float sunDisc = smoothstep(0.9986, 0.9997, sunCos);
+		sky += uSunColor * mieGlow;
+		sky = mix(sky, uSunColor * 1.25, sunDisc);
+
+		if (dir.y > 0.015) {
+			vec2 cloudUv = (dir.xz / (dir.y + 0.16)) * 0.5 + vec2(uTime * 0.01, -uTime * 0.007);
+			float c1 = fbm(cloudUv);
+			float c2 = fbm(cloudUv * 2.15 + vec2(1.7, -2.3));
+			float cloudDensity = smoothstep(0.48, 0.78, c1 * 0.72 + c2 * 0.28)
+				* smoothstep(0.015, 0.22, dir.y)
+				* smoothstep(0.92, 0.34, dir.y);
+
+			vec3 cloudLit = mix(uSkyHorizon * 1.05, uSunColor + vec3(0.18), 0.45 + 0.35 * pow(sunCos, 4.0));
+			vec3 cloudShadow = mix(uSkyZenith * 0.65, uSkyHorizon * 0.78, 0.5);
+			vec3 cloudCol = mix(cloudShadow, cloudLit, smoothstep(0.32, 0.78, c2));
+			sky = mix(sky, cloudCol, cloudDensity * 0.62);
+		}
+
+		if (uNightFactor > 0.05 && dir.y > 0.06) {
+			vec2 starGrid = floor(dir.xz / (dir.y + 0.1) * 195.0);
+			float starVal = hash21(starGrid);
+			float star = step(0.994, starVal) * smoothstep(0.06, 0.35, dir.y);
+			float twinkle = 0.6 + 0.4 * sin(uTime * 3.0 + starVal * 60.0);
+			sky += vec3(0.85, 0.93, 1.0) * star * twinkle * uNightFactor;
+		}
+
+		float horizonHaze = exp(-abs(dir.y) * 12.5);
+		sky = mix(sky, uSkyHorizon, horizonHaze * 0.48);
+
+		gl_FragColor = vec4(sky, 1.0);
+	}
+`;
+
+function createBeveledSlabGeometry(
+	width: number,
+	height: number,
+	depth: number,
+	radius = 0.05,
+	bevel = 0.025
+): THREE.BufferGeometry {
+	const rw = Math.max(0.02, width - bevel * 2);
+	const rh = Math.max(0.02, height - bevel * 2);
+	const r = Math.min(radius, rw * 0.45, rh * 0.45);
+	const hw = rw * 0.5;
+	const hh = rh * 0.5;
+
+	const shape = new THREE.Shape();
+	shape.moveTo(-hw + r, -hh);
+	shape.lineTo(hw - r, -hh);
+	shape.absarc(hw - r, -hh + r, r, -Math.PI / 2, 0, false);
+	shape.lineTo(hw, hh - r);
+	shape.absarc(hw - r, hh - r, r, 0, Math.PI / 2, false);
+	shape.lineTo(-hw + r, hh);
+	shape.absarc(-hw + r, hh - r, r, Math.PI / 2, Math.PI, false);
+	shape.lineTo(-hw, -hh + r);
+	shape.absarc(-hw + r, -hh + r, r, Math.PI, Math.PI * 1.5, false);
+
+	const extrudeDepth = Math.max(0.01, depth - bevel * 2);
+	const geo = new THREE.ExtrudeGeometry(shape, {
+		depth: extrudeDepth,
+		bevelEnabled: true,
+		bevelSegments: 4,
+		steps: 1,
+		bevelSize: bevel,
+		bevelThickness: bevel,
+		curveSegments: 8
+	});
+	geo.center();
+	return geo;
+}
+
+export class FiberSpineWorld {
+	private container: HTMLElement;
+	private callbacks: WorldCallbacks;
+	private scene: THREE.Scene;
+	private camera: THREE.PerspectiveCamera;
+	private renderer: THREE.WebGLRenderer | null = null;
+	private composer: EffectComposer | null = null;
+	private bloomPass: UnrealBloomPass | null = null;
+	private envTexture: THREE.Texture | null = null;
+	private pbrMaps: PBRSurfaceMaps | null = null;
+	private orbitalLoopCurve: THREE.CatmullRomCurve3;
+
+	private targetProgress = 0;
+	private currentProgress = 0;
+	private activeStationIndex = 0;
+	private selectedHotspotId: string | null = null;
+	private hoveredHotspotId: string | null = null;
+	private hoveredIslandIndex: number | null = null;
+	private theme: ThemeMode = 'dark';
+	private locale: Locale = 'ms';
+	private reducedMotion = false;
+	private weatherPresetId = 'golden_horizon';
+
+	private pointerNdc = new THREE.Vector2(0, 0);
+	private smoothPointer = new THREE.Vector2(0, 0);
+	private isDragging = false;
+	private dragStartX = 0;
+	private dragStartY = 0;
+	private dragMoved = false;
+	private userYawOffset = 0;
+	private userPitchOffset = 0;
+	private targetYawOffset = 0;
+	private targetPitchOffset = 0;
+	private lastInteractionTime = 0;
+	private heldKeys = new Set<string>();
+
+	private raycaster = new THREE.Raycaster();
+	private hotspots: HotspotRecord[] = [];
+	private stationHeaders: StationHeaderRecord[] = [];
+	private interactableMeshes: THREE.Object3D[] = [];
+	private stationGroups: THREE.Group[] = [];
+	private rotatingBeacons: THREE.Object3D[] = [];
+	private radarRotor: THREE.Group | null = null;
+	private centralReactorRings: THREE.Object3D[] = [];
+	private glowMaterials: THREE.MeshStandardMaterial[] = [];
+	private pulseMat: THREE.MeshBasicMaterial | null = null;
+	private active = true;
+	private inputEnabled = true;
+	private profileImage: HTMLImageElement | null = null;
+	private interactionRoots: THREE.Object3D[] = [];
+
+	private ambientLight!: THREE.AmbientLight;
+	private hemiLight!: THREE.HemisphereLight;
+	private keyLight!: THREE.DirectionalLight;
+	private rimLight!: THREE.PointLight;
+	private stationSpotLight!: THREE.PointLight;
+
+	private oceanMesh!: THREE.Mesh;
+	private oceanMaterial!: THREE.ShaderMaterial;
+	private skyMesh!: THREE.Mesh;
+	private skyMaterial!: THREE.ShaderMaterial;
+
+	private coreTubeMat!: THREE.MeshStandardMaterial;
+	private pulseInstanced!: THREE.InstancedMesh;
+	private pulseOffsets: Float32Array;
+	private pulseSpeeds: Float32Array;
+	private dummy = new THREE.Object3D();
+
+	private clock = new THREE.Clock();
+	private rafId: number | null = null;
+	private resizeObserver: ResizeObserver | null = null;
+	private tempWorldVec = new THREE.Vector3();
+
+	constructor(container: HTMLElement, callbacks: WorldCallbacks = {}) {
+		this.container = container;
+		this.callbacks = callbacks;
+		this.scene = new THREE.Scene();
+
+		this.camera = new THREE.PerspectiveCamera(46, 1, 0.15, 380);
+		// Gelung tertutup (closed orbital loop) yang menghubungkan ke-6 pulau secara 360°
+		this.orbitalLoopCurve = new THREE.CatmullRomCurve3(STATION_ANCHORS, true, 'catmullrom', 0.5);
+
+		this.pulseOffsets = new Float32Array(PULSE_COUNT);
+		this.pulseSpeeds = new Float32Array(PULSE_COUNT);
+		for (let i = 0; i < PULSE_COUNT; i++) {
+			this.pulseOffsets[i] = i / PULSE_COUNT;
+			this.pulseSpeeds[i] = 0.018 + (i % 5) * 0.004;
+		}
+	}
+
+	public init(): boolean {
+		try {
+			this.renderer = new THREE.WebGLRenderer({
+				antialias: true,
+				powerPreference: 'high-performance',
+				alpha: false
+			});
+			const dpr = Math.min(window.devicePixelRatio || 1, 2);
+			this.renderer.setPixelRatio(dpr);
+			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+			this.renderer.toneMappingExposure = 1.02;
+			this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+			this.renderer.shadowMap.enabled = true;
+			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+			const width = Math.max(this.container.clientWidth, 1);
+			const height = Math.max(this.container.clientHeight, 1);
+			this.renderer.setSize(width, height);
+			this.camera.aspect = width / height;
+			this.camera.updateProjectionMatrix();
+
+			this.container.innerHTML = '';
+			this.container.appendChild(this.renderer.domElement);
+
+			const pmrem = new THREE.PMREMGenerator(this.renderer);
+			pmrem.compileEquirectangularShader();
+			const roomEnv = new RoomEnvironment();
+			this.envTexture = pmrem.fromScene(roomEnv, 0.035).texture;
+			this.scene.environment = this.envTexture;
+			this.scene.environmentIntensity = 1.15;
+			roomEnv.dispose();
+			pmrem.dispose();
+
+			const rt = new THREE.WebGLRenderTarget(width * dpr, height * dpr, {
+				samples: 4,
+				type: THREE.HalfFloatType
+			});
+			this.composer = new EffectComposer(this.renderer, rt);
+			const renderPass = new RenderPass(this.scene, this.camera);
+			this.bloomPass = new UnrealBloomPass(
+				new THREE.Vector2(width, height),
+				0.26,
+				0.48,
+				0.88
+			);
+			const outputPass = new OutputPass();
+			this.composer.addPass(renderPass);
+			this.composer.addPass(this.bloomPass);
+			this.composer.addPass(outputPass);
+		} catch {
+			return false;
+		}
+
+		this.pbrMaps = this.generatePBRSurfaceMaps();
+
+		this.setupLights();
+		this.buildSkyAndOcean();
+		this.buildCentralSovereignReactor();
+		this.buildOrbitalRingCauseway();
+		this.buildArchipelagoStations();
+		this.applyWeatherAndTheme();
+		this.attachEvents();
+		this.updateCamera(0, 0);
+		this.startLoop();
+
+		return true;
+	}
+
+	private generatePBRSurfaceMaps(): PBRSurfaceMaps | null {
+		if (typeof document === 'undefined') return null;
+
+		const size = 256;
+		const heightCanvas = document.createElement('canvas');
+		heightCanvas.width = size;
+		heightCanvas.height = size;
+		const hCtx = heightCanvas.getContext('2d');
+
+		const roughCanvas = document.createElement('canvas');
+		roughCanvas.width = size;
+		roughCanvas.height = size;
+		const rCtx = roughCanvas.getContext('2d');
+
+		const metalCanvas = document.createElement('canvas');
+		metalCanvas.width = size;
+		metalCanvas.height = size;
+		const mCtx = metalCanvas.getContext('2d');
+
+		const normalCanvas = document.createElement('canvas');
+		normalCanvas.width = size;
+		normalCanvas.height = size;
+		const nCtx = normalCanvas.getContext('2d');
+
+		const deckCanvas = document.createElement('canvas');
+		deckCanvas.width = size;
+		deckCanvas.height = size;
+		const dCtx = deckCanvas.getContext('2d');
+
+		if (!hCtx || !rCtx || !mCtx || !nCtx || !dCtx) return null;
+
+		hCtx.fillStyle = '#808080';
+		hCtx.fillRect(0, 0, size, size);
+		rCtx.fillStyle = '#525252';
+		rCtx.fillRect(0, 0, size, size);
+		mCtx.fillStyle = '#e2e2e2';
+		mCtx.fillRect(0, 0, size, size);
+
+		let seed = 1337;
+		const rand = () => {
+			seed = (seed * 16807) % 2147483647;
+			return (seed - 1) / 2147483646;
+		};
+
+		for (let y = 0; y < size; y++) {
+			const v = Math.floor(118 + (rand() - 0.5) * 26);
+			hCtx.fillStyle = `rgb(${v},${v},${v})`;
+			hCtx.fillRect(0, y, size, 1);
+
+			const rv = Math.floor(210 + (rand() - 0.5) * 20);
+			rCtx.fillStyle = `rgb(${rv},${rv},${rv})`;
+			rCtx.fillRect(0, y, size, 1);
+		}
+
+		for (let i = 0; i < 320; i++) {
+			const x1 = rand() * size;
+			const y1 = rand() * size;
+			const len = 8 + rand() * 48;
+			const ang = (rand() - 0.5) * Math.PI;
+			const x2 = x1 + Math.cos(ang) * len;
+			const y2 = y1 + Math.sin(ang) * len;
+
+			hCtx.strokeStyle = rand() > 0.4 ? 'rgba(40,40,40,0.38)' : 'rgba(225,225,225,0.32)';
+			hCtx.lineWidth = 0.6 + rand() * 0.9;
+			hCtx.beginPath();
+			hCtx.moveTo(x1, y1);
+			hCtx.lineTo(x2, y2);
+			hCtx.stroke();
+
+			rCtx.strokeStyle = 'rgba(175,175,175,0.45)';
+			rCtx.lineWidth = 0.8;
+			rCtx.beginPath();
+			rCtx.moveTo(x1, y1);
+			rCtx.lineTo(x2, y2);
+			rCtx.stroke();
+		}
+
+		for (let i = 0; i < 650; i++) {
+			const x = rand() * size;
+			const y = rand() * size;
+			const r = 0.5 + rand() * 1.4;
+			rCtx.fillStyle = rand() > 0.5 ? 'rgba(140,140,140,0.35)' : 'rgba(30,30,30,0.35)';
+			rCtx.beginPath();
+			rCtx.arc(x, y, r, 0, Math.PI * 2);
+			rCtx.fill();
+		}
+
+		const srcData = hCtx.getImageData(0, 0, size, size).data;
+		const dstImg = nCtx.createImageData(size, size);
+		const dst = dstImg.data;
+		const hAt = (x: number, y: number) => {
+			const wx = (x + size) % size;
+			const wy = (y + size) % size;
+			return srcData[(wy * size + wx) * 4] / 255;
+		};
+
+		for (let y = 0; y < size; y++) {
+			for (let x = 0; x < size; x++) {
+				const tl = hAt(x - 1, y - 1);
+				const t = hAt(x, y - 1);
+				const tr = hAt(x + 1, y - 1);
+				const l = hAt(x - 1, y);
+				const r = hAt(x + 1, y);
+				const bl = hAt(x - 1, y + 1);
+				const b = hAt(x, y + 1);
+				const br = hAt(x + 1, y + 1);
+
+				const dX = tr + 2 * r + br - (tl + 2 * l + bl);
+				const dY = bl + 2 * b + br - (tl + 2 * t + tr);
+				const dZ = 1.0 / 1.85;
+
+				const invLen = 1.0 / Math.sqrt(dX * dX + dY * dY + dZ * dZ);
+				const nx = dX * invLen;
+				const ny = dY * invLen;
+				const nz = dZ * invLen;
+
+				const idx = (y * size + x) * 4;
+				dst[idx] = Math.floor((nx * 0.5 + 0.5) * 255);
+				dst[idx + 1] = Math.floor((ny * 0.5 + 0.5) * 255);
+				dst[idx + 2] = Math.floor((nz * 0.5 + 0.5) * 255);
+				dst[idx + 3] = 255;
+			}
+		}
+		nCtx.putImageData(dstImg, 0, 0);
+
+		dCtx.fillStyle = 'rgb(128,128,255)';
+		dCtx.fillRect(0, 0, size, size);
+		dCtx.strokeStyle = 'rgb(92,92,240)';
+		dCtx.lineWidth = 3;
+		const step = 32;
+		for (let i = 0; i <= size; i += step) {
+			dCtx.beginPath();
+			dCtx.moveTo(i, 0);
+			dCtx.lineTo(i, size);
+			dCtx.stroke();
+			dCtx.beginPath();
+			dCtx.moveTo(0, i);
+			dCtx.lineTo(size, i);
+			dCtx.stroke();
+		}
+
+		const makeRepeating = (canvas: HTMLCanvasElement, repeatX: number, repeatY: number) => {
+			const tex = new THREE.CanvasTexture(canvas);
+			tex.wrapS = THREE.RepeatWrapping;
+			tex.wrapT = THREE.RepeatWrapping;
+			tex.repeat.set(repeatX, repeatY);
+			tex.needsUpdate = true;
+			return tex;
+		};
+
+		return {
+			normalMap: makeRepeating(normalCanvas, 2, 2),
+			roughnessMap: makeRepeating(roughCanvas, 2, 2),
+			metalnessMap: makeRepeating(metalCanvas, 2, 2),
+			deckNormalMap: makeRepeating(deckCanvas, 4, 24)
+		};
+	}
+
+	private createBrushedMetalMaterial(colorHex: number, accentHex?: number, roughness = 0.26): THREE.MeshPhysicalMaterial {
+		// Satin, bukan cermin: roughnessMap kini ~0.82, jadi roughness efektif ≈ 0.5–0.7.
+		// Ini membuang highlight putih besar yang memakan teks dan menyilaukan pada waktu malam.
+		return new THREE.MeshPhysicalMaterial({
+			color: colorHex,
+			metalness: 0.6,
+			roughness: Math.min(0.92, roughness + 0.42),
+			clearcoat: 0.06,
+			clearcoatRoughness: 0.5,
+			normalMap: this.pbrMaps?.normalMap ?? null,
+			normalScale: new THREE.Vector2(0.22, 0.22),
+			roughnessMap: this.pbrMaps?.roughnessMap ?? null,
+			metalnessMap: this.pbrMaps?.metalnessMap ?? null,
+			emissive: accentHex ?? 0x000000,
+			emissiveIntensity: accentHex ? 0.04 : 0.0,
+			envMapIntensity: 0.7
+		});
+	}
+
+	private createOpticalGlassMaterial(tintHex = 0x38bdf8): THREE.MeshPhysicalMaterial {
+		return new THREE.MeshPhysicalMaterial({
+			color: tintHex,
+			metalness: 0.0,
+			roughness: 0.22,
+			transmission: 0.7,
+			ior: 1.45,
+			thickness: 0.65,
+			attenuationColor: new THREE.Color(tintHex),
+			attenuationDistance: 1.6,
+			clearcoat: 0.25,
+			clearcoatRoughness: 0.3,
+			envMapIntensity: 0.6,
+			transparent: true
+		});
+	}
+
+	/** Bahan bercahaya didaftar supaya keamatan boleh dikawal mengikut tema siang/malam. */
+	private createGlowMaterial(colorHex: number, emissiveHex: number, baseIntensity: number): THREE.MeshStandardMaterial {
+		const mat = new THREE.MeshStandardMaterial({
+			color: colorHex,
+			emissive: emissiveHex,
+			emissiveIntensity: baseIntensity,
+			metalness: 0.1,
+			roughness: 0.55
+		});
+		mat.userData.baseEmissive = baseIntensity;
+		this.glowMaterials.push(mat);
+		return mat;
+	}
+
+	private setupLights(): void {
+		this.ambientLight = new THREE.AmbientLight(0xdbeafe, 0.5);
+		this.scene.add(this.ambientLight);
+
+		this.hemiLight = new THREE.HemisphereLight(0xbae6fd, 0x0f172a, 0.85);
+		this.hemiLight.position.set(0, 42, 0);
+		this.scene.add(this.hemiLight);
+
+		this.keyLight = new THREE.DirectionalLight(0xfffbeb, 2.2);
+		this.keyLight.position.set(18, 28, 16);
+		this.keyLight.castShadow = true;
+		this.keyLight.shadow.mapSize.width = 2048;
+		this.keyLight.shadow.mapSize.height = 2048;
+		this.keyLight.shadow.camera.near = 2;
+		this.keyLight.shadow.camera.far = 110;
+		const d = 22;
+		this.keyLight.shadow.camera.left = -d;
+		this.keyLight.shadow.camera.right = d;
+		this.keyLight.shadow.camera.top = d;
+		this.keyLight.shadow.camera.bottom = -d;
+		this.keyLight.shadow.bias = -0.0005;
+		this.keyLight.shadow.radius = 2.5;
+		this.scene.add(this.keyLight);
+		this.scene.add(this.keyLight.target);
+
+		this.rimLight = new THREE.PointLight(0x38bdf8, 3.6, 52);
+		this.rimLight.position.set(-7, 6, 0);
+		this.scene.add(this.rimLight);
+
+		this.stationSpotLight = new THREE.PointLight(0x2dd4bf, 3.8, 36);
+		this.stationSpotLight.position.set(0, 7, 0);
+		this.scene.add(this.stationSpotLight);
+	}
+
+	private buildSkyAndOcean(): void {
+		const sunDir = new THREE.Vector3(0.32, 0.16, -0.93).normalize();
+
+		this.skyMaterial = new THREE.ShaderMaterial({
+			vertexShader: SKY_VERTEX_SHADER,
+			fragmentShader: SKY_FRAGMENT_SHADER,
+			side: THREE.BackSide,
+			depthWrite: false,
+			uniforms: {
+				uTime: { value: 0 },
+				uSunDir: { value: sunDir.clone() },
+				uSunColor: { value: new THREE.Color(0xfbbf24) },
+				uSkyZenith: { value: new THREE.Color(0x0c1938) },
+				uSkyHorizon: { value: new THREE.Color(0x1e3a5f) },
+				uNightFactor: { value: 0.15 }
+			}
+		});
+
+		const skyGeo = new THREE.SphereGeometry(280, 48, 32);
+		this.skyMesh = new THREE.Mesh(skyGeo, this.skyMaterial);
+		this.scene.add(this.skyMesh);
+
+		this.oceanMaterial = new THREE.ShaderMaterial({
+			vertexShader: OCEAN_VERTEX_SHADER,
+			fragmentShader: OCEAN_FRAGMENT_SHADER,
+			uniforms: {
+				uTime: { value: 0 },
+				uWaveScale: { value: 1.0 },
+				uChoppiness: { value: 1.15 },
+				uSunDir: { value: sunDir.clone() },
+				uSunColor: { value: new THREE.Color(0xfbbf24) },
+				uSkyZenith: { value: new THREE.Color(0x0c1938) },
+				uSkyHorizon: { value: new THREE.Color(0x1e3a5f) },
+				uWaterDeep: { value: new THREE.Color(0x041f38) },
+				uWaterShallow: { value: new THREE.Color(0x084c61) },
+				uWaterScatter: { value: new THREE.Color(0x14b8a6) },
+				uFogColor: { value: new THREE.Color(0x172e4d) },
+				uSunSpecScale: { value: 1.0 },
+				uIslands: { value: STATION_ANCHORS.map((v) => v.clone()) }
+			}
+		});
+
+		const oceanGeo = new THREE.PlaneGeometry(320, 320, 220, 220);
+		oceanGeo.rotateX(-Math.PI / 2);
+		this.oceanMesh = new THREE.Mesh(oceanGeo, this.oceanMaterial);
+		this.oceanMesh.position.set(0, -0.28, 0);
+		this.scene.add(this.oceanMesh);
+	}
+
+	/**
+	 * MENARA REAKTOR TRI-TUNJANG PUSAT ("THE SOVEREIGN TRI-CORE REACTOR" di (0,0,0))
+	 * Mercu tanda ikonik di tengah lautan yang menghubungkan kesemua 6 Pulau Balai Cerap melalui alur tenaga optik.
+	 */
+	private buildCentralSovereignReactor(): void {
+		const reactorGroup = new THREE.Group();
+		reactorGroup.position.set(0, 0, 0);
+
+		const darkTitanMat = this.createBrushedMetalMaterial(0x0f172a, 0x0284c7, 0.22);
+		const chromeMat = this.createBrushedMetalMaterial(0xcbd5e1, undefined, 0.14);
+		const cyanGlowMat = this.createGlowMaterial(0x38bdf8, 0x0284c7, 0.45);
+		const tealGlowMat = this.createGlowMaterial(0x2dd4bf, 0x0d9488, 0.45);
+		const glassMat = this.createOpticalGlassMaterial(0x38bdf8);
+
+		// Pelantar Asas Reaktor Pusat
+		const baseCylinder = new THREE.Mesh(
+			new THREE.CylinderGeometry(6.8, 8.2, 1.2, 32),
+			darkTitanMat
+		);
+		baseCylinder.position.y = 0.2;
+		baseCylinder.receiveShadow = true;
+		reactorGroup.add(baseCylinder);
+
+		// 3 Tiang Lengkung Menara Reaktor (Tri-Pillar Spire: Network, Enterprise, AI)
+		for (let i = 0; i < 3; i++) {
+			const ang = (i / 3) * Math.PI * 2;
+			const spire = new THREE.Mesh(
+				createBeveledSlabGeometry(0.85, 16.5, 1.4, 0.12, 0.04),
+				darkTitanMat
+			);
+			spire.position.set(Math.sin(ang) * 3.8, 8.2, Math.cos(ang) * 3.8);
+			spire.rotation.y = ang;
+			spire.castShadow = true;
+			reactorGroup.add(spire);
+		}
+
+		// Teras Kristal Tenaga Terapung di Puncak Menara
+		const coreOcta = new THREE.Mesh(new THREE.OctahedronGeometry(2.4, 2), glassMat);
+		coreOcta.position.y = 10.5;
+		reactorGroup.add(coreOcta);
+		this.centralReactorRings.push(coreOcta);
+
+		const innerSun = new THREE.Mesh(new THREE.SphereGeometry(1.15, 32, 32), cyanGlowMat);
+		innerSun.position.y = 10.5;
+		reactorGroup.add(innerSun);
+
+		// 3 Cincin Giroskopik Gergasi Berputar Mengelilingi Teras
+		for (let r = 0; r < 3; r++) {
+			const ring = new THREE.Mesh(
+				new THREE.TorusGeometry(4.6 + r * 1.15, 0.12, 20, 96),
+				r % 2 === 0 ? cyanGlowMat : chromeMat
+			);
+			ring.position.y = 10.5;
+			ring.rotation.set(r * 0.7, r * 1.1, r * 0.4);
+			reactorGroup.add(ring);
+			this.centralReactorRings.push(ring);
+		}
+
+		// 6 Alur Jambatan Optik Bercahaya (Radial Optical Tethers) dari Teras Pusat ke Setiap Pulau CV
+		STATION_ANCHORS.forEach((islandPos, idx) => {
+			const midPoint = islandPos.clone().multiplyScalar(0.5);
+			midPoint.y = 5.4 + (idx % 2) * 1.2;
+			const startPt = new THREE.Vector3(0, 9.2, 0);
+			const endPt = new THREE.Vector3(islandPos.x * 0.86, islandPos.y + 2.8, islandPos.z * 0.86);
+
+			const tetherCurve = new THREE.QuadraticBezierCurve3(startPt, midPoint, endPt);
+			const tetherGeo = new THREE.TubeGeometry(tetherCurve, 48, 0.055, 12, false);
+			const tetherMesh = new THREE.Mesh(
+				tetherGeo,
+				idx % 2 === 0 ? cyanGlowMat : tealGlowMat
+			);
+			reactorGroup.add(tetherMesh);
+		});
+
+		this.scene.add(reactorGroup);
+	}
+
+	/**
+	 * JAMBATAN CINCIN ORBITAL 360° ("THE ORBITAL RING CAUSEWAY")
+	 * Menghubungkan ke-6 Pulau Balai Cerap dalam bulatan panoramik di atas lautan Open-Water.
+	 */
+	private buildOrbitalRingCauseway(): void {
+		const deckMat = new THREE.MeshPhysicalMaterial({
+			color: 0x0f172a,
+			metalness: 0.78,
+			roughness: 0.28,
+			clearcoat: 0.4,
+			clearcoatRoughness: 0.22,
+			normalMap: this.pbrMaps?.deckNormalMap ?? null,
+			normalScale: new THREE.Vector2(0.32, 0.32),
+			roughnessMap: this.pbrMaps?.roughnessMap ?? null,
+			envMapIntensity: 1.25
+		});
+
+		const railGlowMat = this.createGlowMaterial(0x38bdf8, 0x0284c7, 0.42);
+
+		// Lantai Jambatan Cincin Orbital 360° (menggunakan Torus mendatar bersegmen tinggi)
+		const causewayRingGeo = new THREE.RingGeometry(ORBIT_RADIUS - 1.65, ORBIT_RADIUS + 1.65, 180, 2);
+		causewayRingGeo.rotateX(-Math.PI / 2);
+		const causewayRing = new THREE.Mesh(causewayRingGeo, deckMat);
+		causewayRing.position.y = 0.22;
+		causewayRing.receiveShadow = true;
+		this.scene.add(causewayRing);
+
+		// Rel Cahaya Dalam & Luar Cincin Orbital
+		const innerRailGeo = new THREE.TorusGeometry(ORBIT_RADIUS - 1.68, 0.055, 12, 180);
+		innerRailGeo.rotateX(Math.PI / 2);
+		const innerRail = new THREE.Mesh(innerRailGeo, railGlowMat);
+		innerRail.position.y = 0.32;
+		this.scene.add(innerRail);
+
+		const outerRailGeo = new THREE.TorusGeometry(ORBIT_RADIUS + 1.68, 0.055, 12, 180);
+		outerRailGeo.rotateX(Math.PI / 2);
+		const outerRail = new THREE.Mesh(outerRailGeo, railGlowMat);
+		outerRail.position.y = 0.32;
+		this.scene.add(outerRail);
+
+		// Tunjang Gentian Optik Bercahaya di Tengah Laluan Orbital
+		const coreGeo = new THREE.TubeGeometry(this.orbitalLoopCurve, 240, 0.06, 16, true);
+		this.coreTubeMat = this.createGlowMaterial(0x38bdf8, 0x0284c7, 0.45);
+		const coreMesh = new THREE.Mesh(coreGeo, this.coreTubeMat);
+		coreMesh.position.y = 0.28;
+		this.scene.add(coreMesh);
+
+		// Denyutan Paket Data Optik Beredar 360° Sepanjang Kepulauan
+		const pulseGeo = new THREE.SphereGeometry(0.085, 16, 16);
+		this.pulseMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+		this.pulseInstanced = new THREE.InstancedMesh(pulseGeo, this.pulseMat, PULSE_COUNT);
+		this.scene.add(this.pulseInstanced);
+	}
+
+	/**
+	 * Membina Pelantar Pulau Balai Cerap & Megastruktur Pusat yang unik bagi setiap Stesen CV
+	 */
+	private createStationPlazaAndMonument(group: THREE.Group, stationIndex: number, accentHex: number): void {
+		const basaltMat = this.createBrushedMetalMaterial(0x0b1324, undefined, 0.34);
+		const titaniumMat = this.createBrushedMetalMaterial(0x1e293b, accentHex, 0.22);
+		const chromeMat = this.createBrushedMetalMaterial(0xe2e8f0, undefined, 0.14);
+		const glassMat = this.createOpticalGlassMaterial(accentHex);
+		const glowMat = this.createGlowMaterial(accentHex, accentHex, 0.45);
+
+		// Pelantar Pulau Bulat Bertingkat (Atoll Sanctuary)
+		const lowerAtoll = new THREE.Mesh(
+			new THREE.CylinderGeometry(9.6, 10.8, 0.65, 36),
+			basaltMat
+		);
+		lowerAtoll.position.y = -0.08;
+		lowerAtoll.receiveShadow = true;
+		group.add(lowerAtoll);
+
+		const upperAtoll = new THREE.Mesh(
+			new THREE.CylinderGeometry(8.4, 9.0, 0.28, 36),
+			titaniumMat
+		);
+		upperAtoll.position.y = 0.28;
+		upperAtoll.receiveShadow = true;
+		group.add(upperAtoll);
+
+		const outerRing = new THREE.Mesh(new THREE.TorusGeometry(8.2, 0.05, 16, 96), glowMat);
+		outerRing.rotation.x = Math.PI / 2;
+		outerRing.position.y = 0.43;
+		group.add(outerRing);
+
+		// Monumen Kejuruteraan Pusat Pulau (Berbeza untuk setiap Stesen CV!)
+		const monumentGroup = new THREE.Group();
+		monumentGroup.position.set(0, 0.42, -1.8);
+
+		const plinth = new THREE.Mesh(
+			new THREE.CylinderGeometry(1.65, 2.05, 0.55, 32),
+			titaniumMat
+		);
+		plinth.position.y = 0.28;
+		plinth.castShadow = true;
+		plinth.receiveShadow = true;
+		monumentGroup.add(plinth);
+
+		if (stationIndex === 0) {
+			// Stesen 01: Kubah Balai Cerap Giroskopik (Sovereign Core)
+			const sphere = new THREE.Mesh(new THREE.OctahedronGeometry(1.15, 2), glassMat);
+			sphere.position.y = 2.2;
+			monumentGroup.add(sphere);
+			for (let r = 0; r < 3; r++) {
+				const gim = new THREE.Mesh(
+					new THREE.TorusGeometry(1.45 + r * 0.28, 0.045, 16, 64),
+					r === 1 ? glowMat : chromeMat
+				);
+				gim.position.y = 2.2;
+				gim.rotation.set(r * 0.6, r * 0.9, 0);
+				monumentGroup.add(gim);
+				this.rotatingBeacons.push(gim);
+			}
+		} else if (stationIndex === 1) {
+			// Stesen 02: Menara Kluster Pelayan Enterprise YHCM & Nova Bitara
+			for (let t = 0; t < 3; t++) {
+				const ang = (t / 3) * Math.PI * 2;
+				const tower = new THREE.Mesh(
+					createBeveledSlabGeometry(0.95, 3.2, 0.95, 0.08, 0.03),
+					titaniumMat
+				);
+				tower.position.set(Math.sin(ang) * 0.95, 2.1, Math.cos(ang) * 0.95);
+				tower.rotation.y = ang;
+				tower.castShadow = true;
+				monumentGroup.add(tower);
+			}
+			const dataHalo = new THREE.Mesh(new THREE.TorusGeometry(1.55, 0.04, 16, 64), glowMat);
+			dataHalo.rotation.x = Math.PI / 2;
+			dataHalo.position.y = 3.2;
+			monumentGroup.add(dataHalo);
+			this.rotatingBeacons.push(dataHalo);
+		} else if (stationIndex === 2) {
+			// Stesen 03: Kubah Radar Pertahanan Siber TNB SOC — Cangkang 3D dwi-permukaan tebal
+			const pts: THREE.Vector2[] = [];
+			for (let i = 0; i <= 20; i++) {
+				const t = i / 20;
+				pts.push(new THREE.Vector2(t * 1.65, t * t * 0.85));
+			}
+			for (let i = 20; i >= 0; i--) {
+				const t = i / 20;
+				pts.push(new THREE.Vector2(t * 1.57, t * t * 0.85 + 0.05));
+			}
+			// Letakkan radar di atas gerbang, bukan pada garis pandang papan tengah.
+			const radarMast = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.12, 0.28, 4.4, 20),
+				titaniumMat
+			);
+			radarMast.position.set(0, 2.75, -0.6);
+			radarMast.castShadow = true;
+			monumentGroup.add(radarMast);
+
+			this.radarRotor = new THREE.Group();
+			this.radarRotor.position.set(0, 4.95, -0.6);
+			monumentGroup.add(this.radarRotor);
+
+			chromeMat.side = THREE.DoubleSide;
+			const radarDish = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), chromeMat);
+			radarDish.scale.setScalar(0.5);
+			radarDish.rotation.x = Math.PI * 0.18;
+			radarDish.castShadow = true;
+			this.radarRotor.add(radarDish);
+
+			// Suapan antena teras SOC di tengah mangkuk radar
+			const hornPylon = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.045, 0.08, 0.72, 16),
+				titaniumMat
+			);
+			hornPylon.position.y = 0.36;
+			radarDish.add(hornPylon);
+
+			const hornEmitter = new THREE.Mesh(
+				new THREE.SphereGeometry(0.12, 16, 16),
+				glowMat
+			);
+			hornEmitter.position.y = 0.72;
+			radarDish.add(hornEmitter);
+
+		} else if (stationIndex === 3) {
+			// Stesen 04: Prisma Lensa Visi Komputer OpenCV & Projek AI
+			const lensBarrel = new THREE.Mesh(
+				new THREE.CylinderGeometry(1.25, 1.35, 0.9, 36),
+				titaniumMat
+			);
+			lensBarrel.rotation.x = Math.PI / 2;
+			lensBarrel.position.y = 2.2;
+			monumentGroup.add(lensBarrel);
+
+			const opticGlass = new THREE.Mesh(new THREE.SphereGeometry(1.05, 32, 32), glassMat);
+			opticGlass.scale.set(1, 1, 0.45);
+			opticGlass.position.y = 2.2;
+			monumentGroup.add(opticGlass);
+		} else if (stationIndex === 4) {
+			// Stesen 05: 5 Kristal Kemahiran Teknikal Terapung
+			for (let c = 0; c < 5; c++) {
+				const ang = (c / 5) * Math.PI * 2;
+				const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0), glassMat);
+				crystal.position.set(Math.sin(ang) * 1.35, 2.1 + (c % 2) * 0.35, Math.cos(ang) * 1.35);
+				monumentGroup.add(crystal);
+				this.rotatingBeacons.push(crystal);
+			}
+		} else {
+			// Stesen 06: Menara Rumah Api Komunikasi UTM & Cisco
+			const spire = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.25, 0.85, 3.6, 24),
+				titaniumMat
+			);
+			spire.position.y = 2.3;
+			spire.castShadow = true;
+			monumentGroup.add(spire);
+
+			const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 24), glowMat);
+			beacon.position.y = 4.25;
+			monumentGroup.add(beacon);
+		}
+
+		group.add(monumentGroup);
+	}
+
+	/**
+	 * Papan Tanda Melengkung Pulau CV — Menggunakan Panel OLED Gelap Anti-Silau
+	 * supaya dalam Light Mode mahupun Dark Mode teks sentiasa jelas 100%!
+	 */
+	private drawStationHeaderCanvas(canvas: HTMLCanvasElement, station: SpineStation): void {
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
+
+		const w = canvas.width;
+		const h = canvas.height;
+
+		ctx.clearRect(0, 0, w, h);
+
+		// Panel Obsidian Anti-Silau (Kekal gelap berkontras tinggi walaupun di bawah matahari Light Mode!)
+		const bg = ctx.createLinearGradient(0, 0, w, h);
+		bg.addColorStop(0, '#060c18');
+		bg.addColorStop(1, '#0b172a');
+		ctx.fillStyle = bg;
+		ctx.fillRect(0, 0, w, h);
+
+		const grad = ctx.createLinearGradient(0, 0, w, 0);
+		grad.addColorStop(0, '#38bdf8');
+		grad.addColorStop(0.5, '#2dd4bf');
+		grad.addColorStop(1, '#0284c7');
+		ctx.fillStyle = grad;
+		ctx.fillRect(0, 0, w, 12);
+
+		ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+		ctx.lineWidth = 4;
+		ctx.strokeRect(6, 6, w - 12, h - 12);
+
+		ctx.font = '700 26px "JetBrains Mono", monospace';
+		ctx.fillStyle = '#38bdf8';
+		ctx.fillText(`${station.code}  •  ${station.kicker[this.locale]}`, 48, 66);
+
+		ctx.font = '800 52px "Plus Jakarta Sans", system-ui, sans-serif';
+		ctx.fillStyle = '#f8fafc';
+		ctx.fillText(station.title[this.locale], 48, 138);
+
+		ctx.font = '600 28px "Plus Jakarta Sans", system-ui, sans-serif';
+		ctx.fillStyle = '#cbd5e1';
+		ctx.fillText(station.subtitle[this.locale], 48, 188);
+
+		const metricStartX = w - 680;
+		station.metrics.slice(0, 2).forEach((m, idx) => {
+			const bx = metricStartX + idx * 325;
+			ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+			ctx.fillRect(bx, 38, 300, 165);
+			ctx.strokeStyle = 'rgba(45, 212, 191, 0.55)';
+			ctx.lineWidth = 2;
+			ctx.strokeRect(bx, 38, 300, 165);
+
+			ctx.font = '800 36px "Plus Jakarta Sans", system-ui, sans-serif';
+			ctx.fillStyle = '#2dd4bf';
+			ctx.fillText(m.value, bx + 22, 102);
+
+			ctx.font = '600 21px "Plus Jakarta Sans", system-ui, sans-serif';
+			ctx.fillStyle = '#e2e8f0';
+			ctx.fillText(m.label[this.locale].slice(0, 26), bx + 22, 148);
+		});
+	}
+
+	private createStationHeaderArch(group: THREE.Group, station: SpineStation): void {
+		const archGroup = new THREE.Group();
+		archGroup.position.set(0, 0.35, -5.2);
+
+		const pillarMat = this.createBrushedMetalMaterial(0x1e293b, 0x38bdf8, 0.22);
+
+		const leftPillar = new THREE.Mesh(
+			createBeveledSlabGeometry(0.32, 4.8, 0.32, 0.05, 0.02),
+			pillarMat
+		);
+		leftPillar.position.set(-4.6, 2.4, 0);
+		leftPillar.castShadow = true;
+		archGroup.add(leftPillar);
+
+		const rightPillar = new THREE.Mesh(
+			createBeveledSlabGeometry(0.32, 4.8, 0.32, 0.05, 0.02),
+			pillarMat
+		);
+		rightPillar.position.set(4.6, 2.4, 0);
+		rightPillar.castShadow = true;
+		archGroup.add(rightPillar);
+
+		const topBeam = new THREE.Mesh(
+			createBeveledSlabGeometry(9.6, 0.26, 0.36, 0.05, 0.02),
+			pillarMat
+		);
+		topBeam.position.set(0, 4.82, 0);
+		topBeam.castShadow = true;
+		archGroup.add(topBeam);
+
+		const canvas = document.createElement('canvas');
+		canvas.width = 1800;
+		canvas.height = 240;
+		this.drawStationHeaderCanvas(canvas, station);
+
+		const texture = new THREE.CanvasTexture(canvas);
+		texture.colorSpace = THREE.SRGBColorSpace;
+		if (this.renderer) {
+			texture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+		}
+
+		const signBacking = new THREE.Mesh(
+			createBeveledSlabGeometry(8.2, 1.15, 0.16, 0.05, 0.02),
+			pillarMat
+		);
+		signBacking.position.set(0, 4.12, 0);
+		archGroup.add(signBacking);
+
+		const signMat = new THREE.MeshBasicMaterial({ map: texture });
+		const signFace = new THREE.Mesh(new THREE.PlaneGeometry(8.0, 1.05), signMat);
+		signFace.position.set(0, 4.12, 0.09);
+		archGroup.add(signFace);
+
+		this.stationHeaders.push({ station, canvas, texture });
+		group.add(archGroup);
+	}
+
+	/**
+	 * Melukis Teks CV pada Skrin Pameran 3D menggunakan Panel OLED Obsidian Anti-Silau
+	 * supaya tidak pernah berlaku "whiteout" dalam Light Mode!
+	 */
+	private drawHotspotExhibitCanvas(canvas: HTMLCanvasElement, hotspot: HotspotItem): void {
+		const ctx = canvas.getContext('2d');
+		if (!ctx) return;
+
+		const w = canvas.width;
+		const h = canvas.height;
+
+		ctx.clearRect(0, 0, w, h);
+
+		// Latar Belakang OLED Obsidian Anti-Silau (Jelas di bawah matahari mahupun malam)
+		const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
+		bgGrad.addColorStop(0, '#071022');
+		bgGrad.addColorStop(1, '#040914');
+		ctx.fillStyle = bgGrad;
+		ctx.fillRect(0, 0, w, h);
+
+		const topGrad = ctx.createLinearGradient(0, 0, w, 0);
+		topGrad.addColorStop(0, '#38bdf8');
+		topGrad.addColorStop(0.5, '#2dd4bf');
+		topGrad.addColorStop(1, '#0284c7');
+		ctx.fillStyle = topGrad;
+		ctx.fillRect(0, 0, w, 16);
+
+		ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+		ctx.lineWidth = 4;
+		ctx.strokeRect(10, 10, w - 20, h - 20);
+
+		ctx.fillStyle = 'rgba(56, 189, 248, 0.18)';
+		ctx.fillRect(54, 48, 280, 52);
+		ctx.font = '700 26px "JetBrains Mono", monospace';
+		ctx.fillStyle = '#38bdf8';
+		ctx.fillText(hotspot.code, 76, 83);
+
+		ctx.font = '600 25px "Plus Jakarta Sans", system-ui, sans-serif';
+		ctx.fillStyle = '#2dd4bf';
+		ctx.fillText(hotspot.subtitle[this.locale].slice(0, 58), 360, 83);
+
+		ctx.font = '800 46px "Plus Jakarta Sans", system-ui, sans-serif';
+		ctx.fillStyle = '#ffffff';
+		const titleY = this.wrapCanvasText(ctx, hotspot.title[this.locale], 54, 162, w - 108, 56, 2);
+
+		ctx.fillStyle = 'rgba(56, 189, 248, 0.32)';
+		ctx.fillRect(54, titleY + 18, w - 108, 2);
+
+		ctx.font = '500 30px "Plus Jakarta Sans", system-ui, sans-serif';
+		ctx.fillStyle = '#e2e8f0';
+		this.wrapCanvasText(ctx, hotspot.summary[this.locale], 54, titleY + 68, w - 108, 44, 6);
+
+		let chipX = 54;
+		const chipY = h - 175;
+		ctx.font = '600 23px "JetBrains Mono", monospace';
+		for (const tech of hotspot.tech.slice(0, 5)) {
+			const tw = ctx.measureText(tech).width + 38;
+			if (chipX + tw > w - 54) break;
+			ctx.fillStyle = 'rgba(30, 41, 59, 0.95)';
+			ctx.fillRect(chipX, chipY, tw, 46);
+			ctx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+			ctx.lineWidth = 2;
+			ctx.strokeRect(chipX, chipY, tw, 46);
+			ctx.fillStyle = '#f8fafc';
+			ctx.fillText(tech, chipX + 19, chipY + 31);
+			chipX += tw + 16;
+		}
+
+		ctx.fillStyle = 'rgba(14, 116, 144, 0.35)';
+		ctx.fillRect(12, h - 92, w - 24, 80);
+		ctx.font = '700 25px "JetBrains Mono", monospace';
+		ctx.fillStyle = '#38bdf8';
+		const ctaText =
+			this.locale === 'ms'
+				? 'KLIK TERMINAL 3D UNTUK BUKA REKOD PENUH & PAUTAN RASMI ↗'
+				: 'CLICK 3D TERMINAL TO OPEN FULL RECORD & OFFICIAL LINKS ↗';
+		ctx.fillText(ctaText, 54, h - 42);
+	}
+
+	private wrapCanvasText(
+		ctx: CanvasRenderingContext2D,
+		text: string,
+		x: number,
+		startY: number,
+		maxWidth: number,
+		lineHeight: number,
+		maxLines: number
+	): number {
+		const words = text.split(' ');
+		let line = '';
+		let y = startY;
+		let linesDrawn = 0;
+
+		for (let i = 0; i < words.length; i++) {
+			const testLine = line ? `${line} ${words[i]}` : words[i];
+			const metrics = ctx.measureText(testLine);
+			if (metrics.width > maxWidth && line) {
+				linesDrawn++;
+				if (linesDrawn >= maxLines) {
+					ctx.fillText(`${line.slice(0, -3)}...`, x, y);
+					return y;
+				}
+				ctx.fillText(line, x, y);
+				line = words[i];
+				y += lineHeight;
+			} else {
+				line = testLine;
+			}
+		}
+		if (line) {
+			ctx.fillText(line, x, y);
+		}
+		return y;
+	}
+
+	private buildPrecision3DProp(hotspotId: string, accentHex: number): THREE.Object3D {
+		const propGroup = new THREE.Group();
+		const titaniumMat = this.createBrushedMetalMaterial(0x1e293b, accentHex, 0.2);
+		const chromeMat = this.createBrushedMetalMaterial(0xe2e8f0, undefined, 0.12);
+		const glassMat = this.createOpticalGlassMaterial(accentHex);
+		const glowMat = this.createGlowMaterial(accentHex, accentHex, 0.45);
+
+		if (hotspotId.startsWith('core-')) {
+			const coreCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.25, 2), glassMat);
+			coreCrystal.castShadow = true;
+			propGroup.add(coreCrystal);
+
+			for (let r = 0; r < 3; r++) {
+				const gimbal = new THREE.Mesh(
+					new THREE.TorusGeometry(0.32 + r * 0.07, 0.018, 16, 48),
+					r === 1 ? chromeMat : titaniumMat
+				);
+				gimbal.rotation.set(r * 0.8, r * 1.1, r * 0.5);
+				propGroup.add(gimbal);
+				this.rotatingBeacons.push(gimbal);
+			}
+		} else if (hotspotId.startsWith('ent-')) {
+			for (let b = 0; b < 3; b++) {
+				const blade = new THREE.Mesh(
+					createBeveledSlabGeometry(0.58, 0.10, 0.44, 0.025, 0.012),
+					titaniumMat
+				);
+				blade.position.y = -0.16 + b * 0.16;
+				propGroup.add(blade);
+			}
+			const dataCore = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.52, 16), glowMat);
+			propGroup.add(dataCore);
+		} else if (hotspotId.startsWith('net-')) {
+			// Mangkuk Radar Dwi-Permukaan dengan ketebalan fizikal
+			const pts: THREE.Vector2[] = [];
+			for (let i = 0; i <= 14; i++) {
+				const t = i / 14;
+				pts.push(new THREE.Vector2(t * 0.38, t * t * 0.18));
+			}
+			for (let i = 14; i >= 0; i--) {
+				const t = i / 14;
+				pts.push(new THREE.Vector2(t * 0.36, t * t * 0.18 + 0.022));
+			}
+			chromeMat.side = THREE.DoubleSide;
+			const dish = new THREE.Mesh(new THREE.LatheGeometry(pts, 36), chromeMat);
+			dish.rotation.x = Math.PI * 0.28;
+			dish.castShadow = true;
+			propGroup.add(dish);
+
+			const feedHorn = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.016, 0.028, 0.20, 16),
+				titaniumMat
+			);
+			feedHorn.position.set(0, 0.10, 0.08);
+			feedHorn.rotation.x = Math.PI * 0.28;
+			propGroup.add(feedHorn);
+
+			const feedTip = new THREE.Mesh(
+				new THREE.SphereGeometry(0.028, 16, 16),
+				glowMat
+			);
+			feedTip.position.set(0, 0.18, 0.14);
+			propGroup.add(feedTip);
+		} else {
+			const outerHousing = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.30, 0.34, 0.22, 32),
+				titaniumMat
+			);
+			outerHousing.rotation.x = Math.PI / 2;
+			propGroup.add(outerHousing);
+
+			const apertureRing = new THREE.Mesh(
+				new THREE.TorusGeometry(0.26, 0.018, 16, 48),
+				glowMat
+			);
+			apertureRing.position.z = 0.12;
+			propGroup.add(apertureRing);
+			this.rotatingBeacons.push(apertureRing);
+		}
+
+		return propGroup;
+	}
+
+	/**
+	 * Membina Terminal Pameran Kaca Melengkung (Curved Amphitheater Exhibit Terminal)
+	 */
+	private createHotspotExhibitMonolith(
+		stationGroup: THREE.Group,
+		stationIndex: number,
+		hotspot: HotspotItem,
+		position: THREE.Vector3,
+		yawAngle: number,
+		accentHex: number
+	): void {
+		const root = new THREE.Group();
+		root.position.copy(position);
+		root.rotation.y = yawAngle;
+
+		const frameMat = this.createBrushedMetalMaterial(0x1e293b, accentHex, 0.22);
+		const accentMat = this.createGlowMaterial(accentHex, accentHex, 0.45);
+
+		const basePlinth = new THREE.Mesh(
+			createBeveledSlabGeometry(2.85, 0.18, 0.85, 0.08, 0.03),
+			frameMat
+		);
+		basePlinth.position.y = 0.09;
+		basePlinth.castShadow = true;
+		basePlinth.receiveShadow = true;
+		root.add(basePlinth);
+
+		for (const sx of [-0.95, 0.95]) {
+			const strut = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.055, 0.07, 0.62, 18),
+				frameMat
+			);
+			strut.position.set(sx, 0.35, 0);
+			strut.castShadow = true;
+			root.add(strut);
+		}
+
+		const chassis = new THREE.Mesh(
+			createBeveledSlabGeometry(2.82, 1.88, 0.16, 0.08, 0.03),
+			frameMat
+		);
+		chassis.position.set(0, 1.52, 0);
+		chassis.castShadow = true;
+		chassis.receiveShadow = true;
+		root.add(chassis);
+
+		const accentRim = new THREE.Mesh(
+			createBeveledSlabGeometry(2.88, 1.94, 0.05, 0.09, 0.015),
+			accentMat
+		);
+		accentRim.position.set(0, 1.52, -0.02);
+		root.add(accentRim);
+
+		const canvas = document.createElement('canvas');
+		canvas.width = 1440;
+		canvas.height = 920;
+		this.drawHotspotExhibitCanvas(canvas, hotspot);
+
+		const texture = new THREE.CanvasTexture(canvas);
+		texture.colorSpace = THREE.SRGBColorSpace;
+		if (this.renderer) {
+			texture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
+		}
+
+		// Skrin OLED Anti-Silau: roughness tinggi sedikit & emissive terkawal supaya tidak silau di bawah matahari Light Mode
+		const screenMat = new THREE.MeshStandardMaterial({
+			map: texture,
+			emissive: 0xffffff,
+			emissiveMap: texture,
+			emissiveIntensity: 0.22,
+			roughness: 0.42,
+			metalness: 0.04,
+			envMapIntensity: 0.25
+		});
+
+		const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.66, 1.70), screenMat);
+		screenMesh.position.set(0, 1.52, 0.095);
+		root.add(screenMesh);
+
+		// Tiang Penyangga Mikro Mekanikal di Puncak Panel (Penyambung Struktur Estetik)
+		const propPylon = new THREE.Mesh(
+			new THREE.CylinderGeometry(0.035, 0.055, 0.34, 16),
+			frameMat
+		);
+		propPylon.position.set(0, 2.65, 0);
+		propPylon.castShadow = true;
+		root.add(propPylon);
+
+		const pylonCollar = new THREE.Mesh(
+			new THREE.TorusGeometry(0.085, 0.016, 12, 24),
+			accentMat
+		);
+		pylonCollar.rotation.x = Math.PI / 2;
+		pylonCollar.position.set(0, 2.80, 0);
+		root.add(pylonCollar);
+
+		// Arca Kejuruteraan 3D Terapung di Puncak Terminal Pameran (Aras Selamat Bebas Tertindih y = 3.32)
+		const propObject = this.buildPrecision3DProp(hotspot.id, accentHex);
+		propObject.position.set(0, EXHIBIT_PROP_HEIGHT, 0);
+		root.add(propObject);
+
+		root.traverse((child) => {
+			child.userData.hotspotId = hotspot.id;
+			child.userData.stationIndex = stationIndex;
+		});
+
+		stationGroup.add(root);
+
+		this.hotspots.push({
+			id: hotspot.id,
+			stationIndex,
+			hotspot,
+			mesh: root,
+			propObject,
+			anchorLocal: new THREE.Vector3(position.x, position.y + 2.65, position.z),
+			screenMat,
+			frameMat,
+			accentMat,
+			canvas,
+			texture,
+			baseY: position.y,
+			currentLift: 0
+		});
+		this.interactableMeshes.push(root);
+	}
+
+	/**
+	 * Membina 6 Pulau Balai Cerap 360° yang menghadap ke arah Teras Reaktor Pusat (0,0,0).
+	 * Terminal Pameran disusun dalam lengkungan Semi-Bulatan Amphitheater (bukan lorong lurus!).
+	 */
+	private buildArchipelagoStations(): void {
+		const stationAccents = [0x38bdf8, 0x2dd4bf, 0x38bdf8, 0x2dd4bf, 0x60a5fa, 0x2dd4bf];
+
+		STATION_ANCHORS.forEach((anchor, stationIndex) => {
+			const station = STATIONS[stationIndex];
+			if (!station) return;
+
+			const group = new THREE.Group();
+			group.position.copy(anchor);
+			// Pusingkan setiap pulau supaya menghadap ke luar jejari (kamera melihat pulau dengan Teras Reaktor Pusat di latar belakang!)
+			const radialAngle = STATION_ANGLES[stationIndex];
+			group.rotation.y = radialAngle;
+
+			group.userData.islandIndex = stationIndex;
+			this.scene.add(group);
+			this.stationGroups.push(group);
+
+			const accentHex = stationAccents[stationIndex % stationAccents.length];
+			this.createStationPlazaAndMonument(group, stationIndex, accentHex);
+			this.createStationHeaderArch(group, station);
+
+			// Susun setiap HotspotItem dalam Lengkungan Amphitheater Semicircle mengelilingi Monumen Pusat Pulau
+			const items = station.hotspots;
+			const count = items.length;
+			items.forEach((hs, idx) => {
+				const spread = count > 1 ? (idx / (count - 1)) * 2 - 1 : 0; // -1 hingga +1
+				const arcAngle = spread * 1.05; // Lengkungan kipas 120 darjah
+				const arcRadius = 5.2;
+				const xPos = Math.sin(arcAngle) * arcRadius;
+				const zPos = Math.cos(arcAngle) * (arcRadius * 0.42) - 0.45;
+				const yaw = -arcAngle * 0.95;
+				const hsColors = [0x38bdf8, 0x2dd4bf, 0x60a5fa, 0x34d399, 0xfbbf24];
+
+				this.createHotspotExhibitMonolith(
+					group,
+					stationIndex,
+					hs,
+					new THREE.Vector3(xPos, 0.42, zPos),
+					yaw,
+					hsColors[idx % hsColors.length]
+				);
+			});
+
+			// Benarkan pengguna mengklik mana-mana pulau dari jauh untuk terbang terus ke pulau itu
+			group.traverse((child) => {
+				if (child.userData.islandIndex === undefined) {
+					child.userData.islandIndex = stationIndex;
+				}
+			});
+			this.interactableMeshes.push(group);
+		});
+
+		if (typeof Image !== 'undefined') {
+			const img = new Image();
+			img.crossOrigin = 'anonymous';
+			img.onload = () => {
+				const firstRecord = this.hotspots[0];
+				if (firstRecord) {
+					const ctx = firstRecord.canvas.getContext('2d');
+					if (ctx) {
+						ctx.save();
+						ctx.beginPath();
+						ctx.arc(firstRecord.canvas.width - 135, 135, 76, 0, Math.PI * 2);
+						ctx.closePath();
+						ctx.clip();
+						ctx.drawImage(img, firstRecord.canvas.width - 211, 59, 152, 152);
+						ctx.restore();
+
+						ctx.strokeStyle = '#38bdf8';
+						ctx.lineWidth = 5;
+						ctx.beginPath();
+						ctx.arc(firstRecord.canvas.width - 135, 135, 76, 0, Math.PI * 2);
+						ctx.stroke();
+						firstRecord.texture.needsUpdate = true;
+					}
+				}
+			};
+			img.src = PROFILE.profilePhoto;
+		}
+	}
+
+	private redrawAllCanvases(): void {
+		for (const sh of this.stationHeaders) {
+			this.drawStationHeaderCanvas(sh.canvas, sh.station);
+			sh.texture.needsUpdate = true;
+		}
+		for (const rec of this.hotspots) {
+			this.drawHotspotExhibitCanvas(rec.canvas, rec.hotspot);
+			rec.texture.needsUpdate = true;
+		}
+	}
+
+	private getWeatherConfig(): WeatherConfig {
+		const isLight = this.theme === 'light';
+
+		// Dalam Light Mode, pastikan warna langit & laut sentiasa tepu (Rich Tropical Sapphire & Cobalt) tanpa kabus putih yang menyilaukan
+		if (isLight) {
+			if (this.weatherPresetId === 'monsoon_swell') {
+				return {
+					sunElevation: 0.34,
+					sunAzimuth: 0.42,
+					waveScale: 1.28,
+					choppiness: 1.24,
+					skyZenith: new THREE.Color(0x0c4a6e),
+					skyHorizon: new THREE.Color(0x38bdf8),
+					sunColor: new THREE.Color(0xfef08a),
+					waterDeep: new THREE.Color(0x022c43),
+					waterShallow: new THREE.Color(0x0369a1),
+					waterScatter: new THREE.Color(0x0d9488),
+					fogColor: new THREE.Color(0x0284c7),
+					nightFactor: 0.0
+				};
+			}
+			return {
+				sunElevation: 0.42,
+				sunAzimuth: 0.28,
+				waveScale: 0.88,
+				choppiness: 1.06,
+				skyZenith: new THREE.Color(0x0369a1),
+				skyHorizon: new THREE.Color(0x38bdf8),
+				sunColor: new THREE.Color(0xfef3c7),
+				waterDeep: new THREE.Color(0x022c43),
+				waterShallow: new THREE.Color(0x0e7490),
+				waterScatter: new THREE.Color(0x14b8a6),
+				fogColor: new THREE.Color(0x0284c7),
+				nightFactor: 0.0
+			};
+		}
+
+		if (this.weatherPresetId === 'emerald_day') {
+			return {
+				sunElevation: 0.38,
+				sunAzimuth: 0.28,
+				waveScale: 0.88,
+				choppiness: 1.06,
+				skyZenith: new THREE.Color(0x072f49),
+				skyHorizon: new THREE.Color(0x0284c7),
+				sunColor: new THREE.Color(0xfde68a),
+				waterDeep: new THREE.Color(0x032238),
+				waterShallow: new THREE.Color(0x0d7490),
+				waterScatter: new THREE.Color(0x2dd4bf),
+				fogColor: new THREE.Color(0x075985),
+				nightFactor: 0.0
+			};
+		}
+
+		if (this.weatherPresetId === 'biolum_night') {
+			return {
+				sunElevation: 0.14,
+				sunAzimuth: -0.35,
+				waveScale: 0.8,
+				choppiness: 1.0,
+				skyZenith: new THREE.Color(0x030712),
+				skyHorizon: new THREE.Color(0x0f172a),
+				sunColor: new THREE.Color(0x7dd3fc),
+				waterDeep: new THREE.Color(0x020617),
+				waterShallow: new THREE.Color(0x082f49),
+				waterScatter: new THREE.Color(0x06b6d4),
+				fogColor: new THREE.Color(0x091326),
+				nightFactor: 1.0
+			};
+		}
+
+		if (this.weatherPresetId === 'monsoon_swell') {
+			return {
+				sunElevation: 0.2,
+				sunAzimuth: 0.45,
+				waveScale: 1.42,
+				choppiness: 1.32,
+				skyZenith: new THREE.Color(0x0f172a),
+				skyHorizon: new THREE.Color(0x334155),
+				sunColor: new THREE.Color(0xfde68a),
+				waterDeep: new THREE.Color(0x041e34),
+				waterShallow: new THREE.Color(0x0f4c5c),
+				waterScatter: new THREE.Color(0x2dd4bf),
+				fogColor: new THREE.Color(0x1e293b),
+				nightFactor: 0.25
+			};
+		}
+
+		return {
+			sunElevation: 0.34,
+			sunAzimuth: -0.42,
+			waveScale: 0.88,
+			choppiness: 1.06,
+			skyZenith: new THREE.Color(0x050f22),
+			skyHorizon: new THREE.Color(0x183046),
+			sunColor: new THREE.Color(0x8da8c2),
+			waterDeep: new THREE.Color(0x020c17),
+			waterShallow: new THREE.Color(0x0a2633),
+			waterScatter: new THREE.Color(0x17545d),
+			fogColor: new THREE.Color(0x102637),
+			nightFactor: 1.0
+		};
+	}
+
+	/**
+	 * Kalibrasi Pencahayaan, Exposure & Bloom mengikut Tema supaya Light Mode tajam & bebas silau
+	 */
+	private applyWeatherAndTheme(): void {
+		if (!this.oceanMaterial || !this.skyMaterial) return;
+		const cfg = this.getWeatherConfig();
+		const isLight = this.theme === 'light';
+
+		const sunDir = new THREE.Vector3(
+			Math.sin(cfg.sunAzimuth) * Math.cos(cfg.sunElevation),
+			Math.sin(cfg.sunElevation),
+			-Math.cos(cfg.sunAzimuth) * Math.cos(cfg.sunElevation)
+		).normalize();
+
+		this.oceanMaterial.uniforms.uWaveScale.value = this.reducedMotion ? 0.25 : cfg.waveScale;
+		this.oceanMaterial.uniforms.uChoppiness.value = cfg.choppiness;
+		this.oceanMaterial.uniforms.uSunDir.value.copy(sunDir);
+		this.oceanMaterial.uniforms.uSunColor.value.copy(cfg.sunColor);
+		this.oceanMaterial.uniforms.uSkyZenith.value.copy(cfg.skyZenith);
+		this.oceanMaterial.uniforms.uSkyHorizon.value.copy(cfg.skyHorizon);
+		this.oceanMaterial.uniforms.uWaterDeep.value.copy(cfg.waterDeep);
+		this.oceanMaterial.uniforms.uWaterShallow.value.copy(cfg.waterShallow);
+		this.oceanMaterial.uniforms.uWaterScatter.value.copy(cfg.waterScatter);
+		this.oceanMaterial.uniforms.uFogColor.value.copy(cfg.fogColor);
+		this.oceanMaterial.uniforms.uSunSpecScale.value = isLight ? 0.35 : 0.45;
+
+		this.skyMaterial.uniforms.uSunDir.value.copy(sunDir);
+		this.skyMaterial.uniforms.uSunColor.value.copy(cfg.sunColor);
+		this.skyMaterial.uniforms.uSkyZenith.value.copy(cfg.skyZenith);
+		this.skyMaterial.uniforms.uSkyHorizon.value.copy(cfg.skyHorizon);
+		this.skyMaterial.uniforms.uNightFactor.value = cfg.nightFactor;
+
+		// Kawal Exposure, IBL & Bloom: Dark Mode tenang tanpa silau (0.58), Light Mode bersih (0.84)
+		if (this.renderer) {
+			this.renderer.toneMappingExposure = isLight ? 0.84 : 0.58;
+		}
+		this.scene.environmentIntensity = isLight ? 0.72 : 0.42;
+		if (this.bloomPass) {
+			this.bloomPass.strength = isLight ? 0.08 : 0.12;
+			this.bloomPass.threshold = isLight ? 0.96 : 0.92;
+		}
+
+		this.keyLight.color.copy(cfg.sunColor);
+		this.keyLight.intensity = isLight ? 1.45 : 0.82;
+		this.hemiLight.color.copy(cfg.skyHorizon);
+		this.hemiLight.intensity = isLight ? 0.55 : 0.32;
+		this.ambientLight.intensity = isLight ? 0.36 : 0.18;
+		this.stationSpotLight.intensity = isLight ? 2.4 : 1.6;
+		this.rimLight.intensity = isLight ? 2.0 : 1.2;
+
+		if (this.pulseMat) {
+			this.pulseMat.color.setHex(isLight ? 0x0284c7 : 0x38bdf8);
+		}
+
+		for (const mat of this.glowMaterials) {
+			const base = (mat.userData.baseEmissive as number | undefined) ?? 0.5;
+			mat.emissiveIntensity = isLight ? base * 0.9 : base * 0.65;
+		}
+
+		this.refreshHotspotHighlights();
+	}
+
+	public setTheme(theme: ThemeMode): void {
+		this.theme = theme;
+		this.applyWeatherAndTheme();
+		this.redrawAllCanvases();
+	}
+
+	public setLocale(locale: Locale): void {
+		if (this.locale === locale) return;
+		this.locale = locale;
+		this.redrawAllCanvases();
+	}
+
+	public setReducedMotion(reduced: boolean): void {
+		this.reducedMotion = reduced;
+		this.applyWeatherAndTheme();
+	}
+
+	public setActive(active: boolean): void {
+		if (this.active === active) return;
+		this.active = active;
+		if (active) {
+			this.clock.getDelta(); // Buang masa dorman supaya tiada lompatan frame besar
+			this.startLoop();
+		} else {
+			if (this.rafId !== null) {
+				cancelAnimationFrame(this.rafId);
+				this.rafId = null;
+			}
+			this.heldKeys.clear();
+			this.isDragging = false;
+		}
+	}
+
+	public setInputEnabled(enabled: boolean): void {
+		this.inputEnabled = enabled;
+		if (!enabled) {
+			this.heldKeys.clear();
+			this.isDragging = false;
+			if (this.renderer) {
+				this.renderer.domElement.style.cursor = 'default';
+			}
+		}
+	}
+
+	public moveProgress(delta: number): void {
+		let wrapped = (this.targetProgress + delta) % 1;
+		if (wrapped < 0) wrapped += 1;
+		this.targetProgress = wrapped;
+	}
+
+	public setProgress(progress: number): void {
+		// Gelung orbital 360° yang berterusan (boleh berputar penuh tanpa jalan mati)
+		let wrapped = progress % 1;
+		if (wrapped < 0) wrapped += 1;
+		this.targetProgress = wrapped;
+	}
+
+	public goToStation(index: number): void {
+		const clamped = ((index % STATION_ANCHORS.length) + STATION_ANCHORS.length) % STATION_ANCHORS.length;
+		this.targetProgress = clamped / STATION_ANCHORS.length;
+		this.targetYawOffset = 0;
+		this.targetPitchOffset = 0;
+	}
+
+	public selectHotspot(hotspotId: string | null): void {
+		this.selectedHotspotId = hotspotId;
+		this.refreshHotspotHighlights();
+	}
+
+	public setSimulationMode(_stationIndex: number, modeId: string): void {
+		this.weatherPresetId = modeId;
+		this.applyWeatherAndTheme();
+	}
+
+	private refreshHotspotHighlights(): void {
+		const isLight = this.theme === 'light';
+		// Emissive terkawal: waktu malam cukup sebagai lampu OLED lembut tanpa bloom menyilaukan
+		const baseEmissive = isLight ? 0.08 : 0.05;
+		for (const record of this.hotspots) {
+			const isSelected = record.id === this.selectedHotspotId;
+			const isHovered = record.id === this.hoveredHotspotId;
+			record.screenMat.emissiveIntensity = isHovered
+				? baseEmissive + 0.08
+				: isSelected
+					? baseEmissive + 0.05
+					: baseEmissive;
+			record.accentMat.emissiveIntensity = isHovered ? 0.85 : isSelected ? 0.65 : 0.35;
+		}
+	}
+
+	private attachEvents(): void {
+		if (!this.renderer) return;
+		const dom = this.renderer.domElement;
+
+		dom.addEventListener('pointerdown', this.onPointerDown);
+		window.addEventListener('pointermove', this.onPointerMove);
+		window.addEventListener('pointerup', this.onPointerUp);
+		window.addEventListener('pointercancel', this.onPointerCancel);
+		window.addEventListener('keydown', this.onKeyDown);
+		window.addEventListener('keyup', this.onKeyUp);
+		window.addEventListener('blur', this.onWindowBlur);
+
+		this.resizeObserver = new ResizeObserver(() => this.onResize());
+		this.resizeObserver.observe(this.container);
+	}
+
+	private onWindowBlur = (): void => {
+		this.heldKeys.clear();
+		this.isDragging = false;
+	};
+
+	private onPointerCancel = (): void => {
+		this.isDragging = false;
+		this.heldKeys.clear();
+	};
+
+	private onKeyDown = (e: KeyboardEvent): void => {
+		if (!this.inputEnabled) return;
+		if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+		const target = e.target as HTMLElement | null;
+		if (
+			target?.isContentEditable ||
+			['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target?.tagName || '') ||
+			target?.closest?.('[role="dialog"], [role="button"], button, a, input, textarea')
+		) {
+			return;
+		}
+		const k = e.key.toLowerCase();
+		if (k === 'w' || k === 's' || k === 'arrowup' || k === 'arrowdown') {
+			this.heldKeys.add(k);
+			this.lastInteractionTime = this.clock.getElapsedTime();
+		}
+	};
+
+	private onKeyUp = (e: KeyboardEvent): void => {
+		this.heldKeys.delete(e.key.toLowerCase());
+	};
+
+	private onResize(): void {
+		if (!this.renderer) return;
+		const width = Math.max(this.container.clientWidth, 1);
+		const height = Math.max(this.container.clientHeight, 1);
+		this.camera.aspect = width / height;
+		this.camera.updateProjectionMatrix();
+		this.renderer.setSize(width, height);
+		if (this.composer) {
+			this.composer.setSize(width, height);
+		}
+	}
+
+	private updatePointerNdcFromEvent(e: PointerEvent): void {
+		if (!this.renderer) return;
+		const rect = this.renderer.domElement.getBoundingClientRect();
+		if (rect.width <= 0 || rect.height <= 0) return;
+		this.pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+		this.pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+	}
+
+	private onPointerDown = (e: PointerEvent): void => {
+		if (!this.inputEnabled) return;
+		this.updatePointerNdcFromEvent(e);
+		this.isDragging = true;
+		this.dragMoved = false;
+		this.dragStartX = e.clientX;
+		this.dragStartY = e.clientY;
+		this.lastInteractionTime = this.clock.getElapsedTime();
+	};
+
+	private onPointerMove = (e: PointerEvent): void => {
+		if (!this.renderer || !this.inputEnabled) return;
+		this.updatePointerNdcFromEvent(e);
+		this.lastInteractionTime = this.clock.getElapsedTime();
+
+		if (this.isDragging) {
+			const dx = e.clientX - this.dragStartX;
+			const dy = e.clientY - this.dragStartY;
+			if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+				this.dragMoved = true;
+			}
+			// Benarkan pengguna memutar pandangan kamera secara luas untuk menikmati kepulauan 360°
+			this.targetYawOffset = Math.max(-1.35, Math.min(1.35, -dx * 0.0028));
+			this.targetPitchOffset = Math.max(-0.32, Math.min(0.38, -dy * 0.0018));
+			return;
+		}
+
+		this.raycaster.setFromCamera(this.pointerNdc, this.camera);
+		const targets = this.interactionRoots.length > 0 ? this.interactionRoots : this.interactableMeshes;
+		const hits = this.raycaster.intersectObjects(targets, true);
+		let hitHotspotId: string | null = null;
+		let hitIslandIdx: number | null = null;
+
+		if (hits.length > 0) {
+			const hitObj = hits[0].object;
+			hitHotspotId = (hitObj.userData.hotspotId as string | undefined) ?? null;
+			hitIslandIdx = (hitObj.userData.islandIndex as number | undefined) ?? null;
+		}
+
+		if (hitHotspotId !== this.hoveredHotspotId || hitIslandIdx !== this.hoveredIslandIndex) {
+			this.hoveredHotspotId = hitHotspotId;
+			this.hoveredIslandIndex = hitIslandIdx;
+			this.refreshHotspotHighlights();
+			const isClickable = Boolean(
+				hitHotspotId || (hitIslandIdx !== null && hitIslandIdx !== this.activeStationIndex)
+			);
+			this.renderer.domElement.style.cursor = isClickable ? 'pointer' : 'grab';
+
+			let hoverLabel: string | null = null;
+			if (hitIslandIdx !== null && hitIslandIdx !== this.activeStationIndex && !hitHotspotId) {
+				const st = STATIONS[hitIslandIdx];
+				if (st) hoverLabel = `${st.code} · ${st.title[this.locale]}`;
+			}
+			this.callbacks.onHotspotHover?.(hitHotspotId, hoverLabel);
+		}
+	};
+
+	private onPointerUp = (e: PointerEvent): void => {
+		if (!this.isDragging) return;
+		this.updatePointerNdcFromEvent(e);
+		const wasClick = !this.dragMoved;
+		this.isDragging = false;
+
+		if (wasClick && this.renderer && this.inputEnabled) {
+			this.raycaster.setFromCamera(this.pointerNdc, this.camera);
+			const targets = this.interactionRoots.length > 0 ? this.interactionRoots : this.interactableMeshes;
+			const hits = this.raycaster.intersectObjects(targets, true);
+			if (hits.length > 0) {
+				const obj = hits[0].object;
+				const hotspotId = obj.userData.hotspotId as string | undefined;
+				const stationIdx = obj.userData.stationIndex as number | undefined;
+				const islandIdx = obj.userData.islandIndex as number | undefined;
+
+				if (hotspotId && typeof stationIdx === 'number') {
+					this.selectHotspot(hotspotId);
+					this.callbacks.onHotspotSelect?.(hotspotId, stationIdx);
+				} else if (typeof islandIdx === 'number' && islandIdx !== this.activeStationIndex) {
+					// Terbang terus ke pulau yang diklik di seberang lautan!
+					this.goToStation(islandIdx);
+				}
+			}
+		}
+	};
+
+	private updateCamera(dt: number, elapsed: number): void {
+		let walkDir = 0;
+		if (this.heldKeys.has('w') || this.heldKeys.has('arrowup')) walkDir += 1;
+		if (this.heldKeys.has('s') || this.heldKeys.has('arrowdown')) walkDir -= 1;
+		if (walkDir !== 0) {
+			this.setProgress(this.targetProgress + walkDir * dt * 0.085);
+		}
+
+		// Interpolasi sudut terpendek sepanjang gelung orbital 360° (0..1)
+		let diff = this.targetProgress - this.currentProgress;
+		if (diff > 0.5) diff -= 1;
+		if (diff < -0.5) diff += 1;
+
+		const lerpSpeed = this.reducedMotion ? 1 : Math.min(1, dt * 4.2);
+		this.currentProgress = (this.currentProgress + diff * lerpSpeed + 1) % 1;
+
+		this.smoothPointer.x += (this.pointerNdc.x - this.smoothPointer.x) * Math.min(1, dt * 4.5);
+		this.smoothPointer.y += (this.pointerNdc.y - this.smoothPointer.y) * Math.min(1, dt * 4.5);
+
+		const idleDuration = elapsed - this.lastInteractionTime;
+		if (!this.isDragging && idleDuration > 2.5 && !this.reducedMotion) {
+			const idleSway = Math.sin(elapsed * 0.42) * 0.16;
+			this.targetYawOffset += (idleSway - this.targetYawOffset) * Math.min(1, dt * 1.5);
+			this.targetPitchOffset += (0 - this.targetPitchOffset) * Math.min(1, dt * 1.5);
+		}
+
+		this.userYawOffset += (this.targetYawOffset - this.userYawOffset) * Math.min(1, dt * 6);
+		this.userPitchOffset += (this.targetPitchOffset - this.userPitchOffset) * Math.min(1, dt * 6);
+
+		const exactIndex = (this.currentProgress * STATION_ANCHORS.length) % STATION_ANCHORS.length;
+		const nearestStation = Math.round(exactIndex) % STATION_ANCHORS.length;
+
+		if (nearestStation !== this.activeStationIndex || Math.abs(diff) > 0.0004) {
+			this.activeStationIndex = nearestStation;
+			this.callbacks.onStationChange?.(nearestStation, this.currentProgress);
+		}
+
+		// Kedudukan kamera pada lilitan luar pulau supaya menghadap ke arah Pulau Semasa + Teras Reaktor Pusat (0,0,0) di belakangnya!
+		const orbitAngle = this.currentProgress * Math.PI * 2;
+		const radialOut = new THREE.Vector3(Math.sin(orbitAngle), 0, Math.cos(orbitAngle));
+		const tangentRight = new THREE.Vector3(Math.cos(orbitAngle), 0, -Math.sin(orbitAngle));
+
+		const anchorPt = this.orbitalLoopCurve.getPointAt(this.currentProgress);
+		const stepBob = this.reducedMotion
+			? 0
+			: Math.sin(elapsed * 6.8) * Math.min(0.05, Math.abs(diff) * 1.5) +
+				Math.sin(elapsed * 1.35) * 0.04;
+
+		const camRadiusOffset = 9.8;
+		const lateralShift = this.smoothPointer.x * 0.75 + this.userYawOffset * 3.4;
+
+		const camPos = anchorPt
+			.clone()
+			.addScaledVector(radialOut, camRadiusOffset)
+			.addScaledVector(tangentRight, lateralShift);
+		camPos.y = anchorPt.y + 3.25 + stepBob + this.smoothPointer.y * 0.3 + this.userPitchOffset * 1.8;
+
+		this.camera.position.copy(camPos);
+
+		// Kamera memandang ke tengah Pulau Semasa dan terus ke Teras Reaktor Pusat di tengah lautan
+		const lookTarget = anchorPt
+			.clone()
+			.addScaledVector(radialOut, -2.6)
+			.addScaledVector(tangentRight, this.smoothPointer.x * 1.2 - this.userYawOffset * 4.2);
+		lookTarget.y = anchorPt.y + 2.15 - this.userPitchOffset * 1.6;
+
+		this.camera.lookAt(lookTarget);
+
+		if (this.skyMesh) {
+			this.skyMesh.position.copy(this.camera.position);
+		}
+
+		this.keyLight.position.set(anchorPt.x + 14, 26, anchorPt.z + 14);
+		this.keyLight.target.position.copy(anchorPt);
+		this.keyLight.target.updateMatrixWorld();
+
+		this.stationSpotLight.position.set(anchorPt.x, anchorPt.y + 6.8, anchorPt.z);
+		this.rimLight.position.set(anchorPt.x - 6, anchorPt.y + 5.0, anchorPt.z - 3);
+	}
+
+	private updateProjectedMarkers(): void {
+		if (!this.callbacks.onMarkersUpdate || !this.renderer) return;
+
+		this.camera.updateMatrixWorld();
+		const projected: ProjectedMarker[] = [];
+
+		for (const record of this.hotspots) {
+			if (record.stationIndex !== this.activeStationIndex) continue;
+
+			const stationGroup = this.stationGroups[record.stationIndex];
+			if (!stationGroup) continue;
+
+			this.tempWorldVec.copy(record.anchorLocal).applyMatrix4(stationGroup.matrixWorld);
+			this.tempWorldVec.project(this.camera);
+
+			const isInFront = this.tempWorldVec.z > -1 && this.tempWorldVec.z < 1;
+			const screenX = (this.tempWorldVec.x * 0.5 + 0.5) * 100;
+			const screenY = (-this.tempWorldVec.y * 0.5 + 0.5) * 100;
+			const onScreen = isInFront && screenX > 6 && screenX < 94 && screenY > 8 && screenY < 90;
+
+			projected.push({
+				id: record.id,
+				stationIndex: record.stationIndex,
+				x: screenX,
+				y: screenY,
+				visible: onScreen
+			});
+		}
+
+		this.callbacks.onMarkersUpdate(projected);
+	}
+
+	private animateScene(dt: number, elapsed: number): void {
+		if (this.oceanMaterial) {
+			this.oceanMaterial.uniforms.uTime.value = this.reducedMotion ? 0 : elapsed;
+		}
+		if (this.skyMaterial) {
+			this.skyMaterial.uniforms.uTime.value = this.reducedMotion ? 0 : elapsed;
+		}
+
+		for (let i = 0; i < PULSE_COUNT; i++) {
+			if (!this.reducedMotion) {
+				this.pulseOffsets[i] = (this.pulseOffsets[i] + dt * this.pulseSpeeds[i]) % 1;
+			}
+			const pt = this.orbitalLoopCurve.getPointAt(this.pulseOffsets[i]);
+			this.dummy.position.set(pt.x, pt.y + 0.34, pt.z);
+			const s = 0.75 + 0.35 * Math.sin(elapsed * 3.6 + i);
+			this.dummy.scale.setScalar(s);
+			this.dummy.updateMatrix();
+			this.pulseInstanced.setMatrixAt(i, this.dummy.matrix);
+		}
+		this.pulseInstanced.instanceMatrix.needsUpdate = true;
+
+		// Putar cincin Teras Reaktor Pusat
+		if (!this.reducedMotion) {
+			for (let r = 0; r < this.centralReactorRings.length; r++) {
+				const ring = this.centralReactorRings[r];
+				ring.rotation.y = elapsed * (0.32 + r * 0.14);
+				ring.rotation.x = Math.sin(elapsed * 0.4 + r) * 0.45;
+			}
+		}
+
+		for (let i = 0; i < this.hotspots.length; i++) {
+			const rec = this.hotspots[i];
+			const isCurrentIsland = rec.stationIndex === this.activeStationIndex;
+			const isHovered = rec.id === this.hoveredHotspotId;
+
+			const targetLift = isHovered ? 0.24 : isCurrentIsland ? 0.08 : 0;
+			rec.currentLift += (targetLift - rec.currentLift) * Math.min(1, dt * 6);
+			rec.mesh.position.y = rec.baseY + rec.currentLift;
+
+			if (!this.reducedMotion) {
+				const spinSpeed = isHovered ? 1.8 : isCurrentIsland ? 0.85 : 0.35;
+				rec.propObject.rotation.y += dt * spinSpeed;
+				rec.propObject.position.y = EXHIBIT_PROP_HEIGHT + Math.sin(elapsed * 2.2 + i) * EXHIBIT_PROP_BOB;
+			}
+		}
+
+		if (!this.reducedMotion) {
+			// Imbas azimut pada paksi menegak; piring kekal condong pada pemegangnya.
+			if (this.radarRotor) this.radarRotor.rotation.y = elapsed * 0.35;
+			for (let i = 0; i < this.rotatingBeacons.length; i++) {
+				const b = this.rotatingBeacons[i];
+				b.rotation.z = elapsed * (0.55 + (i % 3) * 0.2);
+			}
+		}
+	}
+
+	private startLoop(): void {
+		const tick = () => {
+			this.rafId = requestAnimationFrame(tick);
+			const dt = Math.min(this.clock.getDelta(), 0.1);
+			const elapsed = this.clock.getElapsedTime();
+
+			this.updateCamera(dt, elapsed);
+			this.animateScene(dt, elapsed);
+			this.updateProjectedMarkers();
+
+			if (this.composer) {
+				this.composer.render();
+			} else if (this.renderer) {
+				this.renderer.render(this.scene, this.camera);
+			}
+		};
+		this.rafId = requestAnimationFrame(tick);
+	}
+
+	public dispose(): void {
+		if (this.rafId !== null) {
+			cancelAnimationFrame(this.rafId);
+			this.rafId = null;
+		}
+		if (this.resizeObserver) {
+			this.resizeObserver.disconnect();
+			this.resizeObserver = null;
+		}
+		if (this.renderer) {
+			this.renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
+		}
+		window.removeEventListener('pointermove', this.onPointerMove);
+		window.removeEventListener('pointerup', this.onPointerUp);
+		window.removeEventListener('pointercancel', this.onPointerCancel);
+		window.removeEventListener('keydown', this.onKeyDown);
+		window.removeEventListener('keyup', this.onKeyUp);
+		window.removeEventListener('blur', this.onWindowBlur);
+
+		for (const rec of this.hotspots) {
+			rec.texture.dispose();
+		}
+		for (const sh of this.stationHeaders) {
+			sh.texture.dispose();
+		}
+		if (this.envTexture) {
+			this.envTexture.dispose();
+			this.envTexture = null;
+		}
+		if (this.pbrMaps) {
+			this.pbrMaps.normalMap.dispose();
+			this.pbrMaps.roughnessMap.dispose();
+			this.pbrMaps.metalnessMap.dispose();
+			this.pbrMaps.deckNormalMap.dispose();
+			this.pbrMaps = null;
+		}
+
+		this.scene.traverse((obj) => {
+			const mesh = obj as THREE.Mesh;
+			if (mesh.geometry) mesh.geometry.dispose();
+			if (mesh.material) {
+				if (Array.isArray(mesh.material)) {
+					mesh.material.forEach((m) => m.dispose());
+				} else {
+					mesh.material.dispose();
+				}
+			}
+		});
+
+		if (this.composer) {
+			this.composer.dispose();
+			this.composer = null;
+		}
+		if (this.renderer) {
+			this.renderer.dispose();
+			this.renderer = null;
+		}
+	}
+}

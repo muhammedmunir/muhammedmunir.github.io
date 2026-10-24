@@ -18,6 +18,7 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+claude-*.bat
 
 # Vite
 vite.config.js.timestamp-*
@@ -29,3 +30,5 @@ vite.config.ts.timestamp-*
 !.crew/graphs/
 !.crew/artifacts/.gitkeep
 !.crew/graphs/.gitkeep
+.claude/
+motion-01-hero-desktop.png

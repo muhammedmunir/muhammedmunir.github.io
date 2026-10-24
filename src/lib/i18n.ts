@@ -6,8 +6,12 @@ export type Lang = 'ms' | 'en';
 // Validate saved lang — must be 'ms' or 'en', otherwise default to 'ms'
 function getSavedLang(): Lang {
 	if (!browser) return 'ms';
-	const saved = localStorage.getItem('lang');
-	return saved === 'ms' || saved === 'en' ? saved : 'ms';
+	try {
+		const saved = localStorage.getItem('lang');
+		return saved === 'ms' || saved === 'en' ? saved : 'ms';
+	} catch {
+		return 'ms';
+	}
 }
 
 export const lang = writable<Lang>(getSavedLang());
@@ -15,8 +19,12 @@ export const lang = writable<Lang>(getSavedLang());
 // Persist to localStorage and sync html lang attribute
 lang.subscribe((val) => {
 	if (browser) {
-		localStorage.setItem('lang', val);
 		document.documentElement.lang = val;
+		try {
+			localStorage.setItem('lang', val);
+		} catch {
+			// Storage can be blocked; language switching must still work for this visit.
+		}
 	}
 });
 
