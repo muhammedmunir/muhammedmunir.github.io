@@ -4,7 +4,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import { STATIONS, type Locale, type HotspotItem, type SpineStation } from './spine-data';
+import { STATIONS, PROFILE, type Locale, type HotspotItem, type SpineStation } from './spine-data';
 import {
 	resolveExhibitView,
 	getHotspotLocation,
@@ -65,7 +65,7 @@ interface HotspotRecord {
 	mesh: THREE.Group;
 	propObject: THREE.Object3D;
 	anchorLocal: THREE.Vector3;
-	screenMat: THREE.MeshBasicMaterial;
+	screenMat: THREE.MeshStandardMaterial;
 	screenMesh: THREE.Mesh;
 	panelMeshes: THREE.Mesh[];
 	screenWidth: number;
@@ -1716,6 +1716,11 @@ export class FiberSpineWorld {
 			propObject,
 			anchorLocal: new THREE.Vector3(position.x, position.y + 2.65, position.z),
 			screenMat,
+			screenMesh,
+			panelMeshes: [chassis, accentRim, screenMesh],
+			screenWidth: 2.66,
+			screenHeight: 1.7,
+			regions: [],
 			frameMat,
 			accentMat,
 			canvas,
