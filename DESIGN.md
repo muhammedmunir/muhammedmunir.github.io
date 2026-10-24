@@ -1,24 +1,30 @@
-# Di Sebalik Sistem — spatial portfolio
+# MUNIR — SYSTEMS IN MOTION
 
-The approved graphite/titanium/copper mechanical direction now carries the complete homepage, not a standalone prototype. The implementation contract remains `docs/spatial-expansion-plan.md`.
+## Approved direction
 
-## Structure and compositions
+Primary audience: hiring managers, technical leads, engineering managers and technology companies; prospective clients are secondary. Identity must communicate Muhammed Munir / Full-Stack Software Engineer immediately. Engineering credibility precedes spectacle. User authorized implementation and original procedural assets, but explicitly withheld commit, push and production deployment approval.
 
-- `/` and `/spatial` render the same `SpatialPortfolio.svelte` shell. Root is canonical; neither route mounts the editorial header, HUD, footer or extra main landmark.
-- Six chapters: Muhammed Munir / introduction → eMesys → OnboardX → Computer Vision & Win32 Automation Suite → background/career → contact.
-- Oversized identity, concise opaque synopsis, generous canvas region, and chapter-specific panel placements support the authored mechanical compositions. Mobile uses ordinary document flow with a dedicated 300px scene window, wrapped controls and unclipped names.
-- Direct native chapter buttons, next/back and textual six-step progress never wait for scene loading or motion. The identity button explicitly returns to introduction.
+## Composition and purpose
 
-## Visual and interaction rules
+- ENERGY 3 / RHYTHM 3 / MOTION 3: confident typographic scale, asymmetrical reading/visual lanes, varied project alignment and scroll-linked spatial change; no decorative idle loop.
+- Graphite `#121619`, ivory `#f4eee3`, secondary text `#c4beb3`, copper `#d9a17b`, surfaces `#1c2327`, interactive borders `#89979b`, focus `#ffe2a8`. One fixed dark world, including Contact. Forced-colors delegates to system colors.
+- Local Helvetica/Arial family: immediate rendering without external font downloads, restrained editorial tracking, giant name as a visual anchor rather than a fictitious registered trademark. No monospace-as-engineering costume.
+- Nine shared-geometry beveled laminae create an architectural M-channel aperture. Real thickness, directional light, shadows and cut surfaces establish depth without particles, HUD, grids or fake telemetry.
+- Hero assembled / eMesys separated record layers / OnboardX fanned leaves / vision aligned apertures / about calm joinery / contact resolved assembly. These are conceptual relationships, not production topology or actual system output.
+- Desktop reserves left reading lane and right sculptural aperture. Mobile places identity before a lower-field aperture with different camera distance and mask. Project windows allow the same sculpture to remain visible between solid reading surfaces. About and Contact are intentionally opaque and calm; the settled contact sculpture is therefore not a prominent visible closing feature in this prototype.
 
-- World `#121619`, opaque surface `#1c2327`, raised surface `#283136`, ivory `#f4eee3`, muted `#c4beb3`, copper `#d9a17b`, border `#89979b`, focus `#ffe2a8`. Copper selected controls use world-colored labels. Contrast calculations are recorded in the expansion contract.
-- Large Arial identity, Georgia chapter headings, readable body text and minimum 44px controls. No glass-backed prose, telemetry, invented metrics or claims of live camera tracking.
-- One native reader dialog provides project layers/evidence, biography/career and full contact access. It focuses its heading, restores its opener, uses native modal containment and Escape, and owns a reference-counted scroll lock. Existing Experience and Contact mount once and remain unmodified; the reader uses their original paper palette.
-- BM/EN updates all visible facts and dialog labels; concise chapter/language/fallback statuses are polite. Header resume PDF and full contact access remain reachable.
-- Finite intro supports skip/replay and pause; live reduced-motion preferences are respected. Loading-time intent is reconciled only after controller assignment. Static SVG fallback preserves all six chapters and facts, without dead WebGL motion controls.
+## Architecture and interaction
 
-## Factual boundaries and verification
+`SystemsPortfolio.svelte` owns semantic continuous HTML, language, verified project data and inline Contact. `MotionWorld.svelte` owns SSR fallback and guarded loading. `world.ts` owns procedural scene, section-derived scroll anchors and event-driven rendering. `/` and `/spatial/` share the page. Layout no longer mounts old HUD/navigation.
 
-Project summaries, every layer and portfolio evidence come from `system-projects.ts` by project key. Biography comes from localized source copy; exact career periods and contact validation, direct channels, honeypot, request timeout and result states remain in the original components. Mechanical geometry and optical sweep are explicitly conceptual, not deployed infrastructure or camera tracking.
+Native document scroll is the source of truth; no wheel interception, scroll locking, mandatory chapter buttons, core dialogs, snapping or reveal-hidden content. Header links are optional shortcuts. Native links, language buttons, form controls and resume remain functional. Pointer parallax is bounded and unavailable to coarse pointers. Reduced motion chooses one assembled static composition. Hidden tabs cancel pending frames. Context loss returns permanently to the authored SVG without retry. Teardown disposes geometry/material/shadows/renderer/listeners/observers.
 
-Formatting/type checks do not establish visual, WebGL or accessibility acceptance. Parent-owned build and browser QA must validate desktop, 320/390px, short landscape, zoom, keyboard/dialog flows, loading-time navigation, reduced motion, context loss and route cleanup before publication. Historical editorial components remain available outside the spatial route gate; they are not the homepage shell.
+## Facts and boundaries
+
+Projects and technical capabilities are sourced from `system-projects.ts`, `cortex-data.ts` and existing translations. OnboardX is TNB / Flutter, not Nova Bitara. Feature lists are labeled documented capabilities rather than assuming every feature is a personally delivered contribution. Career periods follow Experience. Conceptual diagrams are explicitly labeled, not invented screenshots. No invented results, clients, metrics, deployment status or confidential data.
+
+## Acceptance and outstanding review
+
+Target WCAG 2.2 AA, not a compliance claim. Semantic landmarks, one h1, h2 sections/h3 subsections, skip main, logical native focus, visible rings, 44px controls, associated errors and a mounted status region. Form POST fallback avoids leaking messages in GET URLs. No WebGL-only information. Audit includes all six sections, language, form validation/error/success, reduced motion and context loss.
+
+Browser geometry and automation are evidence of behavior, not aesthetic quality. The current runtime cannot inspect screenshot pixels. Human visual sign-off, draft diagram accessible-name confirmation, real screen reader and physical mobile GPU review remain open. See `docs/motion-verification.md` for executed checks and raw unresolved audit counts. Earlier spatial/editorial reports describe superseded builds. Legacy source remains unmounted, not deleted without explicit confirmation.

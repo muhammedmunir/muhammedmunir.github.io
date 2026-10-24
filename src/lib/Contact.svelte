@@ -9,6 +9,27 @@
 	let submitted = $state(false);
 	let submitting = $state(false);
 	let errorMsg = $state('');
+	let attempted = $state(false);
+	const fieldErrors = $derived({
+		name:
+			attempted && !formData.name.trim()
+				? $lang === 'ms'
+					? 'Sila masukkan nama anda.'
+					: 'Please enter your name.'
+				: '',
+		email:
+			attempted && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())
+				? $lang === 'ms'
+					? 'Sila masukkan alamat e-mel yang sah.'
+					: 'Please enter a valid email address.'
+				: '',
+		message:
+			attempted && !formData.message.trim()
+				? $lang === 'ms'
+					? 'Sila masukkan mesej anda.'
+					: 'Please enter your message.'
+				: ''
+	});
 	let resultHeading = $state<HTMLHeadingElement>();
 	let nameInput = $state<HTMLInputElement>();
 
@@ -20,18 +41,13 @@
 		e.preventDefault();
 		if (submitting) return;
 		errorMsg = '';
-
-		if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+		attempted = true;
+		const form = e.currentTarget as HTMLFormElement;
+		if (fieldErrors.name || fieldErrors.email || fieldErrors.message) {
 			errorMsg =
-				$lang === 'ms'
-					? 'Sila isikan ruangan Nama, E-mel dan Mesej.'
-					: 'Please fill in your Name, Email, and Message.';
-			return;
-		}
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		if (!emailRegex.test(formData.email.trim())) {
-			errorMsg =
-				$lang === 'ms' ? 'Format alamat e-mel tidak sah.' : 'Invalid email address format.';
+				$lang === 'ms' ? 'Sila semak ruangan yang ditandakan.' : 'Please check the marked fields.';
+			await tick();
+			form.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
 			return;
 		}
 
@@ -167,8 +183,13 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 				>
 			</div>
 			<div class="form-sheet">
+				<div class="form-status" role="status" aria-live="polite" aria-atomic="true">
+					{#if errorMsg}<p class="error">{errorMsg}</p>{:else if submitting}<p>
+							{$t.sending}
+						</p>{:else if submitted}<p>{$t.success_title}</p>{/if}
+				</div>
 				{#if submitted}
-					<div class="success" role="status">
+					<div class="success">
 						<p class="form-note">{$lang === 'ms' ? 'Terima kasih' : 'Thank you'}</p>
 						<h3 tabindex="-1" bind:this={resultHeading}>{$t.success_title}</h3>
 						<p>{$t.success_msg}</p>
@@ -179,13 +200,28 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 								submitted = false;
 								formData = { name: '', email: '', subject: '', message: '' };
 								botcheck = false;
+								attempted = false;
+								errorMsg = '';
 								await tick();
 								nameInput?.focus();
 							}}>{$t.send_another}</button
 						>
 					</div>
 				{:else}
-					<form id="contact-form" onsubmit={handleSubmit} aria-busy={submitting}>
+					<form
+						id="contact-form"
+						method="POST"
+						action="https://api.web3forms.com/submit"
+						onsubmit={handleSubmit}
+						aria-busy={submitting}
+					>
+						<input type="hidden" name="access_key" value={WEB3FORMS_KEY} />
+						<noscript
+							><p class="privacy-note">
+								JavaScript is unavailable. This form submits directly to Web3Forms; you can also use
+								the email link.
+							</p></noscript
+						>
 						<input
 							type="checkbox"
 							name="botcheck"
@@ -214,7 +250,10 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 										autocomplete="name"
 										required
 										maxlength="160"
+										aria-invalid={Boolean(fieldErrors.name)}
+										aria-describedby="contact-name-error"
 									/>
+									<p id="contact-name-error" class="field-error">{fieldErrors.name}</p>
 								</div>
 								<div class="field">
 									<label for="contact-email">{$t.email_label} *</label><input
@@ -226,7 +265,10 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 										autocomplete="email"
 										required
 										maxlength="254"
+										aria-invalid={Boolean(fieldErrors.email)}
+										aria-describedby="contact-email-error"
 									/>
+									<p id="contact-email-error" class="field-error">{fieldErrors.email}</p>
 								</div>
 							</div>
 							<div class="field">
@@ -247,12 +289,12 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 									rows="6"
 									required
 									maxlength="8000"
+									aria-invalid={Boolean(fieldErrors.message)}
+									aria-describedby="contact-message-error"
 								></textarea>
+								<p id="contact-message-error" class="field-error">{fieldErrors.message}</p>
 							</div>
 						</fieldset>
-						<div role="alert" aria-atomic="true">
-							{#if errorMsg}<p class="error">{errorMsg}</p>{/if}
-						</div>
 						<button type="submit" class="btn btn-primary send-button" disabled={submitting}
 							>{submitting ? $t.sending : $t.send_btn}<span aria-hidden="true">↗</span></button
 						>
@@ -269,6 +311,103 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 </section>
 
 <style>
+	section {
+		background: var(--paper, #121619);
+		color: var(--ink, #f4eee3);
+		padding: clamp(4rem, 8vw, 8rem) clamp(1.1rem, 4vw, 5rem);
+	}
+	.section {
+		max-width: none;
+		padding: 0;
+		margin: 0;
+	}
+	.section-header {
+		margin-bottom: 3rem;
+		max-width: 65rem;
+	}
+	.section-label {
+		color: var(--copper, #d9a17b);
+		font-size: 0.7rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+	h2 {
+		font-family: Arial, Helvetica, sans-serif;
+		font-size: clamp(2.5rem, 5vw, 5.5rem);
+		letter-spacing: -0.045em;
+		line-height: 1.08;
+		font-weight: 500;
+		margin: 1.5rem 0;
+	}
+	h3 {
+		font-family: Arial, Helvetica, sans-serif;
+		font-size: clamp(1.2rem, 2vw, 1.7rem);
+		font-weight: 500;
+		letter-spacing: -0.02em;
+		line-height: 1.2;
+	}
+	.section-desc {
+		max-width: 58ch;
+		color: var(--muted, #c4beb3);
+		font-size: 0.95rem;
+	}
+	a {
+		color: inherit;
+		text-underline-offset: 0.3em;
+	}
+	button {
+		min-height: 48px;
+		padding: 0.8rem 1rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 1rem;
+		cursor: pointer;
+		background: var(--copper, #d9a17b);
+		color: var(--paper, #121619);
+		border: 1px solid var(--copper, #d9a17b);
+		border-radius: 0;
+		font: inherit;
+		font-size: 0.85rem;
+		font-weight: 600;
+	}
+	button:disabled {
+		cursor: wait;
+		background: var(--muted, #c4beb3);
+		border-color: var(--muted, #c4beb3);
+	}
+	a:focus-visible,
+	button:focus-visible,
+	input:focus-visible,
+	textarea:focus-visible {
+		outline: 2px solid var(--focus, #ffe2a8);
+		outline-offset: 4px;
+	}
+	input[aria-invalid='true'],
+	textarea[aria-invalid='true'] {
+		border-color: #ffb4a1;
+	}
+	.field-error {
+		color: #ffb4a1;
+		font-size: 0.78rem;
+		margin-top: 0.4rem;
+	}
+	.field-error:empty {
+		margin: 0;
+	}
+	.form-status {
+		font-size: 0.85rem;
+	}
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
+	}
 	.contact-grid {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
@@ -280,7 +419,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 	}
 	.intro {
 		font-size: 0.9rem;
-		color: #645a4f;
+		color: var(--muted, #c4beb3);
 		margin-top: 1.25rem;
 		max-width: 54ch;
 	}
@@ -288,13 +427,13 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		margin: 2rem 0 0;
 	}
 	.channels > div {
-		border-top: 1px solid #c8bfb2;
+		border-top: 1px solid var(--line, #89979b);
 		padding-block: 0.9rem;
 	}
 	dt {
 		font-size: 0.65rem;
 		letter-spacing: 0.06em;
-		color: #645a4f;
+		color: var(--muted, #c4beb3);
 	}
 	dd {
 		margin: 0.25rem 0 0;
@@ -315,22 +454,22 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		align-items: center;
 		min-height: 44px;
 		font-size: 0.85rem;
-		color: #75442b;
+		color: var(--copper, #d9a17b);
 		margin-top: 1rem;
 	}
 	.form-sheet {
-		background: #faf7f1;
-		border: 1px solid #b9aa98;
-		padding: clamp(1.25rem, 3vw, 2.5rem);
+		background: var(--paper, #121619);
+		border-top: 1px solid var(--line, #89979b);
+		padding: clamp(1.25rem, 3vw, 2.5rem) 0;
 	}
 	.form-note {
 		font-size: 0.7rem;
 		letter-spacing: 0.04em;
-		color: #75442b;
+		color: var(--copper, #d9a17b);
 		margin-bottom: 1rem;
 	}
 	.required-note {
-		color: #645a4f;
+		color: var(--muted, #c4beb3);
 		font-size: 0.72rem;
 		margin-block: 0.75rem 1.5rem;
 	}
@@ -357,8 +496,10 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 	textarea {
 		display: block;
 		width: 100%;
-		border: 1px solid #897b6b;
-		background: #faf7f1;
+		box-sizing: border-box;
+		border: 1px solid var(--line, #89979b);
+		background: var(--surface, #1c2327);
+		color: var(--ink, #f4eee3);
 		border-radius: 0;
 		min-height: 48px;
 		padding: 0.75rem;
@@ -366,7 +507,7 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 	}
 	input::placeholder,
 	textarea::placeholder {
-		color: #6b6054;
+		color: var(--muted, #c4beb3);
 		opacity: 1;
 		font-size: 0.85rem;
 	}
@@ -374,10 +515,10 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 		resize: vertical;
 	}
 	.error {
-		color: #922c22;
+		color: #ffb4a1;
 		font-size: 0.85rem;
 		padding: 0.75rem;
-		border-left: 3px solid #922c22;
+		border-left: 3px solid #ffb4a1;
 		margin-bottom: 1rem;
 	}
 	.send-button {
@@ -386,14 +527,14 @@ Untuk membalas mesej ini secara terus, reply e-mel ini atau hubungi ${formData.e
 	}
 	.privacy-note {
 		font-size: 0.7rem;
-		color: #645a4f;
+		color: var(--muted, #c4beb3);
 		margin-top: 1rem;
 	}
 	.success {
 		padding-block: 2rem;
 	}
 	.success > p:not(.form-note) {
-		color: #645a4f;
+		color: var(--muted, #c4beb3);
 		margin: 1rem 0 2rem;
 		font-size: 0.9rem;
 	}

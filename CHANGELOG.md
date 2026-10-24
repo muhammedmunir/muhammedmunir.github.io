@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-10-22 — Systems in Motion native-scroll prototype (unpublished)
+
+- Replaced button-driven homepage composition with continuous SSR HTML: direct identity, three inline projects, career and Contact. Both routes share SystemsPortfolio; no core reader dialogs or forced chapter sequence.
+- Added a procedural nine-lamina M-channel sculpture, section-measured camera interpolation, separate mobile framing, bounded pointer response and event-driven idle rendering.
+- Unified graphite/ivory/copper theme through Contact, removed remote font requests and old layout HUD imports, preserved Web3Forms and added field errors, mounted status, safe native POST fallback and blocked-storage resilience.
+- Added native-scroll regression, no-JS/no-WebGL/keyboard/resizing resilience checks and a11y interaction states. Local verification is recorded in docs/motion-verification.md; aesthetic approval remains open because the runtime cannot inspect images.
+- No commit, push or deployment authorized for this iteration. Legacy components remain unmounted for rollback; unrelated user files are untouched.
+
 ## 2026-10-22 — Complete six-chapter spatial homepage
 
 - Added a shared spatial UI for `/` and `/spatial`, with root canonical metadata and a layout gate that excludes editorial chrome/listeners on both routes.
