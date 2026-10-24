@@ -16,6 +16,8 @@ import {
 	drawExhibitScreen,
 	hitTestScreen,
 	getInspectDistance,
+	EXHIBIT_MIN_WIDTH,
+	EXHIBIT_MIN_HEIGHT,
 	type ExhibitPalette,
 	type ScreenHitRegion
 } from './exhibit-screen';
@@ -121,6 +123,7 @@ const STATION_ANCHORS: THREE.Vector3[] = STATION_ANGLES.map(
 );
 
 const PULSE_COUNT = 72;
+const MOTE_COUNT = 160;
 const EXHIBIT_PROP_HEIGHT = 3.32;
 const EXHIBIT_PROP_BOB = 0.04;
 
@@ -128,6 +131,7 @@ const OCEAN_VERTEX_SHADER = /* glsl */ `
 	uniform float uTime;
 	uniform float uWaveScale;
 	uniform float uChoppiness;
+	uniform vec3 uIslands[6];
 
 	varying vec3 vWorldPos;
 	varying vec3 vNormal;
@@ -187,11 +191,24 @@ const OCEAN_VERTEX_SHADER = /* glsl */ `
 		gerstnerWave(p, vec2(0.74, 0.67), 0.045, 3.5, 1.30, displaced, tangent, binormal, jacobian);
 		gerstnerWave(p, vec2(-0.45, 0.89), 0.03, 1.8, 1.42, displaced, tangent, binormal, jacobian);
 
+		// Redam ombak di bawah setiap pelantar pulau: air tidak boleh menembusi dek.
+		float islandClearance = 1.0;
+		for (int i = 0; i < 6; i++) {
+			float islandDist = length(worldInitial.xz - uIslands[i].xz);
+			islandClearance = min(islandClearance, smoothstep(12.6, 17.4, islandDist));
+		}
+
 		// Redam ombak di sekitar cincin jambatan orbital (R=38) dan teras pusat (R=0)
-		float radialDist = length(displaced.xz);
+		float radialDist = length(worldInitial.xz);
 		float ringClearance = smoothstep(1.5, 6.5, abs(radialDist - 38.0));
 		float coreClearance = smoothstep(3.0, 10.0, radialDist);
-		displaced.y *= mix(0.25, 1.0, ringClearance * coreClearance);
+		float waveDamp = islandClearance * mix(0.25, 1.0, ringClearance * coreClearance);
+
+		vec3 delta = displaced - worldInitial.xyz;
+		displaced = worldInitial.xyz + delta * waveDamp;
+		tangent = mix(vec3(1.0, 0.0, 0.0), tangent, waveDamp);
+		binormal = mix(vec3(0.0, 0.0, 1.0), binormal, waveDamp);
+		jacobian = mix(1.0, jacobian, waveDamp);
 
 		vWorldPos = displaced;
 		vElevation = displaced.y;
@@ -298,7 +315,7 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 
 		// Cincin Koral &Tunjang Optik Bawah Laut pada R = 38m dan jejari ke pusat
 		float ringDist = abs(length(vWorldPos.xz) - 38.0);
-		float shallowLagoon = max(1.0 - smoothstep(4.2, 11.5, minIslandDist), (1.0 - smoothstep(1.5, 5.5, ringDist)) * 0.58);
+		float shallowLagoon = max(1.0 - smoothstep(6.0, 14.0, minIslandDist), (1.0 - smoothstep(1.5, 5.5, ringDist)) * 0.58);
 		baseWater = mix(baseWater, uWaterScatter * 0.78, shallowLagoon * 0.52);
 
 		float cablePulse = 0.65 + 0.35 * sin(length(vWorldPos.xz) * 0.5 - uTime * 3.8);
@@ -321,7 +338,7 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 		float foamLace = noise2D(vWorldPos.xz * 1.55 + vec2(uTime * 0.16, -uTime * 0.12));
 		float whitecap = smoothstep(0.78, 0.44, vJacobian - foamLace * 0.24) * smoothstep(0.08, 0.48, vElevation);
 		float wakeWave = sin(minIslandDist * 3.1 - uTime * 2.4) * 0.5 + 0.5;
-		float shoreFoam = (1.0 - smoothstep(4.2, 6.8, minIslandDist)) * smoothstep(0.35, 0.78, wakeWave * foamLace * 1.45);
+		float shoreFoam = (1.0 - smoothstep(11.6, 14.6, minIslandDist)) * smoothstep(0.35, 0.78, wakeWave * foamLace * 1.45);
 		float totalFoam = clamp(whitecap * 0.55 + shoreFoam * 0.82, 0.0, 1.0);
 
 		vec3 foamColor = mix(vec3(0.88, 0.95, 1.0), uSunColor, 0.18);
@@ -512,6 +529,7 @@ export class FiberSpineWorld {
 	private interactionRoots: THREE.Object3D[] = [];
 	private disposed = false;
 	private screenPalette: ExhibitPalette | null = null;
+	private profileImage: HTMLImageElement | null = null;
 	private screenRoute: ExhibitRoute | null = null;
 	private screenHistory: Array<{ route: ExhibitRoute; page: number }> = [];
 	private screenPage = 0;
@@ -545,6 +563,9 @@ export class FiberSpineWorld {
 	private pulseOffsets: Float32Array;
 	private pulseSpeeds: Float32Array;
 	private dummy = new THREE.Object3D();
+	private moteInstanced!: THREE.InstancedMesh;
+	private moteData: Float32Array = new Float32Array(0);
+	private stationBob: number[] = [];
 
 	private clock = new THREE.Clock();
 	private rafId: number | null = null;
@@ -1098,6 +1119,64 @@ export class FiberSpineWorld {
 		this.pulseMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
 		this.pulseInstanced = new THREE.InstancedMesh(pulseGeo, this.pulseMat, PULSE_COUNT);
 		this.scene.add(this.pulseInstanced);
+
+		this.buildAtmosphericMotes();
+	}
+
+	/**
+	 * ZARAH CAHAYA ATMOSFERA MARIN (Luminous Cyber-Motes)
+	 * Satu InstancedMesh = satu draw call: suasana video game moden tanpa kejatuhan FPS.
+	 * Data per zarah: [sudut orbit, jejari, ketinggian asas, fasa, kelajuan].
+	 */
+	private buildAtmosphericMotes(): void {
+		const moteGeo = new THREE.SphereGeometry(0.075, 8, 6);
+		const moteMat = new THREE.MeshBasicMaterial({
+			color: 0x7dd3fc,
+			transparent: true,
+			opacity: 0.72,
+			depthWrite: false,
+			toneMapped: false
+		});
+		this.moteInstanced = new THREE.InstancedMesh(moteGeo, moteMat, MOTE_COUNT);
+		this.moteInstanced.frustumCulled = false;
+		this.moteData = new Float32Array(MOTE_COUNT * 5);
+
+		for (let i = 0; i < MOTE_COUNT; i++) {
+			const base = i * 5;
+			this.moteData[base] = Math.random() * Math.PI * 2;
+			this.moteData[base + 1] = 12 + Math.random() * (ORBIT_RADIUS + 12);
+			this.moteData[base + 2] = 0.6 + Math.random() * 13;
+			this.moteData[base + 3] = Math.random() * Math.PI * 2;
+			this.moteData[base + 4] = 0.35 + Math.random() * 0.85;
+			this.dummy.position.set(0, -40, 0);
+			this.dummy.scale.setScalar(1);
+			this.dummy.updateMatrix();
+			this.moteInstanced.setMatrixAt(i, this.dummy.matrix);
+		}
+		this.moteInstanced.instanceMatrix.needsUpdate = true;
+		this.scene.add(this.moteInstanced);
+	}
+
+	/** Alunan apungan marin halus: heave + pitch + roll berkunci semasa periksa (hydraulic lock). */
+	private applyStationBuoyancy(elapsed: number): void {
+		if (!this.stationBob.length) return;
+		// Kunci hidraulik: bacaan teks mesti stabil ketika pengguna memeriksa terminal.
+		const locked = Boolean(this.selectedHotspotId);
+		for (let i = 0; i < this.stationGroups.length; i++) {
+			const group = this.stationGroups[i];
+			const anchor = STATION_ANCHORS[i];
+			if (!anchor) continue;
+			const phase = this.stationBob[i] ?? i * 1.7;
+			if (this.reducedMotion || locked) {
+				group.position.y = anchor.y;
+				group.rotation.x = 0;
+				group.rotation.z = 0;
+				continue;
+			}
+			group.position.y = anchor.y + Math.sin(elapsed * 0.52 + phase) * 0.045;
+			group.rotation.x = Math.sin(elapsed * 0.41 + phase * 0.7) * 0.0032;
+			group.rotation.z = Math.cos(elapsed * 0.37 + phase * 1.3) * 0.0038;
+		}
 	}
 
 	/**
@@ -1129,6 +1208,45 @@ export class FiberSpineWorld {
 		outerRing.rotation.x = Math.PI / 2;
 		outerRing.position.y = 0.43;
 		group.add(outerRing);
+
+		// --- KEJURUTERAAN MARIN: tapak sauh laut dalam, benteng ombak & tiang pylon ---
+		// Caisson balast: memberi berat visual supaya pelantar berpaut pada dasar laut, bukan terapung.
+		const caissonMat = this.createBrushedMetalMaterial(0x070d18, accentHex, 0.46);
+		const caisson = new THREE.Mesh(new THREE.CylinderGeometry(9.9, 10.9, 4.2, 40, 1), caissonMat);
+		caisson.position.y = -2.05;
+		caisson.receiveShadow = true;
+		group.add(caisson);
+
+		// Cincin kolar keluli di pertemuan dek dengan caisson.
+		const collar = new THREE.Mesh(new THREE.CylinderGeometry(10.35, 10.35, 0.34, 40, 1, true), chromeMat);
+		collar.position.y = -0.3;
+		group.add(collar);
+
+		// Benteng pemecah ombak (breakwater seawall): dinding condong yang memecah gelombang sebelum dek.
+		const seawallMat = this.createBrushedMetalMaterial(0x111c2e, undefined, 0.62);
+		const seawall = new THREE.Mesh(new THREE.CylinderGeometry(11.9, 13.1, 1.5, 48, 1, true), seawallMat);
+		seawall.position.y = -0.42;
+		seawall.receiveShadow = true;
+		group.add(seawall);
+
+		const seawallLip = new THREE.Mesh(new THREE.TorusGeometry(11.92, 0.11, 10, 64), glowMat);
+		seawallLip.rotation.x = Math.PI / 2;
+		seawallLip.position.y = 0.3;
+		group.add(seawallLip);
+
+		// 6 tiang tambat (mooring bollards) di bibir benteng: butiran platform luar pesisir.
+		// Ketinggian sengaja rendah supaya tidak menghalang garis pandang kamera orbit.
+		for (let p = 0; p < 6; p++) {
+			const ang = (p / 6) * Math.PI * 2;
+			const bollard = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.26, 1.05, 12), caissonMat);
+			bollard.position.set(Math.sin(ang) * 12.05, 0.32, Math.cos(ang) * 12.05);
+			bollard.castShadow = true;
+			group.add(bollard);
+
+			const cap = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 10), glowMat);
+			cap.position.set(Math.sin(ang) * 12.05, 0.9, Math.cos(ang) * 12.05);
+			group.add(cap);
+		}
 
 		// Monumen Kejuruteraan Pusat Pulau (Berbeza untuk setiap Stesen CV!)
 		const monumentGroup = new THREE.Group();
@@ -1343,6 +1461,8 @@ export class FiberSpineWorld {
 		if (!view) return;
 		const location = getHotspotLocation(hotspot.id);
 		const siblings = STATIONS[location?.stationIndex ?? 0].hotspots;
+		// Potret hanya milik papan ringkasan profil; terminal lain kekal tanpa gambar.
+		const isProfileSummary = hotspot.id === 'core-monolith' && view.code === 'PROFIL-01';
 		const layout = drawExhibitScreen(canvas, {
 			view,
 			locale: this.locale,
@@ -1353,7 +1473,8 @@ export class FiberSpineWorld {
 			page: inspecting ? this.screenPage : 0,
 			hoveredId: inspecting ? this.hoveredRegionId : null,
 			focusedId: inspecting ? this.focusedRegionId : null,
-			pressedId: inspecting ? this.pressedRegionId : null
+			pressedId: inspecting ? this.pressedRegionId : null,
+			avatar: isProfileSummary ? this.profileImage : null
 		}, this.screenPalette);
 		const record = this.hotspots.find((item) => item.id === hotspot.id);
 		if (record) record.regions = layout.regions;
@@ -1369,19 +1490,26 @@ export class FiberSpineWorld {
 	}
 
 	private resizeExhibit(record: HotspotRecord, inspecting: boolean): void {
-		const width = inspecting ? Math.max(288, this.container.clientWidth - 32) : 900;
-		const height = inspecting ? Math.max(208, this.container.clientHeight - 32) : 575;
+		// Saiz logik mengikut keluasan monitor terunjur; geometri fizikal kekal 2.66 × 1.7.
+		const ratio = 2.66 / 1.7;
+		const width = inspecting
+			? Math.max(
+					EXHIBIT_MIN_WIDTH,
+					Math.ceil(EXHIBIT_MIN_HEIGHT * ratio),
+					Math.round(Math.min(this.container.clientWidth, this.container.clientHeight * ratio) * 0.88)
+				)
+			: 1440;
+		const height = inspecting ? Math.max(EXHIBIT_MIN_HEIGHT, Math.round(width / ratio)) : 920;
+		if (record.canvas.width === width && record.canvas.height === height) return;
 		record.canvas.width = width;
 		record.canvas.height = height;
-		record.screenWidth = 2.66;
-		record.screenHeight = inspecting ? 2.66 * height / width : 1.7;
-		const scaleY = record.screenHeight / 1.7;
-		for (const mesh of record.panelMeshes) mesh.scale.y = scaleY;
-		for (const child of record.mesh.children) {
-			if (!record.panelMeshes.includes(child as THREE.Mesh)) child.visible = !inspecting;
-		}
-		this.drawHotspotExhibitCanvas(record.canvas, record.hotspot);
-		record.texture.needsUpdate = true;
+		const texture = new THREE.CanvasTexture(record.canvas);
+		texture.colorSpace = THREE.SRGBColorSpace;
+		texture.anisotropy = record.texture.anisotropy;
+		record.texture.dispose();
+		record.texture = texture;
+		record.screenMat.map = texture;
+		record.screenMat.emissiveMap = texture;
 	}
 
 	private redrawSelectedScreen(): void {
@@ -1402,6 +1530,17 @@ export class FiberSpineWorld {
 		if (this.previousScreenRecord) this.previousScreenRecord.screenMat.opacity = 1;
 		this.previousScreenRecord = null;
 		this.screenTransition = 1;
+		this.screenReady = Boolean(this.selectedHotspotId);
+	}
+
+	private updateScreenTransition(dt: number): void {
+		if (!this.previousScreen) return;
+		this.screenTransition =
+			this.reducedMotion || this.screenChangeDuration <= 0
+				? 1
+				: Math.min(1, this.screenTransition + dt / this.screenChangeDuration);
+		this.previousScreen.material.opacity = 1 - this.screenTransition;
+		if (this.screenTransition >= 1) this.clearScreenTransition();
 	}
 
 	private beginScreenTransition(): void {
@@ -1751,6 +1890,7 @@ export class FiberSpineWorld {
 			group.userData.islandIndex = stationIndex;
 			this.scene.add(group);
 			this.stationGroups.push(group);
+			this.stationBob.push(stationIndex * 1.37 + 0.6);
 
 			const accentHex = stationAccents[stationIndex % stationAccents.length];
 			this.createStationPlazaAndMonument(group, stationIndex, accentHex);
@@ -1800,26 +1940,10 @@ export class FiberSpineWorld {
 			const img = new Image();
 			img.crossOrigin = 'anonymous';
 			img.onload = () => {
-				const firstRecord = this.hotspots[0];
-				if (firstRecord) {
-					const ctx = firstRecord.canvas.getContext('2d');
-					if (ctx) {
-						ctx.save();
-						ctx.beginPath();
-						ctx.arc(firstRecord.canvas.width - 135, 135, 76, 0, Math.PI * 2);
-						ctx.closePath();
-						ctx.clip();
-						ctx.drawImage(img, firstRecord.canvas.width - 211, 59, 152, 152);
-						ctx.restore();
-
-						ctx.strokeStyle = '#38bdf8';
-						ctx.lineWidth = 5;
-						ctx.beginPath();
-						ctx.arc(firstRecord.canvas.width - 135, 135, 76, 0, Math.PI * 2);
-						ctx.stroke();
-						firstRecord.texture.needsUpdate = true;
-					}
-				}
+				if (this.disposed) return;
+				// Simpan rujukan kekal: kanvas dilukis semula (clearRect) pada setiap perubahan tema/periksa.
+				this.profileImage = img;
+				this.redrawAllCanvases();
 			};
 			img.src = PROFILE.profilePhoto;
 		}
@@ -2030,16 +2154,15 @@ export class FiberSpineWorld {
 				cancelAnimationFrame(this.rafId);
 				this.rafId = null;
 			}
-			this.heldKeys.clear();
-			this.isDragging = false;
+			this.onPointerCancel();
 		}
 	}
 
 	public setInputEnabled(enabled: boolean): void {
 		this.inputEnabled = enabled;
 		if (!enabled) {
-			this.heldKeys.clear();
-			this.isDragging = false;
+			this.onPointerCancel();
+			this.setScreenFeedback('hover', null);
 			if (this.hoveredHotspotId || this.hoveredIslandIndex !== null) {
 				this.hoveredHotspotId = null;
 				this.hoveredIslandIndex = null;
@@ -2074,14 +2197,33 @@ export class FiberSpineWorld {
 	}
 
 	public selectHotspot(hotspotId: string | null): void {
+		if (this.selectedHotspotId === hotspotId) return;
+		const record = this.hotspots.find((item) => item.id === hotspotId);
+		if (hotspotId && !record) return;
+		this.clearScreenTransition();
+		this.onPointerCancel();
+		const previous = this.hotspots.find((item) => item.id === this.selectedHotspotId);
 		this.selectedHotspotId = hotspotId;
-		if (hotspotId) {
-			const rec = this.hotspots.find((h) => h.id === hotspotId);
-			if (rec && rec.stationIndex !== this.activeStationIndex) {
-				this.goToStation(rec.stationIndex);
-			}
-		}
+		if (previous) this.resizeExhibit(previous, false);
+		if (record) this.resizeExhibit(record, true);
+		this.screenRoute = hotspotId ? { kind: 'hotspot', id: hotspotId } : null;
+		this.screenHistory = [];
+		this.screenPage = 0;
+		this.screenPageCount = 1;
+		this.hoveredRegionId = null;
+		this.focusedRegionId = null;
+		this.pressedRegionId = null;
+		this.hoveredHotspotId = null;
+		this.hoveredIslandIndex = null;
+		this.targetYawOffset = 0;
+		this.targetPitchOffset = 0;
+		if (record) this.goToStation(record.stationIndex);
+		this.screenReady = Boolean(hotspotId);
 		this.refreshHotspotHighlights();
+		this.redrawAllCanvases();
+		this.callbacks.onHotspotHover?.(null, null);
+		if (!hotspotId) this.callbacks.onScreenUpdate?.(null);
+		if (this.renderer) this.renderer.domElement.style.cursor = hotspotId ? 'default' : 'grab';
 	}
 
 	public setSimulationMode(_stationIndex: number, modeId: string): void {
@@ -2132,19 +2274,24 @@ export class FiberSpineWorld {
 	}
 
 	private onWindowBlur = (): void => {
-		this.heldKeys.clear();
-		this.isDragging = false;
+		this.onPointerCancel();
+		this.setScreenFeedback('hover', null);
 	};
 
-	private onPointerCancel = (): void => {
+	private onPointerCancel = (e?: PointerEvent): void => {
+		if (e && e.pointerId !== this.pointerId) return;
 		this.isDragging = false;
+		this.pointerId = null;
+		this.pointerDownRegionId = null;
 		this.heldKeys.clear();
+		this.setScreenFeedback('press', null);
 	};
 
 	private onKeyDown = (e: KeyboardEvent): void => {
 		if (!this.inputEnabled) return;
 		if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
 		if (e.key === 'Escape' && this.selectedHotspotId) {
+			e.preventDefault();
 			this.selectHotspot(null);
 			this.callbacks.onHotspotSelect?.('', this.activeStationIndex);
 			return;
@@ -2157,6 +2304,7 @@ export class FiberSpineWorld {
 		) {
 			return;
 		}
+		if (this.selectedHotspotId) return;
 		const k = e.key.toLowerCase();
 		if (k === 'w' || k === 's' || k === 'arrowup' || k === 'arrowdown') {
 			this.heldKeys.add(k);
@@ -2178,6 +2326,13 @@ export class FiberSpineWorld {
 		if (this.composer) {
 			this.composer.setSize(width, height);
 		}
+		const record = this.hotspots.find((item) => item.id === this.selectedHotspotId);
+		if (record) {
+			this.clearScreenTransition();
+			this.onPointerCancel();
+			this.resizeExhibit(record, true);
+			this.redrawSelectedScreen();
+		}
 	}
 
 	private updatePointerNdcFromEvent(e: PointerEvent): void {
@@ -2188,18 +2343,47 @@ export class FiberSpineWorld {
 		this.pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
 	}
 
+	private hitSelectedScreen(): { hit: THREE.Intersection | null; region: ScreenHitRegion | null } {
+		const record = this.hotspots.find((item) => item.id === this.selectedHotspotId);
+		if (!record || Math.abs(this.pointerNdc.x) > 1 || Math.abs(this.pointerNdc.y) > 1) {
+			return { hit: null, region: null };
+		}
+		this.camera.updateMatrixWorld();
+		record.screenMesh.updateWorldMatrix(true, false);
+		this.raycaster.setFromCamera(this.pointerNdc, this.camera);
+		const hit = this.raycaster.intersectObject(record.screenMesh, false)[0] ?? null;
+		const region =
+			hit?.uv && this.screenReady
+				? hitTestScreen(
+						record.regions,
+						hit.uv.x * record.canvas.width,
+						(1 - hit.uv.y) * record.canvas.height
+					)
+				: null;
+		return { hit, region };
+	}
+
 	private onPointerDown = (e: PointerEvent): void => {
-		if (!this.inputEnabled) return;
+		if (
+			!this.renderer || !this.inputEnabled || e.button !== 0 || !e.isPrimary || this.pointerId !== null
+		) return;
 		this.updatePointerNdcFromEvent(e);
+		this.pointerId = e.pointerId;
 		this.isDragging = true;
 		this.dragMoved = false;
 		this.dragStartX = e.clientX;
 		this.dragStartY = e.clientY;
 		this.lastInteractionTime = this.clock.getElapsedTime();
+		if (this.selectedHotspotId) {
+			this.pointerDownRegionId = this.hitSelectedScreen().region?.id ?? null;
+			this.setScreenFeedback('press', this.pointerDownRegionId);
+		}
 	};
 
 	private onPointerMove = (e: PointerEvent): void => {
-		if (!this.renderer || !this.inputEnabled) return;
+		if (
+			!this.renderer || !this.inputEnabled || (this.pointerId !== null && e.pointerId !== this.pointerId)
+		) return;
 		this.updatePointerNdcFromEvent(e);
 		this.lastInteractionTime = this.clock.getElapsedTime();
 
@@ -2209,9 +2393,22 @@ export class FiberSpineWorld {
 			if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
 				this.dragMoved = true;
 			}
-			// Benarkan pengguna memutar pandangan kamera secara luas untuk menikmati kepulauan 360°
-			this.targetYawOffset = Math.max(-1.35, Math.min(1.35, -dx * 0.0028));
-			this.targetPitchOffset = Math.max(-0.32, Math.min(0.38, -dy * 0.0018));
+			if (!this.selectedHotspotId) {
+				// Benarkan pengguna memutar pandangan kamera secara luas untuk menikmati kepulauan 360°
+				this.targetYawOffset = Math.max(-1.35, Math.min(1.35, -dx * 0.0028));
+				this.targetPitchOffset = Math.max(-0.32, Math.min(0.38, -dy * 0.0018));
+				return;
+			}
+		}
+
+		if (this.selectedHotspotId) {
+			const { region } = this.hitSelectedScreen();
+			this.setScreenFeedback('hover', region?.id ?? null);
+			this.setScreenFeedback(
+				'press',
+				this.isDragging && !this.dragMoved && region?.id === this.pointerDownRegionId ? region.id : null
+			);
+			this.renderer.domElement.style.cursor = region ? 'pointer' : 'default';
 			return;
 		}
 
@@ -2255,12 +2452,31 @@ export class FiberSpineWorld {
 	};
 
 	private onPointerUp = (e: PointerEvent): void => {
-		if (!this.isDragging) return;
+		if (!this.isDragging || e.pointerId !== this.pointerId || e.button !== 0) return;
 		this.updatePointerNdcFromEvent(e);
-		const wasClick = !this.dragMoved;
+		const wasClick =
+			!this.dragMoved &&
+			Math.abs(e.clientX - this.dragStartX) <= 4 &&
+			Math.abs(e.clientY - this.dragStartY) <= 4;
+		const pressedRegionId = this.pointerDownRegionId;
 		this.isDragging = false;
+		this.pointerId = null;
+		this.pointerDownRegionId = null;
+		this.setScreenFeedback('press', null);
 
 		if (wasClick && this.renderer && this.inputEnabled) {
+			if (this.selectedHotspotId) {
+				const { hit, region } = this.hitSelectedScreen();
+				if (hit) {
+					if (region && region.id === pressedRegionId) this.performScreenAction(region.action);
+					return;
+				}
+				// Klik kawasan kosong luar monitor semasa mod inspect: keluar zoom kembali ke panorama orbit!
+				this.selectHotspot(null);
+				this.callbacks.onHotspotSelect?.('', this.activeStationIndex);
+				return;
+			}
+
 			this.raycaster.setFromCamera(this.pointerNdc, this.camera);
 			const targets =
 				this.interactionRoots.length > 0 ? this.interactionRoots : this.interactableMeshes;
@@ -2278,10 +2494,6 @@ export class FiberSpineWorld {
 					// Terbang terus ke pulau yang diklik di seberang lautan!
 					this.goToStation(islandIdx);
 				}
-			} else if (this.selectedHotspotId) {
-				// Klik kawasan kosong semasa mod inspect: keluar zoom kembali ke panorama orbit!
-				this.selectHotspot(null);
-				this.callbacks.onHotspotSelect?.('', this.activeStationIndex);
 			}
 		}
 	};
@@ -2290,7 +2502,7 @@ export class FiberSpineWorld {
 		let walkDir = 0;
 		if (this.heldKeys.has('w') || this.heldKeys.has('arrowup')) walkDir += 1;
 		if (this.heldKeys.has('s') || this.heldKeys.has('arrowdown')) walkDir -= 1;
-		if (walkDir !== 0) {
+		if (walkDir !== 0 && !this.selectedHotspotId) {
 			this.setProgress(this.targetProgress + walkDir * dt * 0.085);
 		}
 
@@ -2355,25 +2567,28 @@ export class FiberSpineWorld {
 			? (this.hotspots.find((h) => h.id === this.selectedHotspotId) ?? null)
 			: null;
 
+		const enteringInspect = focusedRecord && this.inspectBlend <= 0.0005;
 		const targetBlend = focusedRecord ? 1 : 0;
 		const blendSpeed = this.reducedMotion ? 1 : Math.min(1, dt * 5.2);
 		this.inspectBlend += (targetBlend - this.inspectBlend) * blendSpeed;
+		if (Math.abs(targetBlend - this.inspectBlend) < 0.0005) this.inspectBlend = targetBlend;
+
+		const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 992;
+		const targetFov = focusedRecord ? (isDesktop ? 38 : 42) : 46;
 
 		if (focusedRecord) {
 			focusedRecord.mesh.updateWorldMatrix(true, true);
-			// Titik fokus seimbang antara skrin terminal (y=1.52) dan arca kejuruteraan 3D di puncak (y=3.32)
-			this.tempScreenCenter.set(0, 2.15, 0.095).applyMatrix4(focusedRecord.mesh.matrixWorld);
+			// Pusatkan sasaran pandangan tepat pada koordinat skrin terminal (y=1.52, z=0.095)
+			this.tempScreenCenter.set(0, 1.52, 0.095).applyMatrix4(focusedRecord.mesh.matrixWorld);
 			focusedRecord.mesh.getWorldQuaternion(this.tempQuat);
 			this.tempNormal.set(0, 0, 1).applyQuaternion(this.tempQuat).normalize();
 			this.tempTangent.set(1, 0, 0).applyQuaternion(this.tempQuat).normalize();
 
-			const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 992;
-			// Desktop: anjak kamera secara lateral (0.85m) ke kanan supaya skrin 3D kelihatan di sebelah kiri viewport,
-			// membebaskan ruang sebelah kanan untuk kad dialog 2D tanpa sebarang pertindihan.
-			const lateralOffset = isDesktop ? 0.85 : 0;
-			// Mobile: condongkan sasaran pandangan ke bawah (-0.52m) supaya skrin 3D terangkat ke bahagian atas (di atas bottom sheet).
-			const verticalOffset = isDesktop ? -0.05 : -0.52;
-			const camDistance = isDesktop ? 3.55 : 3.8;
+			const lateralOffset = 0;
+			const verticalOffset = 0;
+			const aspect =
+				Number.isFinite(this.camera.aspect) && this.camera.aspect > 0 ? this.camera.aspect : 1;
+			const camDistance = getInspectDistance(2.66, 1.7, aspect, targetFov, 0.88);
 
 			this.targetInspectLookAt
 				.copy(this.tempScreenCenter)
@@ -2384,9 +2599,9 @@ export class FiberSpineWorld {
 				.copy(this.tempScreenCenter)
 				.addScaledVector(this.tempNormal, camDistance)
 				.addScaledVector(this.tempTangent, lateralOffset)
-				.add(new THREE.Vector3(0, verticalOffset + 0.12, 0));
+				.add(new THREE.Vector3(0, verticalOffset, 0));
 
-			if (this.inspectBlend < 0.05) {
+			if (enteringInspect) {
 				this.currentInspectCamPos.copy(this.targetInspectCamPos);
 				this.currentInspectLookAt.copy(this.targetInspectLookAt);
 			} else {
@@ -2399,21 +2614,12 @@ export class FiberSpineWorld {
 		if (this.inspectBlend > 0.0005) {
 			this.camera.position.lerpVectors(camPos, this.currentInspectCamPos, this.inspectBlend);
 			lookTarget.lerp(this.currentInspectLookAt, this.inspectBlend);
-
-			if (!this.reducedMotion) {
-				const microX = this.smoothPointer.x * 0.14 * this.inspectBlend;
-				const microY = this.smoothPointer.y * 0.09 * this.inspectBlend;
-				this.camera.position.addScaledVector(this.tempTangent, microX);
-				this.camera.position.y += microY;
-			}
 		} else {
 			this.camera.position.copy(camPos);
 		}
 
 		this.camera.lookAt(lookTarget);
 
-		const isDesktop = typeof window !== 'undefined' && window.innerWidth >= 992;
-		const targetFov = focusedRecord ? (isDesktop ? 38 : 42) : 46;
 		if (Math.abs(this.camera.fov - targetFov) > 0.05) {
 			this.camera.fov += (targetFov - this.camera.fov) * blendSpeed;
 			this.camera.updateProjectionMatrix();
@@ -2487,6 +2693,30 @@ export class FiberSpineWorld {
 		}
 		this.pulseInstanced.instanceMatrix.needsUpdate = true;
 
+		// Zarah atmosfera: satu instanced draw call, drift perlahan mengelilingi archipelago.
+		if (this.moteInstanced) {
+			for (let i = 0; i < MOTE_COUNT; i++) {
+				const base = i * 5;
+				const angle = this.moteData[base] + (this.reducedMotion ? 0 : elapsed * 0.018 * this.moteData[base + 4]);
+				const radius = this.moteData[base + 1];
+				const phase = this.moteData[base + 3];
+				const rise = this.reducedMotion ? 0 : Math.sin(elapsed * 0.55 + phase) * 1.15;
+				this.dummy.position.set(
+					Math.sin(angle) * radius,
+					this.moteData[base + 2] + rise,
+					Math.cos(angle) * radius
+				);
+				const twinkle = this.reducedMotion ? 1 : 0.55 + 0.45 * Math.sin(elapsed * 1.9 + phase * 2.1);
+				this.dummy.scale.setScalar(twinkle);
+				this.dummy.rotation.set(0, 0, 0);
+				this.dummy.updateMatrix();
+				this.moteInstanced.setMatrixAt(i, this.dummy.matrix);
+			}
+			this.moteInstanced.instanceMatrix.needsUpdate = true;
+		}
+
+		this.applyStationBuoyancy(elapsed);
+
 		// Putar cincin Teras Reaktor Pusat
 		if (!this.reducedMotion) {
 			for (let r = 0; r < this.centralReactorRings.length; r++) {
@@ -2547,8 +2777,9 @@ export class FiberSpineWorld {
 			const dt = Math.min(this.clock.getDelta(), 0.1);
 			const elapsed = this.clock.getElapsedTime();
 
-			this.updateCamera(dt, elapsed);
 			this.animateScene(dt, elapsed);
+			this.updateCamera(dt, elapsed);
+			this.updateScreenTransition(dt);
 			this.updateProjectedMarkers();
 
 			if (this.composer) {
@@ -2561,6 +2792,8 @@ export class FiberSpineWorld {
 	}
 
 	public dispose(): void {
+		this.disposed = true;
+		this.clearScreenTransition();
 		if (this.rafId !== null) {
 			cancelAnimationFrame(this.rafId);
 			this.rafId = null;
