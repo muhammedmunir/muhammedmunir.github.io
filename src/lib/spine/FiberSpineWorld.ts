@@ -638,6 +638,7 @@ export class FiberSpineWorld {
 	private rafId: number | null = null;
 	private resizeObserver: ResizeObserver | null = null;
 	private tempWorldVec = new THREE.Vector3();
+	private tempPulsePt = new THREE.Vector3();
 	private inspectBlend = 0;
 	private currentInspectCamPos = new THREE.Vector3();
 	private currentInspectLookAt = new THREE.Vector3();
@@ -689,7 +690,7 @@ export class FiberSpineWorld {
 			this.renderer.toneMappingExposure = 1.02;
 			this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 			this.renderer.shadowMap.enabled = true;
-			this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+			this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
 			const width = Math.max(this.container.clientWidth, 1);
 			const height = Math.max(this.container.clientHeight, 1);
@@ -941,8 +942,6 @@ export class FiberSpineWorld {
 			color: colorHex,
 			metalness: 0.6,
 			roughness: Math.min(0.92, roughness + 0.42),
-			clearcoat: 0.06,
-			clearcoatRoughness: 0.5,
 			normalMap: this.pbrMaps?.normalMap ?? null,
 			normalScale: new THREE.Vector2(0.22, 0.22),
 			roughnessMap: this.pbrMaps?.roughnessMap ?? null,
@@ -956,17 +955,13 @@ export class FiberSpineWorld {
 	private createOpticalGlassMaterial(tintHex = 0x38bdf8): THREE.MeshPhysicalMaterial {
 		return new THREE.MeshPhysicalMaterial({
 			color: tintHex,
-			metalness: 0.0,
-			roughness: 0.22,
-			transmission: 0.7,
+			metalness: 0.05,
+			roughness: 0.18,
 			ior: 1.45,
-			thickness: 0.65,
-			attenuationColor: new THREE.Color(tintHex),
-			attenuationDistance: 1.6,
-			clearcoat: 0.25,
-			clearcoatRoughness: 0.3,
-			envMapIntensity: 0.6,
-			transparent: true
+			envMapIntensity: 0.85,
+			transparent: true,
+			opacity: 0.38,
+			depthWrite: false
 		});
 	}
 
@@ -1064,7 +1059,7 @@ export class FiberSpineWorld {
 			}
 		});
 
-		const oceanGeo = new THREE.PlaneGeometry(320, 320, 112, 112);
+		const oceanGeo = new THREE.PlaneGeometry(320, 320, 64, 64);
 		oceanGeo.rotateX(-Math.PI / 2);
 		this.oceanMesh = new THREE.Mesh(oceanGeo, this.oceanMaterial);
 		this.oceanMesh.position.set(0, -0.28, 0);
@@ -1320,12 +1315,16 @@ export class FiberSpineWorld {
 		const lowerAtoll = new THREE.Mesh(new THREE.CylinderGeometry(9.6, 10.8, 0.65, 36), basaltMat);
 		lowerAtoll.position.y = -0.08;
 		lowerAtoll.receiveShadow = true;
+		lowerAtoll.userData.islandIndex = stationIndex;
 		group.add(lowerAtoll);
+		this.interactionRoots.push(lowerAtoll);
 
 		const upperAtoll = new THREE.Mesh(new THREE.CylinderGeometry(8.4, 9.0, 0.28, 36), titaniumMat);
 		upperAtoll.position.y = 0.28;
 		upperAtoll.receiveShadow = true;
+		upperAtoll.userData.islandIndex = stationIndex;
 		group.add(upperAtoll);
+		this.interactionRoots.push(upperAtoll);
 
 		const outerRing = new THREE.Mesh(new THREE.TorusGeometry(8.2, 0.05, 16, 96), glowMat);
 		outerRing.rotation.x = Math.PI / 2;
@@ -2040,6 +2039,7 @@ export class FiberSpineWorld {
 			currentLift: 0
 		});
 		this.interactableMeshes.push(root);
+		this.interactionRoots.push(chassis, screenMesh, propObject);
 	}
 
 	/**
@@ -2875,16 +2875,18 @@ export class FiberSpineWorld {
 			if (!this.reducedMotion) {
 				this.pulseOffsets[i] = (this.pulseOffsets[i] + dt * this.pulseSpeeds[i]) % 1;
 			}
-			const pt = this.causewayLoopCurve.getPointAt(this.pulseOffsets[i]);
+			const pt = this.causewayLoopCurve.getPointAt(this.pulseOffsets[i], this.tempPulsePt);
 			// Bola menyelam di bawah dek pulau apabila menghampiri pusat pulau, jadi ia
 			// tidak lagi menembusi lantai (dahulu laluan y=0.78 + 0.34 melepasi dek y=1.20).
-			let nearestIsland = Infinity;
+			let nearestIslandSq = Infinity;
 			for (let islandIdx = 0; islandIdx < STATION_ANCHORS.length; islandIdx++) {
 				const anchor = STATION_ANCHORS[islandIdx];
 				const dx = pt.x - anchor.x;
 				const dz = pt.z - anchor.z;
-				nearestIsland = Math.min(nearestIsland, Math.sqrt(dx * dx + dz * dz));
+				const d2 = dx * dx + dz * dz;
+				if (d2 < nearestIslandSq) nearestIslandSq = d2;
 			}
+			const nearestIsland = Math.sqrt(nearestIslandSq);
 			const dive = Math.min(1, Math.max(0, (PULSE_DIVE_RADIUS - nearestIsland) / PULSE_DIVE_FADE));
 			const rideY = PULSE_RIDE_Y - dive * 2.4;
 			this.dummy.position.set(pt.x, rideY, pt.z);
@@ -2985,9 +2987,9 @@ export class FiberSpineWorld {
 
 			// Resolusi adaptif: hanya diturunkan apabila frame benar-benar lewat,
 			// dan dipulihkan perlahan-lahan apabila GPU kembali lapang.
-			if (rawDelta > 0 && rawDelta < 250) {
+			if (rawDelta > 0 && rawDelta < 2500) {
 				if (rawDelta > frameBudget * 1.55) {
-					slowStreak += 1;
+					slowStreak += rawDelta > 120 ? 9 : 1;
 					fastStreak = 0;
 				} else if (rawDelta < frameBudget * 1.1) {
 					fastStreak += 1;
@@ -2996,7 +2998,7 @@ export class FiberSpineWorld {
 					slowStreak = 0;
 					fastStreak = 0;
 				}
-				if (slowStreak >= 45) {
+				if (slowStreak >= 18) {
 					slowStreak = 0;
 					this.stepPixelRatio(-0.15);
 				} else if (fastStreak >= 180) {
