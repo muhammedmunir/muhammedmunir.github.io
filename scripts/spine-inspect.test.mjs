@@ -4,26 +4,53 @@ import * as THREE from 'three';
 import { createServer } from 'vite';
 
 // Uji logik dunia dan raycasting sebenar tanpa WebGL atau pelayar.
-const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' });
+const vite = await createServer({
+	configFile: false,
+	server: { middlewareMode: true, hmr: false, ws: false, watch: null },
+	optimizeDeps: { noDiscovery: true },
+	appType: 'custom'
+});
 after(() => vite.close());
 const { FiberSpineWorld } = await vite.ssrLoadModule('/src/lib/spine/FiberSpineWorld.ts');
 const { STATIONS } = await vite.ssrLoadModule('/src/lib/spine/spine-data.ts');
 const { getInspectDistance } = await vite.ssrLoadModule('/src/lib/spine/exhibit-screen.ts');
 
 const palette = {
-	background: '#101010', surface: '#202020', text: '#ffffff', muted: '#bbbbbb',
-	accent: '#77bbff', border: '#777777', hover: '#333333', onAccent: '#101010',
-	fontBody: 'sans-serif', fontMono: 'monospace'
+	background: '#101010',
+	surface: '#202020',
+	text: '#ffffff',
+	muted: '#bbbbbb',
+	accent: '#77bbff',
+	border: '#777777',
+	hover: '#333333',
+	onAccent: '#101010',
+	fontBody: 'sans-serif',
+	fontMono: 'monospace'
 };
 
 function canvas(width = 900, height = 575) {
 	const operations = [];
 	const context = {
 		font: '16px sans-serif',
-		save() {}, restore() {}, setTransform() {}, clearRect() {}, fillRect() {}, strokeRect() {},
-		beginPath() {}, closePath() {}, moveTo() {}, lineTo() {}, rect() {}, roundRect() {}, arc() {},
-		clip() {}, fill() {}, stroke() {},
-		fillText(text) { operations.push(text); },
+		save() {},
+		restore() {},
+		setTransform() {},
+		clearRect() {},
+		fillRect() {},
+		strokeRect() {},
+		beginPath() {},
+		closePath() {},
+		moveTo() {},
+		lineTo() {},
+		rect() {},
+		roundRect() {},
+		arc() {},
+		clip() {},
+		fill() {},
+		stroke() {},
+		fillText(text) {
+			operations.push(text);
+		},
 		drawImage() {},
 		measureText(text) {
 			const size = Number(this.font.match(/([\d.]+)px/)?.[1] ?? 16);
@@ -36,10 +63,13 @@ function canvas(width = 900, height = 575) {
 function fixture(width = 1280, height = 800) {
 	const selections = [];
 	const snapshots = [];
-	const world = new FiberSpineWorld({ clientWidth: width, clientHeight: height }, {
-		onHotspotSelect: (id, stationIndex) => selections.push({ id, stationIndex }),
-		onScreenUpdate: (snapshot) => snapshots.push(snapshot)
-	});
+	const world = new FiberSpineWorld(
+		{ clientWidth: width, clientHeight: height },
+		{
+			onHotspotSelect: (id, stationIndex) => selections.push({ id, stationIndex }),
+			onScreenUpdate: (snapshot) => snapshots.push(snapshot)
+		}
+	);
 	world.clock = { getElapsedTime: () => 10 };
 	world.screenPalette = palette;
 	world.renderer = {
@@ -55,16 +85,25 @@ function fixture(width = 1280, height = 800) {
 		for (const hotspot of station.hotspots) {
 			const mesh = new THREE.Group();
 			mesh.position.set(station.index * 8 + world.hotspots.length * 3, 0.3, -station.index * 5);
-			mesh.rotation.y = station.index * Math.PI / 3;
+			mesh.rotation.y = (station.index * Math.PI) / 3;
 			const screenMat = new THREE.MeshStandardMaterial();
 			const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.66, 1.7), screenMat);
 			screenMesh.position.set(0, 1.52, 0.095);
 			mesh.add(screenMesh);
 			world.scene.add(mesh);
 			world.hotspots.push({
-				id: hotspot.id, stationIndex: station.index, hotspot, mesh, screenMesh, screenMat,
-				canvas: canvas(), texture: new THREE.Texture(), regions: [],
-				accentMat: new THREE.MeshStandardMaterial(), screenWidth: 2.66, screenHeight: 1.7
+				id: hotspot.id,
+				stationIndex: station.index,
+				hotspot,
+				mesh,
+				screenMesh,
+				screenMat,
+				canvas: canvas(),
+				texture: new THREE.Texture(),
+				regions: [],
+				accentMat: new THREE.MeshStandardMaterial(),
+				screenWidth: 2.66,
+				screenHeight: 1.7
 			});
 		}
 	}
@@ -86,12 +125,17 @@ function eventAt(world, record, x, y, overrides = {}) {
 		(x / record.canvas.width - 0.5) * 2.66,
 		(0.5 - y / record.canvas.height) * 1.7,
 		0
-	).applyMatrix4(record.screenMesh.matrixWorld).project(world.camera);
+	)
+		.applyMatrix4(record.screenMesh.matrixWorld)
+		.project(world.camera);
 	const rect = world.renderer.domElement.getBoundingClientRect();
 	return {
-		clientX: rect.left + (point.x + 1) * rect.width / 2,
-		clientY: rect.top + (1 - point.y) * rect.height / 2,
-		pointerId: 1, button: 0, isPrimary: true, ...overrides
+		clientX: rect.left + ((point.x + 1) * rect.width) / 2,
+		clientY: rect.top + ((1 - point.y) * rect.height) / 2,
+		pointerId: 1,
+		button: 0,
+		isPrimary: true,
+		...overrides
 	};
 }
 
@@ -99,7 +143,13 @@ function regionEvent(world, id, overrides) {
 	const record = selected(world);
 	const region = record.regions.find((item) => item.id === id);
 	assert.ok(region, `Kawasan ${id} mesti wujud`);
-	return eventAt(world, record, region.x + region.width / 2, region.y + region.height / 2, overrides);
+	return eventAt(
+		world,
+		record,
+		region.x + region.width / 2,
+		region.y + region.height / 2,
+		overrides
+	);
 }
 
 function click(world, event) {
@@ -109,8 +159,13 @@ function click(world, event) {
 
 function withDocument(run) {
 	const original = Object.getOwnPropertyDescriptor(globalThis, 'document');
-	Object.defineProperty(globalThis, 'document', { configurable: true, value: { createElement: () => canvas() } });
-	try { run(); } finally {
+	Object.defineProperty(globalThis, 'document', {
+		configurable: true,
+		value: { createElement: () => canvas() }
+	});
+	try {
+		run();
+	} finally {
 		if (original) Object.defineProperty(globalThis, 'document', original);
 		else delete globalThis.document;
 	}
@@ -124,7 +179,9 @@ test('Pemilihan melukis kawalan, mengekalkan input dan memulihkan pratonton apab
 		assert.equal(world.inputEnabled, true);
 		assert.equal(snapshots.at(-1).view.key, `hotspot:${record.id}`);
 		assert.ok(record.regions.some((region) => region.id === 'close'));
-		assert.ok(world.hotspots.filter((other) => other !== record).every((other) => !other.regions.length));
+		assert.ok(
+			world.hotspots.filter((other) => other !== record).every((other) => !other.regions.length)
+		);
 	}
 	world.selectHotspot(null);
 	assert.equal(world.screenReady, false);
@@ -134,7 +191,11 @@ test('Pemilihan melukis kawalan, mengekalkan input dan memulihkan pratonton apab
 });
 
 test('Kamera menghadap pusat monitor tanpa parallax pada semua terminal dan nisbah aspek', () => {
-	for (const [width, height] of [[1280, 800], [390, 844], [844, 390]]) {
+	for (const [width, height] of [
+		[1280, 800],
+		[390, 844],
+		[844, 390]
+	]) {
 		const { world } = fixture(width, height);
 		for (const record of world.hotspots) {
 			world.selectHotspot(record.id);
@@ -227,7 +288,10 @@ test('Navigasi cip, Kembali dan pemilihan berulang mengekalkan laluan serta seja
 	withDocument(() => {
 		const { world } = fixture();
 		world.selectHotspot('ent-sutera');
-		world.performScreenAction({ kind: 'navigate', route: { kind: 'project', id: 'proj-loan-iwa001' } });
+		world.performScreenAction({
+			kind: 'navigate',
+			route: { kind: 'project', id: 'proj-loan-iwa001' }
+		});
 		world.selectHotspot('ent-sutera');
 		assert.equal(world.screenRoute.kind, 'project');
 		assert.equal(world.screenHistory.length, 1);
@@ -254,10 +318,11 @@ test('Klik cip projek dan Kembali melalui UV memulihkan halaman asal', () => {
 		const record = selected(world);
 		let chip;
 		for (let page = 0; page < world.screenPageCount; page++) {
-			chip = record.regions.find((region) =>
-				region.action.kind === 'navigate' &&
-				region.action.route.kind === 'project' &&
-				region.action.route.id === 'proj-loan-iwa001'
+			chip = record.regions.find(
+				(region) =>
+					region.action.kind === 'navigate' &&
+					region.action.route.kind === 'project' &&
+					region.action.route.id === 'proj-loan-iwa001'
 			);
 			if (chip) break;
 			world.performScreenAction({ kind: 'page', delta: 1 });
@@ -314,11 +379,16 @@ test('Mod reduced-motion melangkau peralihan dan butang arkib memanggil callback
 	const { world } = fixture();
 	world.reducedMotion = true;
 	world.selectHotspot('ent-emesys');
-	world.performScreenAction({ kind: 'navigate', route: { kind: 'project', id: 'proj-loan-iwa001' } });
+	world.performScreenAction({
+		kind: 'navigate',
+		route: { kind: 'project', id: 'proj-loan-iwa001' }
+	});
 	assert.equal(world.previousScreen, null);
 	assert.equal(world.screenReady, true);
 	let opened = false;
-	world.callbacks.onOpenDossier = () => { opened = true; };
+	world.callbacks.onOpenDossier = () => {
+		opened = true;
+	};
 	world.performScreenAction({ kind: 'archive' });
 	assert.equal(opened, true);
 });
@@ -330,8 +400,13 @@ test('Resize mengekalkan nisbah monitor, menggantikan tekstur dan membatalkan pe
 		const record = selected(world);
 		const texture = record.texture;
 		let disposed = false;
-		texture.addEventListener('dispose', () => { disposed = true; });
-		world.performScreenAction({ kind: 'navigate', route: { kind: 'project', id: 'proj-loan-iwa001' } });
+		texture.addEventListener('dispose', () => {
+			disposed = true;
+		});
+		world.performScreenAction({
+			kind: 'navigate',
+			route: { kind: 'project', id: 'proj-loan-iwa001' }
+		});
 		world.container.clientWidth = 320;
 		world.container.clientHeight = 568;
 		world.onResize();
@@ -374,7 +449,12 @@ test('W/S tidak mengorbit semasa inspect; Escape menutup dan menghalang pengenda
 	world.updateCamera(1 / 60, 0);
 	assert.equal(world.targetProgress, progress);
 	let prevented = false;
-	world.onKeyDown({ key: 'Escape', preventDefault() { prevented = true; } });
+	world.onKeyDown({
+		key: 'Escape',
+		preventDefault() {
+			prevented = true;
+		}
+	});
 	assert.equal(prevented, true);
 	assert.equal(world.selectedHotspotId, null);
 	assert.equal(selections.at(-1).id, '');

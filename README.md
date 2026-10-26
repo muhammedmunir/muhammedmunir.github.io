@@ -25,6 +25,29 @@ npm run dev
 npm run dev -- --open
 ```
 
+## Pengesahan
+
+Gunakan Node.js 24 LTS; ujian TypeScript menggunakan pelari terbina dalam `node:test`:
+
+```sh
+npm run check
+npm test
+npm run test:contrast
+```
+
+`npm test` menyelaraskan fail terjana SvelteKit dan menjalankan hanya `scripts/*.test.mjs`, bukan salinan dalam `.claude/worktrees`. Jangan gunakan `npx vitest run`: ujian ini bukan suite Vitest. `scripts/glass-contrast.mjs` ialah pustaka utiliti, bukan arahan ujian kendiri.
+
+Ujian unit dan kontras token tidak membuktikan kontras piksel WebGL, keadaan visual, axe, saiz sasaran terpapar, limpahan atau responsiviti sebenar.
+
+Untuk regresi render monitor, jalankan `npm run dev` dalam terminal berasingan, kemudian:
+
+```sh
+npx playwright install chromium
+npm run test:screen
+```
+
+`SPINE_URL` boleh menggantikan URL lalai `http://127.0.0.1:5173/`. Ujian ini memerlukan pelayan pembangunan Vite dan Chromium; browser yang tiada menyebabkan kegagalan, bukan keputusan lulus. Bukti PNG dan ukuran disimpan dalam `.crew/artifacts/monitor-glare/`.
+
 ## Pembinaan (Building)
 
 Untuk memulakan versi pengeluaran (production) aplikasi anda, jalankan perintah berikut:

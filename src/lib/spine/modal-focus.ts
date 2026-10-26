@@ -12,6 +12,7 @@ export interface ModalTrapOptions {
 	enabled: boolean;
 	onClose: () => void;
 	initialFocusSelector?: string;
+	returnFocusTo?: HTMLElement | null;
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -39,9 +40,16 @@ export function trapFocus(node: HTMLElement, options: ModalTrapOptions) {
 		});
 	}
 
+	function isInert(el: HTMLElement): boolean {
+		return Boolean(el.closest('[inert]'));
+	}
+
 	function activate() {
 		if (typeof document === 'undefined') return;
-		triggerElement = document.activeElement as HTMLElement | null;
+		// Pencetus eksplisit diutamakan: apabila HUD menjadi `inert`, pelayar
+		// memindahkan fokus ke body sebelum action ini berjalan.
+		const active = document.activeElement as HTMLElement | null;
+		triggerElement = options.returnFocusTo ?? (active && active !== document.body ? active : null);
 
 		prevOverflow = document.body.style.overflow;
 		document.body.style.overflow = 'hidden';
@@ -68,10 +76,14 @@ export function trapFocus(node: HTMLElement, options: ModalTrapOptions) {
 	function deactivate() {
 		if (typeof document === 'undefined') return;
 		document.body.style.overflow = prevOverflow;
-		if (triggerElement && typeof triggerElement.focus === 'function') {
-			triggerElement.focus();
-			triggerElement = null;
-		}
+		const target = triggerElement;
+		triggerElement = null;
+		if (!target || typeof target.focus !== 'function') return;
+		// Tunggu sehingga Svelte selesai membuang `inert` pada HUD sebelum fokus dipulangkan.
+		requestAnimationFrame(() => {
+			if (!target.isConnected || isInert(target)) return;
+			target.focus();
+		});
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

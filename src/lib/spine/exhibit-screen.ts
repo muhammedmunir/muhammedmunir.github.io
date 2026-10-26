@@ -12,6 +12,8 @@ export interface ExhibitPalette {
 	onAccent: string;
 	fontBody: string;
 	fontMono: string;
+	online?: string;
+	halo?: string;
 }
 
 export interface ScreenHitRegion {
@@ -84,6 +86,7 @@ const words = {
 		previousPage: 'Halaman sebelumnya',
 		nextPage: 'Halaman seterusnya',
 		context: 'Konteks & teknologi',
+		architecture: 'SENI BINA',
 		links: 'Pautan & rekod',
 		open: 'Buka papan'
 	},
@@ -99,6 +102,7 @@ const words = {
 		previousPage: 'Previous page',
 		nextPage: 'Next page',
 		context: 'Context & technology',
+		architecture: 'ARCHITECTURE',
 		links: 'Links & records',
 		open: 'Open board'
 	}
@@ -203,7 +207,10 @@ function makeControls(
 	const inset = CONTROL_PADDING * 2 + MARKER_WIDTH;
 	const controlWidth = fullWidth
 		? width
-		: Math.min(width, Math.max(EXHIBIT_TOUCH_SIZE, Math.ceil(ctx.measureText(label).width + inset)));
+		: Math.min(
+				width,
+				Math.max(EXHIBIT_TOUCH_SIZE, Math.ceil(ctx.measureText(label).width + inset))
+			);
 	const lines = wrap(ctx, label, controlWidth - inset);
 	const linesPerPart = Math.max(1, Math.floor((maxHeight - 16) / style.line));
 	const controls: Control[] = [];
@@ -355,15 +362,25 @@ function preview(
 	const ruleY = padding + meta.line + 10;
 	const hintY = height - padding - EXHIBIT_TOUCH_SIZE;
 	const roomBelowRule = hintY - ruleY - 20;
-	const avatarSize = state.avatar && roomBelowRule >= 100 && width >= 340
-		? Math.min(68, Math.max(44, Math.round(Math.min(width * 0.12, height * 0.16))))
-		: 0;
+	const avatarSize =
+		state.avatar && roomBelowRule >= 100 && width >= 340
+			? Math.min(68, Math.max(44, Math.round(Math.min(width * 0.12, height * 0.16))))
+			: 0;
 
 	setType(ctx, meta, palette);
 	paintText(ctx, excerpt(ctx, state.view.code, width * 0.62), x, padding, meta, palette);
 	const counter = `${state.total ? Math.min(state.total, Math.max(1, state.index + 1)) : 0} / ${state.total}`;
 	const counterWidth = ctx.measureText(counter).width;
 	paintText(ctx, counter, x + width - counterWidth, padding, meta, palette);
+	// ONLINE merujuk monitor pameran tempatan, bukan status pelayan projek.
+	if (width >= 440) {
+		const statusX = x + width - counterWidth - ctx.measureText('ONLINE').width - 40;
+		ctx.fillStyle = palette.online ?? palette.accent;
+		ctx.beginPath();
+		ctx.arc(statusX - 12, padding + meta.line / 2, 3, 0, Math.PI * 2);
+		ctx.fill();
+		paintText(ctx, 'ONLINE', statusX, padding, meta, palette, palette.online ?? palette.accent);
+	}
 
 	ctx.fillStyle = palette.border;
 	ctx.fillRect(x, ruleY, width, 1);
@@ -375,20 +392,46 @@ function preview(
 		paintAvatar(ctx, state.avatar, x + width - avatarSize, avatarY, avatarSize, palette);
 	}
 
+	const chipStyle: TypeStyle = { ...meta, size: 13, tone: 'text' };
+	const chipHeight = chipStyle.line + 12;
+	const chipRows: Array<Array<{ label: string; width: number }>> = [];
+	if (height >= 460 && state.view.tech.length) {
+		setType(ctx, chipStyle, palette);
+		let row: Array<{ label: string; width: number }> = [];
+		let used = 0;
+		for (const chip of state.view.tech) {
+			const label = excerpt(ctx, chip, width - 24);
+			const chipWidth = ctx.measureText(label).width + 24;
+			if (used + chipWidth > width && row.length) {
+				chipRows.push(row);
+				row = [];
+				used = 0;
+			}
+			row.push({ label, width: chipWidth });
+			used += chipWidth + GAP;
+		}
+		if (row.length) chipRows.push(row);
+		chipRows.splice(height >= 700 ? 3 : 2);
+	}
+	const detailsTop = chipRows.length
+		? hintY - GAP * 3 - (meta.line + 12) - chipRows.length * (chipHeight + GAP)
+		: hintY - GAP;
 	let cursorY = ruleY + 18;
 	const titleWidth = avatarSize > 0 ? width - avatarSize - 16 : width;
 
-	// Tajuk besar: elemen utama papan, bukan teks kecil di sudut.
+	// Tajuk penuh diutamakan; cip mempunyai ruang sendiri tanpa ditolak ringkasan.
 	setType(ctx, title, palette);
 	const titleLines = wrap(ctx, state.view.title[state.locale], titleWidth);
-	const titleRoom = hintY - cursorY;
-	const maxTitleLines = Math.max(1, Math.min(3, Math.floor(titleRoom / (title.line * 1.35))));
+	const titleRoom = detailsTop - cursorY;
+	const maxTitleLines = Math.max(1, Math.floor(titleRoom / title.line));
 	const titleCount = Math.min(maxTitleLines, titleLines.length);
 	for (let index = 0; index < titleCount; index++) {
 		const isLast = index === titleCount - 1 && titleLines.length > titleCount;
 		paintText(
 			ctx,
-			isLast ? excerpt(ctx, `${titleLines[index]} ${titleLines[index + 1]}`, titleWidth) : titleLines[index],
+			isLast
+				? excerpt(ctx, `${titleLines[index]} ${titleLines[index + 1]}`, titleWidth)
+				: titleLines[index],
 			x,
 			cursorY,
 			title,
@@ -400,11 +443,11 @@ function preview(
 
 	// Subtajuk: konteks CV (syarikat, tempoh, lokasi).
 	const subtitle = state.view.subtitle[state.locale];
-	if (subtitle && cursorY + meta.line * 2 < hintY) {
+	if (subtitle && cursorY + meta.line * 2 < detailsTop) {
 		const subStyle: TypeStyle = { ...body, size: Math.max(12, body.size - 4), tone: 'accent' };
 		setType(ctx, subStyle, palette);
 		const subLines = wrap(ctx, subtitle, titleWidth);
-		const subMax = Math.min(2, Math.floor((hintY - cursorY - body.line * 2) / subStyle.line));
+		const subMax = Math.min(2, Math.floor((detailsTop - cursorY - GAP) / subStyle.line));
 		for (let index = 0; index < Math.min(subMax, subLines.length); index++) {
 			paintText(ctx, subLines[index], x, cursorY, subStyle, palette);
 			cursorY += subStyle.line;
@@ -420,14 +463,18 @@ function preview(
 	// Ringkasan: diisi mengikut ruang yang tinggal, bukan tetap 3 baris.
 	setType(ctx, body, palette);
 	const summaryLines = wrap(ctx, state.view.summary[state.locale].replace(/\s+/gu, ' '), width);
-	const reserved = Math.min(body.line * 3, Math.round(height * 0.16));
-	const summaryRoom = hintY - cursorY - reserved;
-	const summaryCount = Math.max(0, Math.min(summaryLines.length, Math.floor(summaryRoom / body.line)));
+	const summaryRoom = detailsTop - cursorY - GAP * 2;
+	const summaryCount = Math.max(
+		0,
+		Math.min(summaryLines.length, Math.floor(summaryRoom / body.line))
+	);
 	for (let index = 0; index < summaryCount; index++) {
 		const isLast = index === summaryCount - 1 && summaryLines.length > summaryCount;
 		paintText(
 			ctx,
-			isLast ? excerpt(ctx, `${summaryLines[index]} ${summaryLines[index + 1]}`, width) : summaryLines[index],
+			isLast
+				? excerpt(ctx, `${summaryLines[index]} ${summaryLines[index + 1]}`, width)
+				: summaryLines[index],
 			x,
 			cursorY,
 			{ ...body, tone: 'muted' },
@@ -436,23 +483,31 @@ function preview(
 		cursorY += body.line;
 	}
 
-	// Cip teknologi: pratonton visual (bukan kawasan klik) supaya kandungan kelihatan segera.
-	const chips = state.view.tech.slice(0, 8);
-	if (chips.length && cursorY + EXHIBIT_TOUCH_SIZE * 0.7 < hintY - EXHIBIT_TOUCH_SIZE - GAP) {
-		const chipStyle: TypeStyle = { ...meta, size: Math.max(11, Math.round(meta.size * 1.05)) };
-		setType(ctx, chipStyle, palette);
-		const chipY = Math.min(cursorY + 8, hintY - EXHIBIT_TOUCH_SIZE - chipStyle.line - 18);
-		let chipX = x;
-		for (const chip of chips) {
-			const label = excerpt(ctx, chip, width * 0.46);
-			const chipWidth = Math.min(width, ctx.measureText(label).width + 20);
-			if (chipX + chipWidth > x + width) break;
-			roundedRect(ctx, chipX + 0.5, chipY + 0.5, chipWidth - 1, chipStyle.line + 11, (chipStyle.line + 11) / 2);
-			ctx.strokeStyle = palette.border;
-			ctx.lineWidth = 1;
-			ctx.stroke();
-			paintText(ctx, label, chipX + 10, chipY + 5, chipStyle, palette);
-			chipX += chipWidth + 6;
+	// Lencana seksyen menggunakan timbunan teknologi sebenar, tanpa dakwaan seni bina rekaan.
+	if (chipRows.length) {
+		setType(ctx, meta, palette);
+		const badgeWidth = ctx.measureText(labels.architecture).width + 24;
+		roundedRect(ctx, x, detailsTop, badgeWidth, meta.line + 12, 4);
+		ctx.fillStyle = palette.surface;
+		ctx.fill();
+		ctx.strokeStyle = palette.accent;
+		ctx.lineWidth = 1;
+		ctx.stroke();
+		paintText(ctx, labels.architecture, x + 12, detailsTop + 6, meta, palette, palette.accent);
+		let chipY = detailsTop + meta.line + 20;
+		for (const row of chipRows) {
+			let chipX = x;
+			for (const chip of row) {
+				roundedRect(ctx, chipX + 0.5, chipY + 0.5, chip.width - 1, chipHeight - 1, chipHeight / 2);
+				ctx.fillStyle = palette.surface;
+				ctx.fill();
+				ctx.strokeStyle = palette.border;
+				ctx.lineWidth = 1;
+				ctx.stroke();
+				paintText(ctx, chip.label, chipX + 12, chipY + 6, chipStyle, palette);
+				chipX += chip.width + GAP;
+			}
+			chipY += chipHeight + GAP;
 		}
 	}
 
@@ -504,11 +559,22 @@ function paintAvatar(
 	ctx.drawImage(source, x, y, size, size);
 	ctx.restore();
 	if (typeof ctx.beginPath === 'function' && typeof ctx.arc === 'function') {
-		ctx.strokeStyle = palette.accent;
-		ctx.lineWidth = Math.max(2, Math.round(size * 0.03));
+		const haloColor = palette.halo ?? '#38bdf8';
+		const cx = x + size / 2;
+		const cy = y + size / 2;
+		ctx.save();
+		ctx.strokeStyle = haloColor;
+		ctx.globalAlpha = 0.32;
+		ctx.lineWidth = Math.max(4, Math.round(size * 0.08));
 		ctx.beginPath();
-		ctx.arc(x + size / 2, y + size / 2, size / 2 - 1, 0, Math.PI * 2);
+		ctx.arc(cx, cy, size / 2 + 1, 0, Math.PI * 2);
 		ctx.stroke();
+		ctx.globalAlpha = 1;
+		ctx.lineWidth = Math.max(2, Math.round(size * 0.035));
+		ctx.beginPath();
+		ctx.arc(cx, cy, size / 2 - 1, 0, Math.PI * 2);
+		ctx.stroke();
+		ctx.restore();
 	}
 }
 
@@ -519,7 +585,12 @@ export function drawExhibitScreen(
 	palette: ExhibitPalette
 ): { regions: ScreenHitRegion[]; page: number; pageCount: number } {
 	const { width, height } = canvas;
-	if (!Number.isFinite(width) || !Number.isFinite(height) || width < EXHIBIT_MIN_WIDTH || height < EXHIBIT_MIN_HEIGHT) {
+	if (
+		!Number.isFinite(width) ||
+		!Number.isFinite(height) ||
+		width < EXHIBIT_MIN_WIDTH ||
+		height < EXHIBIT_MIN_HEIGHT
+	) {
 		throw new RangeError('Kanvas papan memerlukan sekurang-kurangnya 320 × 240 piksel logik.');
 	}
 	const ctx = canvas.getContext('2d');
@@ -529,11 +600,28 @@ export function drawExhibitScreen(
 	const contentWidth = Math.min(960, width - padding * 2);
 	const left = (width - contentWidth) / 2;
 	const bodySize = height < 360 ? 16 : Math.min(20, Math.round(16 + (width - 320) / 220));
-	const body: TypeStyle = { size: bodySize, line: Math.ceil(bodySize * 1.5), weight: 400, family: 'fontBody', tone: 'text' };
+	const body: TypeStyle = {
+		size: bodySize,
+		line: Math.ceil(bodySize * 1.5),
+		weight: 400,
+		family: 'fontBody',
+		tone: 'text'
+	};
 	const titleSize = height < 360 ? 20 : Math.round(bodySize * 1.6);
-	const title: TypeStyle = { ...body, size: titleSize, line: Math.ceil(titleSize * 1.3), weight: 600 };
+	const title: TypeStyle = {
+		...body,
+		size: titleSize,
+		line: Math.ceil(titleSize * 1.3),
+		weight: 600
+	};
 	const meta: TypeStyle = { size: 12, line: 18, weight: 500, family: 'fontMono', tone: 'muted' };
-	const button: TypeStyle = { size: width < 600 ? 14 : 15, line: 20, weight: 500, family: 'fontBody', tone: 'text' };
+	const button: TypeStyle = {
+		size: width < 600 ? 14 : 15,
+		line: 20,
+		weight: 500,
+		family: 'fontBody',
+		tone: 'text'
+	};
 	const regions: ScreenHitRegion[] = [];
 	ctx.save();
 	try {
@@ -558,14 +646,22 @@ export function drawExhibitScreen(
 		const footerLabelY = footerButtonsY - GAP - meta.line;
 		const contentBottom = footerLabelY - 16;
 		const contentHeight = contentBottom - contentTop;
-		const avatarSize = state.avatar && contentHeight >= 200 && contentWidth >= 460
-			? Math.min(96, Math.max(56, Math.round(Math.min(contentWidth * 0.12, contentHeight * 0.2))))
-			: 0;
+		const avatarSize =
+			state.avatar && contentHeight >= 200 && contentWidth >= 460
+				? Math.min(96, Math.max(56, Math.round(Math.min(contentWidth * 0.12, contentHeight * 0.2))))
+				: 0;
 		const rows: FlowRow[] = [];
 		const headerWidth = avatarSize > 0 ? contentWidth - avatarSize - GAP * 2 : contentWidth;
 		addText(rows, ctx, state.view.title[state.locale], headerWidth, title, palette);
 		rows.push({ kind: 'space', height: GAP });
-		addText(rows, ctx, state.view.subtitle[state.locale], headerWidth, { ...body, size: bodySize - 1, tone: 'muted' }, palette);
+		addText(
+			rows,
+			ctx,
+			state.view.subtitle[state.locale],
+			headerWidth,
+			{ ...body, size: bodySize - 1, tone: 'muted' },
+			palette
+		);
 		// Elak ringkasan melimpah ke bawah avatar: tajuk/subtajuk yang pendek diberi ruang tambahan.
 		const headerHeight = rows.reduce((total, row) => total + row.height, 0);
 		rows.push({
@@ -581,7 +677,11 @@ export function drawExhibitScreen(
 			let chipRowWidth = 0;
 			const flushChips = () => {
 				if (!chipRow.length) return;
-				rows.push({ kind: 'controls', controls: chipRow, height: Math.max(...chipRow.map((chip) => chip.height)) });
+				rows.push({
+					kind: 'controls',
+					controls: chipRow,
+					height: Math.max(...chipRow.map((chip) => chip.height))
+				});
 				rows.push({ kind: 'space', height: GAP });
 				chipRow = [];
 				chipRowWidth = 0;
@@ -595,9 +695,20 @@ export function drawExhibitScreen(
 					rows.push({ kind: 'space', height: GAP });
 					return;
 				}
-				const controls = makeControls(ctx, `chip:${index}`, chip, action, contentWidth, contentHeight, button, palette, false);
+				const controls = makeControls(
+					ctx,
+					`chip:${index}`,
+					chip,
+					action,
+					contentWidth,
+					contentHeight,
+					button,
+					palette,
+					false
+				);
 				for (const control of controls) {
-					if (chipRowWidth + (chipRow.length ? GAP : 0) + control.width > contentWidth) flushChips();
+					if (chipRowWidth + (chipRow.length ? GAP : 0) + control.width > contentWidth)
+						flushChips();
 					chipRowWidth += (chipRow.length ? GAP : 0) + control.width;
 					chipRow.push(control);
 				}
@@ -609,17 +720,36 @@ export function drawExhibitScreen(
 			addText(rows, ctx, labels.links, contentWidth, meta, palette);
 			rows.push({ kind: 'space', height: GAP });
 			for (const item of state.view.actions) {
-				for (const control of makeControls(ctx, `action:${item.id}`, item.label[state.locale], item.action, contentWidth, contentHeight, button, palette, true)) {
+				for (const control of makeControls(
+					ctx,
+					`action:${item.id}`,
+					item.label[state.locale],
+					item.action,
+					contentWidth,
+					contentHeight,
+					button,
+					palette,
+					true
+				)) {
 					rows.push({ kind: 'controls', controls: [control], height: control.height });
 					rows.push({ kind: 'space', height: GAP });
 				}
 			}
 		}
 		const pages = paginate(rows, contentHeight);
-		const page = Number.isFinite(state.page) ? Math.max(0, Math.min(pages.length - 1, Math.floor(state.page))) : 0;
+		const page = Number.isFinite(state.page)
+			? Math.max(0, Math.min(pages.length - 1, Math.floor(state.page)))
+			: 0;
 		// Potret hanya pada halaman pertama: di bawah bar chrome, sejajar tajuk, tidak menyentuh butang Tutup.
 		if (page === 0 && avatarSize > 0 && state.avatar) {
-			paintAvatar(ctx, state.avatar, left + contentWidth - avatarSize, contentTop, avatarSize, palette);
+			paintAvatar(
+				ctx,
+				state.avatar,
+				left + contentWidth - avatarSize,
+				contentTop,
+				avatarSize,
+				palette
+			);
 		}
 		let y = contentTop;
 		for (const row of pages[page]) {
@@ -634,47 +764,145 @@ export function drawExhibitScreen(
 			y += row.height;
 		}
 
-		const chrome = (id: string, label: string, display: string, action: ExhibitAction, x: number, y: number, width: number, disabled = false) => {
-			paintControl(ctx, { id, label, lines: [display], action, width, height: EXHIBIT_TOUCH_SIZE, marker: false, disabled }, x, y, state, button, palette, regions);
+		const chrome = (
+			id: string,
+			label: string,
+			display: string,
+			action: ExhibitAction,
+			x: number,
+			y: number,
+			width: number,
+			disabled = false
+		) => {
+			paintControl(
+				ctx,
+				{
+					id,
+					label,
+					lines: [display],
+					action,
+					width,
+					height: EXHIBIT_TOUCH_SIZE,
+					marker: false,
+					disabled
+				},
+				x,
+				y,
+				state,
+				button,
+				palette,
+				regions
+			);
 		};
 		setType(ctx, button, palette);
-		const backWidth = Math.max(80, Math.ceil(ctx.measureText(labels.back).width + CONTROL_PADDING * 2));
-		const closeWidth = Math.max(80, Math.ceil(ctx.measureText(labels.close).width + CONTROL_PADDING * 2));
-		chrome('back', labels.back, labels.back, { kind: 'back' }, left, padding, backWidth, !state.canBack);
-		chrome('close', labels.close, labels.close, { kind: 'close' }, left + contentWidth - closeWidth, padding, closeWidth);
+		const backWidth = Math.max(
+			80,
+			Math.ceil(ctx.measureText(labels.back).width + CONTROL_PADDING * 2)
+		);
+		const closeWidth = Math.max(
+			80,
+			Math.ceil(ctx.measureText(labels.close).width + CONTROL_PADDING * 2)
+		);
+		chrome(
+			'back',
+			labels.back,
+			labels.back,
+			{ kind: 'back' },
+			left,
+			padding,
+			backWidth,
+			!state.canBack
+		);
+		chrome(
+			'close',
+			labels.close,
+			labels.close,
+			{ kind: 'close' },
+			left + contentWidth - closeWidth,
+			padding,
+			closeWidth
+		);
 		setType(ctx, meta, palette);
 		const codeWidth = contentWidth - backWidth - closeWidth - GAP * 2;
 		const code = excerpt(ctx, state.view.code, codeWidth);
-		paintText(ctx, code, left + backWidth + GAP + (codeWidth - ctx.measureText(code).width) / 2, padding + (EXHIBIT_TOUCH_SIZE - meta.line) / 2, meta, palette);
+		paintText(
+			ctx,
+			code,
+			left + backWidth + GAP + (codeWidth - ctx.measureText(code).width) / 2,
+			padding + (EXHIBIT_TOUCH_SIZE - meta.line) / 2,
+			meta,
+			palette
+		);
 
 		ctx.fillStyle = palette.border;
 		ctx.fillRect(left, footerLabelY - GAP, contentWidth, 1);
 		const groupWidth = (contentWidth - 16) / 2;
 		const controlWidth = (groupWidth - GAP) / 2;
 		const total = Number.isFinite(state.total) ? Math.max(0, Math.floor(state.total)) : 0;
-		const index = Number.isFinite(state.index) ? Math.max(0, Math.min(Math.max(0, total - 1), Math.floor(state.index))) : 0;
+		const index = Number.isFinite(state.index)
+			? Math.max(0, Math.min(Math.max(0, total - 1), Math.floor(state.index)))
+			: 0;
 		const groups = [
 			{
-				x: left, label: `${labels.board} ${total ? index + 1 : 0}/${total}`,
-				previousId: 'previous', nextId: 'next', previousLabel: labels.previousBoard, nextLabel: labels.nextBoard,
-				previous: { kind: 'previous' } as ExhibitAction, next: { kind: 'next' } as ExhibitAction,
-				atStart: index === 0, atEnd: total <= 1 || index >= total - 1
+				x: left,
+				label: `${labels.board} ${total ? index + 1 : 0}/${total}`,
+				previousId: 'previous',
+				nextId: 'next',
+				previousLabel: labels.previousBoard,
+				nextLabel: labels.nextBoard,
+				previous: { kind: 'previous' } as ExhibitAction,
+				next: { kind: 'next' } as ExhibitAction,
+				atStart: index === 0,
+				atEnd: total <= 1 || index >= total - 1
 			},
 			{
-				x: left + groupWidth + 16, label: `${labels.page} ${page + 1}/${pages.length}`,
-				previousId: 'page-previous', nextId: 'page-next', previousLabel: labels.previousPage, nextLabel: labels.nextPage,
-				previous: { kind: 'page', delta: -1 } as ExhibitAction, next: { kind: 'page', delta: 1 } as ExhibitAction,
-				atStart: page === 0, atEnd: page === pages.length - 1
+				x: left + groupWidth + 16,
+				label: `${labels.page} ${page + 1}/${pages.length}`,
+				previousId: 'page-previous',
+				nextId: 'page-next',
+				previousLabel: labels.previousPage,
+				nextLabel: labels.nextPage,
+				previous: { kind: 'page', delta: -1 } as ExhibitAction,
+				next: { kind: 'page', delta: 1 } as ExhibitAction,
+				atStart: page === 0,
+				atEnd: page === pages.length - 1
 			}
 		];
 		for (const group of groups) {
 			setType(ctx, meta, palette);
-			paintText(ctx, group.label, group.x + (groupWidth - ctx.measureText(group.label).width) / 2, footerLabelY, meta, palette);
+			paintText(
+				ctx,
+				group.label,
+				group.x + (groupWidth - ctx.measureText(group.label).width) / 2,
+				footerLabelY,
+				meta,
+				palette
+			);
 			setType(ctx, button, palette);
 			const previousText = `← ${labels.previous}`;
 			const nextText = `${labels.next} →`;
-			chrome(group.previousId, group.previousLabel, ctx.measureText(previousText).width <= controlWidth - CONTROL_PADDING * 2 ? previousText : '←', group.previous, group.x, footerButtonsY, controlWidth, group.atStart);
-			chrome(group.nextId, group.nextLabel, ctx.measureText(nextText).width <= controlWidth - CONTROL_PADDING * 2 ? nextText : '→', group.next, group.x + controlWidth + GAP, footerButtonsY, controlWidth, group.atEnd);
+			chrome(
+				group.previousId,
+				group.previousLabel,
+				ctx.measureText(previousText).width <= controlWidth - CONTROL_PADDING * 2
+					? previousText
+					: '←',
+				group.previous,
+				group.x,
+				footerButtonsY,
+				controlWidth,
+				group.atStart
+			);
+			chrome(
+				group.nextId,
+				group.nextLabel,
+				ctx.measureText(nextText).width <= controlWidth - CONTROL_PADDING * 2 ? nextText : '→',
+				group.next,
+				group.x + controlWidth + GAP,
+				footerButtonsY,
+				controlWidth,
+				group.atEnd
+			);
 		}
 		return { regions, page, pageCount: pages.length };
 	} finally {
@@ -683,11 +911,20 @@ export function drawExhibitScreen(
 }
 
 /** Sempadan kanan/bawah terbuka; kawalan dilumpuhkan tidak menerima klik. */
-export function hitTestScreen(regions: ScreenHitRegion[], x: number, y: number): ScreenHitRegion | null {
+export function hitTestScreen(
+	regions: ScreenHitRegion[],
+	x: number,
+	y: number
+): ScreenHitRegion | null {
 	if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
 	for (let index = regions.length - 1; index >= 0; index--) {
 		const region = regions[index];
-		if (x >= region.x && y >= region.y && x < region.x + region.width && y < region.y + region.height) {
+		if (
+			x >= region.x &&
+			y >= region.y &&
+			x < region.x + region.width &&
+			y < region.y + region.height
+		) {
 			return region.disabled ? null : region;
 		}
 	}
@@ -695,8 +932,23 @@ export function hitTestScreen(regions: ScreenHitRegion[], x: number, y: number):
 }
 
 /** FOV menegak dalam darjah; fill ialah pecahan maksimum kedua-dua paksi viewport. */
-export function getInspectDistance(width: number, height: number, aspect: number, fov: number, fill = 0.9): number {
-	if (![width, height, aspect, fov, fill].every(Number.isFinite) || width <= 0 || height <= 0 || aspect <= 0 || fov <= 0 || fov >= 180 || fill <= 0 || fill > 1) {
+export function getInspectDistance(
+	width: number,
+	height: number,
+	aspect: number,
+	fov: number,
+	fill = 0.9
+): number {
+	if (
+		![width, height, aspect, fov, fill].every(Number.isFinite) ||
+		width <= 0 ||
+		height <= 0 ||
+		aspect <= 0 ||
+		fov <= 0 ||
+		fov >= 180 ||
+		fill <= 0 ||
+		fill > 1
+	) {
 		throw new RangeError('Dimensi, nisbah aspek dan FOV mesti sah; fill mesti dalam julat (0, 1].');
 	}
 	const distance = Math.max(height, width / aspect) / (2 * Math.tan((fov * Math.PI) / 360) * fill);

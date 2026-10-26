@@ -1,55 +1,69 @@
 /* ==========================================================================
-   Design Tokens & Modern Editorial Hierarchy (Inspired by Kia Bai & High Craft)
+   Token reka bentuk: kaca berfros, aksen amber dan hierarki editorial
    ========================================================================== */
 
 :root,
-:root[data-theme="dark"] {
-	/* Dark Theme: Deep Obsidian Velvet & Luminous Amber */
+:root[data-theme='dark'] {
+	/* Kaca telus; kontras teks dilindungi pelapik setempat, bukan panel legap. */
 	--bg: #0b0c0e;
 	--bg-subtle: #121418;
 	--surface: #15181d;
 	--surface-hover: #1c2027;
 	--surface-border: rgba(255, 255, 255, 0.08);
 	--surface-border-hover: rgba(255, 255, 255, 0.18);
-	--ink: #f5f6f8;
-	--ink-secondary: #9ea5b0;
-	--ink-muted: #676d78;
+	--ink: #f7f9fc;
+	--ink-secondary: #c3ccd8;
+	--ink-muted: #9da6b4;
 	--accent: #e59057;
 	--accent-hover: #f0a36e;
-	--accent-soft: rgba(229, 144, 87, 0.12);
-	--badge-bg: rgba(229, 144, 87, 0.1);
-	--badge-ink: #f0b58e;
-	--badge-border: rgba(229, 144, 87, 0.25);
-	--glass: rgba(17, 20, 24, 0.75);
-	--glass-border: rgba(255, 255, 255, 0.1);
+	--on-accent: var(--bg);
+	--accent-soft: rgba(229, 144, 87, 0.14);
+	--badge-bg: rgba(229, 144, 87, 0.12);
+	--badge-ink: #f5c6a3;
+	--badge-border: rgba(229, 144, 87, 0.28);
+	--glass: rgba(13, 17, 24, 0.42);
+	--glass-modal-bg: rgba(16, 21, 30, 0.55);
+	--glass-text-bg: rgba(13, 17, 24, 0.78);
+	--glass-text-hover-bg: rgba(13, 17, 24, 0.84);
+	--glass-border: rgba(255, 255, 255, 0.22);
+	--glass-border-hover: rgba(255, 255, 255, 0.36);
+	--glass-sheen-start: rgba(255, 255, 255, 0.04);
+	--glass-sheen-end: rgba(255, 255, 255, 0);
 	--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
 	--shadow-md: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
 	--shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.75);
-	--focus: #e59057;
+	--shadow-glass: 0 12px 32px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+	--shadow-glass-modal: var(--shadow-glass), 0 24px 64px -12px rgba(0, 0, 0, 0.4);
+	--focus: var(--badge-ink);
+	--screen-bg: var(--bg);
+	--screen-surface: var(--surface);
+	--screen-surface-hover: var(--surface-hover);
+	--screen-online: #34d399;
+	--screen-halo: #4bdcff;
 
-	/* Spatial 3D HUD & Experience Tokens */
-	--spatial-hud-bg: rgba(15, 18, 23, 0.9);
+	/* HUD biasa kekal solid; kaca dipilih hanya oleh panel yang memerlukannya. */
+	--spatial-hud-bg: #10151c;
 	--spatial-hud-border: rgba(255, 255, 255, 0.14);
 	--spatial-hud-ink: var(--ink);
 	--spatial-hud-muted: var(--ink-secondary);
-	--spatial-card-bg: rgba(21, 24, 29, 0.95);
-	--spatial-card-border: rgba(255, 255, 255, 0.12);
-	--spatial-chip-bg: rgba(229, 144, 87, 0.12);
+	--spatial-card-bg: var(--surface);
+	--spatial-card-border: var(--surface-border);
+	--spatial-chip-bg: var(--glass-text-hover-bg);
 	--spatial-chip-ink: var(--badge-ink);
-	--spatial-chip-border: rgba(229, 144, 87, 0.25);
-	--spatial-pill-bg: rgba(28, 32, 39, 0.88);
-	--spatial-pill-border: rgba(255, 255, 255, 0.16);
-	--spatial-pill-hover-bg: rgba(229, 144, 87, 0.18);
-	--spatial-pill-hover-border: var(--accent);
-	--spatial-radar-bg: rgba(11, 12, 14, 0.92);
+	--spatial-chip-border: rgba(229, 144, 87, 0.3);
+	--spatial-pill-bg: var(--glass-text-bg);
+	--spatial-pill-border: rgba(255, 255, 255, 0.18);
+	--spatial-pill-hover-bg: var(--glass-text-hover-bg);
+	--spatial-pill-hover-border: var(--glass-border-hover);
+	--spatial-radar-bg: #10151c;
 	--spatial-radar-border: rgba(255, 255, 255, 0.18);
-	--spatial-radar-node: #676d78;
-	--spatial-radar-node-active: var(--accent);
-	--spatial-backdrop: rgba(7, 8, 10, 0.72);
-	--spatial-accent: var(--accent);
+	--spatial-radar-node: #9da6b4;
+	--spatial-radar-node-active: var(--spatial-accent);
+	--spatial-backdrop: rgba(6, 8, 12, 0.65);
+	--spatial-accent: var(--badge-ink);
 	--spatial-focus: var(--focus);
 
-	/* Legacy aliases for backward compatibility */
+	/* Alias lama dikekalkan. */
 	--paper: var(--bg);
 	--copper: var(--accent);
 	--muted: var(--ink-secondary);
@@ -58,53 +72,66 @@
 	color-scheme: dark;
 }
 
-:root[data-theme="light"] {
-	/* Light Theme: Warm Alabaster Art Paper & Bisque Ceramic */
+:root[data-theme='light'] {
+	/* Kaca cerah dengan aksen tembaga yang lebih jelas dibaca. */
 	--bg: #faf8f5;
 	--bg-subtle: #f2eee8;
 	--surface: #ffffff;
 	--surface-hover: #faf8f5;
 	--surface-border: rgba(20, 21, 23, 0.08);
 	--surface-border-hover: rgba(20, 21, 23, 0.18);
-	--ink: #141518;
-	--ink-secondary: #5a5f66;
-	--ink-muted: #8c929a;
-	--accent: #c46d3b;
-	--accent-hover: #b05c2c;
-	--accent-soft: rgba(196, 109, 59, 0.08);
-	--badge-bg: rgba(196, 109, 59, 0.08);
-	--badge-ink: #a6562a;
-	--badge-border: rgba(196, 109, 59, 0.2);
-	--glass: rgba(255, 255, 255, 0.82);
-	--glass-border: rgba(20, 21, 23, 0.08);
+	--ink: #11141a;
+	--ink-secondary: #4d5562;
+	--ink-muted: #5a6574;
+	--accent: #964c27;
+	--accent-hover: #803d1d;
+	--on-accent: #ffffff;
+	--accent-soft: rgba(150, 76, 39, 0.1);
+	--badge-bg: rgba(150, 76, 39, 0.08);
+	--badge-ink: #803d1d;
+	--badge-border: rgba(150, 76, 39, 0.24);
+	--glass: rgba(255, 255, 255, 0.52);
+	--glass-modal-bg: rgba(255, 255, 255, 0.52);
+	--glass-text-bg: rgba(255, 255, 255, 0.8);
+	--glass-text-hover-bg: rgba(255, 255, 255, 0.86);
+	--glass-border: rgba(20, 24, 32, 0.18);
+	--glass-border-hover: rgba(20, 24, 32, 0.3);
+	--glass-sheen-start: rgba(255, 255, 255, 0.28);
+	--glass-sheen-end: rgba(255, 255, 255, 0.04);
 	--shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
 	--shadow-md: 0 12px 32px -8px rgba(0, 0, 0, 0.07);
 	--shadow-lg: 0 24px 48px -12px rgba(0, 0, 0, 0.1);
-	--focus: #c46d3b;
+	--shadow-glass: inset 0 1px 0 rgba(255, 255, 255, 0.95), 0 12px 32px -8px rgba(18, 25, 38, 0.16);
+	--shadow-glass-modal:
+		inset 0 1px 0 rgba(255, 255, 255, 1), 0 24px 64px -12px rgba(18, 25, 38, 0.24);
+	--focus: var(--accent);
+	--screen-bg: #f3efe9;
+	--screen-surface: #ede7df;
+	--screen-surface-hover: #e8e1d7;
+	--screen-online: #08794e;
+	--screen-halo: #007d9c;
 
-	/* Spatial 3D HUD & Experience Tokens */
-	--spatial-hud-bg: rgba(255, 255, 255, 0.94);
+	--spatial-hud-bg: #faf8f5;
 	--spatial-hud-border: rgba(20, 21, 23, 0.14);
 	--spatial-hud-ink: var(--ink);
 	--spatial-hud-muted: var(--ink-secondary);
-	--spatial-card-bg: rgba(255, 255, 255, 0.98);
-	--spatial-card-border: rgba(20, 21, 23, 0.14);
-	--spatial-chip-bg: rgba(196, 109, 59, 0.08);
+	--spatial-card-bg: var(--surface);
+	--spatial-card-border: var(--surface-border);
+	--spatial-chip-bg: var(--glass-text-hover-bg);
 	--spatial-chip-ink: var(--badge-ink);
-	--spatial-chip-border: rgba(196, 109, 59, 0.2);
-	--spatial-pill-bg: rgba(242, 238, 232, 0.92);
-	--spatial-pill-border: rgba(20, 21, 23, 0.14);
-	--spatial-pill-hover-bg: rgba(196, 109, 59, 0.12);
-	--spatial-pill-hover-border: var(--accent);
-	--spatial-radar-bg: rgba(250, 248, 245, 0.96);
-	--spatial-radar-border: rgba(20, 21, 23, 0.18);
-	--spatial-radar-node: #8c929a;
-	--spatial-radar-node-active: var(--accent);
-	--spatial-backdrop: rgba(20, 21, 23, 0.45);
-	--spatial-accent: var(--accent);
+	--spatial-chip-border: rgba(150, 76, 39, 0.24);
+	--spatial-pill-bg: var(--glass-text-bg);
+	--spatial-pill-border: rgba(20, 24, 32, 0.18);
+	--spatial-pill-hover-bg: var(--glass-text-hover-bg);
+	--spatial-pill-hover-border: var(--glass-border-hover);
+	--spatial-radar-bg: #f0f2f5;
+	--spatial-radar-border: rgba(20, 24, 32, 0.18);
+	--spatial-radar-node: #5a6574;
+	--spatial-radar-node-active: var(--spatial-accent);
+	--spatial-backdrop: rgba(15, 20, 30, 0.36);
+	--spatial-accent: var(--badge-ink);
 	--spatial-focus: var(--focus);
 
-	/* Legacy aliases */
 	--paper: var(--bg);
 	--copper: var(--accent);
 	--muted: var(--ink-secondary);
@@ -118,8 +145,16 @@
    ========================================================================== */
 
 :root {
-	--font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-body:
+		'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	--font-heading: 'Syne', sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+	--glass-sheen: linear-gradient(135deg, var(--glass-sheen-start), var(--glass-sheen-end));
+	--glass-filter: blur(12px) saturate(135%);
+	--ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
+	--space-idle-y: 2px;
+	--space-inspect-y: 16px;
+	--space-pressed-y: 1px;
 
 	/* Radii & Size Tokens */
 	--radius-pill: 9999px;
@@ -131,14 +166,51 @@
 	--radius-xs: 6px;
 	--duration-fast: 150ms;
 	--duration-normal: 300ms;
-	--size-touch: 40px;
-	--size-control-sm: 34px;
-	--size-control-md: 38px;
+	--size-touch: 44px;
+	--size-target-min: 24px;
+	--size-control-sm: 44px;
+	--size-control-md: 44px;
+	--size-modal-width: 1140px;
+	--size-modal-max: 920px;
+	--card-min-width: 300px;
+	--card-min-sm: 220px;
 	--size-radar: 84px;
 	--size-radar-node: 26px;
 	--size-avatar-sm: 36px;
 	--size-avatar-md: 52px;
 	--size-avatar-lg: 88px;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	:root[data-theme],
+	:root:not([data-theme]) {
+		--glass: var(--surface);
+		--glass-modal-bg: var(--surface);
+		--glass-sheen: none;
+		--glass-filter: none;
+	}
+}
+
+@media (prefers-reduced-transparency: reduce) {
+	:root[data-theme],
+	:root:not([data-theme]) {
+		--glass: var(--surface);
+		--glass-modal-bg: var(--surface);
+		--glass-sheen: none;
+		--glass-filter: none;
+	}
+}
+
+@media (forced-colors: active) {
+	:root[data-theme],
+	:root:not([data-theme]) {
+		--glass: Canvas;
+		--glass-modal-bg: Canvas;
+		--glass-sheen: none;
+		--glass-filter: none;
+		--shadow-glass: none;
+		--shadow-glass-modal: none;
+	}
 }
 
 *,
@@ -173,7 +245,9 @@ body {
 	line-height: 1.65;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
-	transition: background-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+	transition:
+		background-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+		color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 	overflow-x: hidden;
 }
 
