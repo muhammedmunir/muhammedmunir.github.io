@@ -194,10 +194,7 @@
 @media (prefers-reduced-transparency: reduce) {
 	:root[data-theme],
 	:root:not([data-theme]) {
-		--glass: var(--surface);
-		--glass-modal-bg: var(--surface);
-		--glass-sheen: none;
-		--glass-filter: none;
+		--glass-filter: blur(10px) saturate(125%);
 	}
 }
 
