@@ -5,7 +5,9 @@ import * as THREE from 'three';
 
 const rootDir = process.cwd();
 
-console.log('=== [1/5] Menguji Output SSR Statik (build/index.html & build/spatial/index.html) ===');
+console.log(
+	'=== [1/5] Menguji Output SSR Statik (build/index.html & build/spatial/index.html) ==='
+);
 for (const relHtml of ['build/index.html', 'build/spatial/index.html']) {
 	const fullPath = path.join(rootDir, relHtml);
 	assert.ok(fs.existsSync(fullPath), `Fail binaan ${relHtml} wajib wujud`);
@@ -53,9 +55,13 @@ for (const relHtml of ['build/index.html', 'build/spatial/index.html']) {
 		);
 	}
 }
-console.log('✓ Semua fakta CV rasmi, 5 pengalaman kerja, 5 kategori kemahiran, UTM, 7 sijil & 11 projek disahkan wujud dalam HTML SSR.');
+console.log(
+	'✓ Semua fakta CV rasmi, 5 pengalaman kerja, 5 kategori kemahiran, UTM, 7 sijil & 11 projek disahkan wujud dalam HTML SSR.'
+);
 
-console.log('=== [2/5] Menguji 7 Rukun Realisme 3D PBR + Open-Water GLSL dalam FiberSpineWorld.ts ===');
+console.log(
+	'=== [2/5] Menguji 7 Rukun Realisme 3D PBR + Open-Water GLSL dalam FiberSpineWorld.ts ==='
+);
 const worldSource = fs.readFileSync(path.join(rootDir, 'src/lib/spine/FiberSpineWorld.ts'), 'utf8');
 assert.ok(
 	!worldSource.includes('GridHelper'),
@@ -76,7 +82,7 @@ for (const requiredToken of [
 	'RoomEnvironment',
 	'EffectComposer',
 	'UnrealBloomPass',
-	'PCFSoftShadowMap',
+	'PCFShadowMap',
 	'MeshPhysicalMaterial',
 	'createBeveledSlabGeometry',
 	'generatePBRSurfaceMaps',
@@ -96,7 +102,10 @@ for (const requiredToken of [
 const group = new THREE.Group();
 group.userData.hotspotId = 'term-email';
 group.userData.stationIndex = 5;
-const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 2.0, 16), new THREE.MeshBasicMaterial());
+const mesh = new THREE.Mesh(
+	new THREE.CylinderGeometry(0.4, 0.5, 2.0, 16),
+	new THREE.MeshBasicMaterial()
+);
 group.add(mesh);
 group.updateMatrixWorld(true);
 
@@ -109,10 +118,17 @@ const raycaster = new THREE.Raycaster();
 raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
 const hits = raycaster.intersectObjects([group], true);
 assert.ok(hits.length > 0, 'Raycaster mesti mengenai objek pameran 3D');
-console.log('✓ 7 Rukun Realisme 3D PBR, IBL, Soft Shadows, Bloom & In-World CanvasTexture Exhibits disahkan.');
+console.log(
+	'✓ 7 Rukun Realisme 3D PBR, IBL, Soft Shadows, Bloom & In-World CanvasTexture Exhibits disahkan.'
+);
 
-console.log('=== [3/5] Menguji Penghapusan Deretan Butang Menyemak dalam FiberSpineExperience.svelte ===');
-const svelteSource = fs.readFileSync(path.join(rootDir, 'src/lib/spine/FiberSpineExperience.svelte'), 'utf8');
+console.log(
+	'=== [3/5] Menguji Penghapusan Deretan Butang Menyemak dalam FiberSpineExperience.svelte ==='
+);
+const svelteSource = fs.readFileSync(
+	path.join(rootDir, 'src/lib/spine/FiberSpineExperience.svelte'),
+	'utf8'
+);
 for (const bannedClutter of [
 	'station-pills',
 	'hud-left-dock',
@@ -142,16 +158,27 @@ for (const cleanStationCode of [
 		`spine-data.ts wajib mengandungi stesen CV "${cleanStationCode}"`
 	);
 }
-for (const bannedJargon of ['Mod Resonans Monolit Optik', 'Harmoni Tiga Tunjang', 'Gerbang Prisma']) {
+for (const bannedJargon of [
+	'Mod Resonans Monolit Optik',
+	'Harmoni Tiga Tunjang',
+	'Gerbang Prisma'
+]) {
 	assert.ok(
 		!dataSource.includes(bannedJargon),
 		`Jargon mengelirukan "${bannedJargon}" tidak dibenarkan dalam spine-data.ts`
 	);
 }
-console.log('✓ Kesemua 6 stesen Mod 3D mengikut seksyen sebenar CV Resume tanpa jargon mengelirukan.');
+console.log(
+	'✓ Kesemua 6 stesen Mod 3D mengikut seksyen sebenar CV Resume tanpa jargon mengelirukan.'
+);
 
 console.log('=== [5/5] Menguji Keselamatan & Ketepatan Ringkasan Sistem YHCM ===');
-const forbiddenPatterns = [/10\.\d+\.\d+\.\d+/, /192\.168\.\d+\.\d+/, /password\s*[:=]/i, /secret_key/i];
+const forbiddenPatterns = [
+	/10\.\d+\.\d+\.\d+/,
+	/192\.168\.\d+\.\d+/,
+	/password\s*[:=]/i,
+	/secret_key/i
+];
 for (const pat of forbiddenPatterns) {
 	assert.ok(!pat.test(dataSource), `Corak sensitif ${pat} tidak dibenarkan dalam spine-data.ts`);
 }
