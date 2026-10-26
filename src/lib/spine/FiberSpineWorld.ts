@@ -242,12 +242,9 @@ const OCEAN_VERTEX_SHADER = /* glsl */ `
 		float jacobian = 1.0;
 
 		vec2 p = displaced.xz;
-		gerstnerWave(p, vec2(0.86, -0.51), 0.13, 28.0, 1.02, displaced, tangent, binormal, jacobian);
-		gerstnerWave(p, vec2(-0.62, -0.78), 0.11, 17.5, 1.08, displaced, tangent, binormal, jacobian);
-		gerstnerWave(p, vec2(0.32, -0.94), 0.085, 10.4, 1.15, displaced, tangent, binormal, jacobian);
-		gerstnerWave(p, vec2(-0.91, -0.41), 0.065, 6.2, 1.22, displaced, tangent, binormal, jacobian);
-		gerstnerWave(p, vec2(0.74, 0.67), 0.045, 3.5, 1.30, displaced, tangent, binormal, jacobian);
-		gerstnerWave(p, vec2(-0.45, 0.89), 0.03, 1.8, 1.42, displaced, tangent, binormal, jacobian);
+		gerstnerWave(p, vec2(0.86, -0.51), 0.14, 28.0, 1.02, displaced, tangent, binormal, jacobian);
+		gerstnerWave(p, vec2(-0.62, -0.78), 0.10, 14.5, 1.12, displaced, tangent, binormal, jacobian);
+		gerstnerWave(p, vec2(0.32, -0.94), 0.06, 6.2, 1.25, displaced, tangent, binormal, jacobian);
 
 		// Redam ombak di bawah setiap pelantar pulau: air tidak boleh menembusi dek.
 		float islandClearance = 1.0;
@@ -295,58 +292,24 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 	varying float vJacobian;
 	varying float vElevation;
 
-	float hash21(vec2 p) {
-		p = fract(p * vec2(234.34, 435.345));
-		p += dot(p, p + 34.23);
-		return fract(p.x * p.y);
-	}
-
-	float noise2D(vec2 p) {
-		vec2 i = floor(p);
-		vec2 f = fract(p);
-		float a = hash21(i);
-		float b = hash21(i + vec2(1.0, 0.0));
-		float c = hash21(i + vec2(0.0, 1.0));
-		float d = hash21(i + vec2(1.0, 1.0));
-		vec2 u = f * f * (3.0 - 2.0 * f);
-		return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-	}
-
-	float fbm(vec2 p) {
-		float v = 0.0;
-		float a = 0.5;
-		mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
-		for (int i = 0; i < 2; i++) {
-			v += a * noise2D(p);
-			p = rot * p * 2.04;
-			a *= 0.5;
-		}
-		return v;
-	}
-
 	void main() {
 		vec3 viewVec = cameraPosition - vWorldPos;
 		float dist = length(viewVec);
 		vec3 V = normalize(viewVec);
 
-		vec2 uv1 = vWorldPos.xz * 1.65 + vec2(uTime * 0.38, -uTime * 0.29);
-		vec2 uv2 = vWorldPos.xz * 4.20 - vec2(uTime * 0.52, uTime * 0.41);
-		vec2 uv3 = vWorldPos.xz * 9.80 + vec2(-uTime * 0.75, uTime * 0.63);
-		float n1 = noise2D(uv1) * 2.0 - 1.0;
-		float n2 = noise2D(uv2) * 2.0 - 1.0;
-		float n3 = noise2D(uv3) * 2.0 - 1.0;
+		// Riak mikro perkakasan GPU SFU pantas (1 kitaran perkakasan vs 80 kitaran ALU hash)
+		vec2 w1 = sin(vWorldPos.xz * 1.65 + vec2(uTime * 0.38, -uTime * 0.29));
+		vec2 w2 = sin(vWorldPos.xz * 3.80 - vec2(uTime * 0.52, uTime * 0.41));
+		vec2 w3 = cos(vWorldPos.xz * 7.50 + vec2(-uTime * 0.75, uTime * 0.63));
 
 		float distAtten = 1.0 / (1.0 + dist * 0.028);
 		vec3 microPerturb = vec3(
-			(n1 * 0.11 + n2 * 0.065 + n3 * 0.035) * distAtten,
+			(w1.x * 0.09 + w2.x * 0.05 + w3.x * 0.025) * distAtten,
 			0.0,
-			(n2 * 0.11 - n1 * 0.065 + n3 * 0.035) * distAtten
+			(w1.y * 0.09 + w2.y * 0.05 + w3.y * 0.025) * distAtten
 		);
 		vec3 N = normalize(vNormal + microPerturb);
-
-		vec3 dNdx = dFdx(N);
-		vec3 dNdy = dFdy(N);
-		float slopeVar = clamp(dot(dNdx, dNdx) + dot(dNdy, dNdy), 0.0, 0.25);
+		float slopeVar = clamp(length(microPerturb.xz) * 4.0, 0.0, 0.25);
 
 		float NoV = max(dot(N, V), 0.001);
 		float fresnel = clamp(0.02 + 0.96 * pow(1.0 - NoV, 5.0), 0.0, 1.0);
@@ -371,7 +334,7 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 			minIslandDist = min(minIslandDist, d);
 		}
 
-		// Cincin Koral &Tunjang Optik Bawah Laut pada R = 38m dan jejari ke pusat
+		// Cincin Koral & Tunjang Optik Bawah Laut pada R = 38m dan jejari ke pusat
 		float ringDist = abs(length(vWorldPos.xz) - 38.0);
 		float shallowLagoon = max(1.0 - smoothstep(6.0, 14.0, minIslandDist), (1.0 - smoothstep(1.5, 5.5, ringDist)) * 0.58);
 		baseWater = mix(baseWater, uWaterScatter * 0.78, shallowLagoon * 0.52);
@@ -383,17 +346,17 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 		vec3 waterBody = baseWater + sss + subseaCableColor;
 		vec3 color = mix(waterBody, skyReflect, fresnel * 0.76);
 
-		// Sun specular & glints (dikawal oleh uSunSpecScale supaya Light Mode tidak silau)
+		// Sun specular & kilauan optik pantas
 		vec3 H = normalize(uSunDir + V);
 		float NoH = max(dot(N, H), 0.0);
 		float specPower = mix(190.0, 32.0, clamp(slopeVar * 6.0, 0.0, 1.0));
 		float specBroad = pow(NoH, specPower) * 0.65 * uSunSpecScale;
-		float glintCell = smoothstep(0.78, 0.97, noise2D(vWorldPos.xz * 8.5 + vec2(uTime * 1.4, -uTime * 1.1)));
-		float specSparkle = (pow(NoH, 520.0) * 2.2 + pow(NoH, 72.0) * glintCell * 1.2) * uSunSpecScale;
+		float glintCell = smoothstep(0.72, 0.98, sin(dot(vWorldPos.xz, vec2(5.5, 4.8)) + uTime * 1.8) * 0.5 + 0.5);
+		float specSparkle = (pow(NoH, 128.0) * 2.2 + pow(NoH, 48.0) * glintCell * 1.2) * uSunSpecScale;
 		color += uSunColor * (specBroad + specSparkle);
 
 		// Whitecaps & Shore Foam di sekeliling 6 Pulau & Teras Pusat
-		float foamLace = noise2D(vWorldPos.xz * 1.55 + vec2(uTime * 0.16, -uTime * 0.12));
+		float foamLace = (sin(vWorldPos.x * 1.55 + uTime * 0.16) * cos(vWorldPos.z * 1.55 - uTime * 0.12)) * 0.5 + 0.5;
 		float whitecap = smoothstep(0.78, 0.44, vJacobian - foamLace * 0.24) * smoothstep(0.08, 0.48, vElevation);
 		float wakeWave = sin(minIslandDist * 3.1 - uTime * 2.4) * 0.5 + 0.5;
 		float shoreFoam = (1.0 - smoothstep(11.6, 14.6, minIslandDist)) * smoothstep(0.35, 0.78, wakeWave * foamLace * 1.45);
@@ -633,6 +596,7 @@ export class FiberSpineWorld {
 	private motePoints: THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial> | null = null;
 	private motionTime = 0;
 	private buoyancyTime = 0;
+	private isMobile = false;
 
 	private clock = new THREE.Clock();
 	private rafId: number | null = null;
@@ -680,7 +644,10 @@ export class FiberSpineWorld {
 				powerPreference: 'high-performance',
 				alpha: false
 			});
-			const dpr = Math.min(window.devicePixelRatio || 1, 1.35);
+			this.isMobile =
+				typeof window !== 'undefined' &&
+				(window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || ''));
+			const dpr = this.isMobile ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.25);
 			this.basePixelRatio = dpr;
 			this.currentPixelRatio = dpr;
 			this.renderer.setPixelRatio(dpr);
@@ -1059,7 +1026,7 @@ export class FiberSpineWorld {
 			}
 		});
 
-		const oceanGeo = new THREE.PlaneGeometry(320, 320, 64, 64);
+		const oceanGeo = new THREE.PlaneGeometry(320, 320, 48, 48);
 		oceanGeo.rotateX(-Math.PI / 2);
 		this.oceanMesh = new THREE.Mesh(oceanGeo, this.oceanMaterial);
 		this.oceanMesh.position.set(0, -0.28, 0);
@@ -2979,7 +2946,9 @@ export class FiberSpineWorld {
 			this.updateScreenTransition(dt);
 			this.updateProjectedMarkers();
 
-			if (this.composer) {
+			if (this.isMobile && this.renderer) {
+				this.renderer.render(this.scene, this.camera);
+			} else if (this.composer) {
 				this.composer.render();
 			} else if (this.renderer) {
 				this.renderer.render(this.scene, this.camera);

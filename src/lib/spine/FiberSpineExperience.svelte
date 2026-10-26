@@ -472,19 +472,20 @@
 
 			{#if webglReady}
 				<button type="button" class="util-pill mode-switch" onclick={toggleViewMode}>
-					{viewMode === '3d'
-						? locale === 'ms'
-							? 'Baca Mod Editorial CV'
-							: 'Read Editorial CV Mode'
-						: locale === 'ms'
-							? 'Kembali ke Dunia 3D'
-							: 'Return to 3D World'}
+					<span class="mode-label-full">
+						{viewMode === '3d'
+							? locale === 'ms'
+								? 'Baca Mod Editorial CV'
+								: 'Read Editorial CV Mode'
+							: locale === 'ms'
+								? 'Kembali ke Dunia 3D'
+								: 'Return to 3D World'}
+					</span>
+					<span class="mode-label-short" aria-hidden="true">
+						{viewMode === '3d' ? 'CV' : '3D'}
+					</span>
 				</button>
 			{/if}
-
-			<button type="button" class="util-pill" bind:this={dossierTriggerEl} onclick={openDossier}>
-				{locale === 'ms' ? 'Arkib Penuh' : 'Full Archive'}
-			</button>
 
 			<button type="button" class="util-pill" onclick={toggleLocale}>
 				<span>{locale === 'ms' ? 'BM / EN' : 'EN / BM'}</span>
@@ -617,13 +618,13 @@
 
 				{#each STATIONS as st, idx (st.id)}
 					{@const angle = (idx / STATIONS.length) * Math.PI * 2 - Math.PI / 2}
-					{@const nx = 42 + Math.cos(angle) * 30}
-					{@const ny = 42 + Math.sin(angle) * 30}
+					{@const nx = ((42 + Math.cos(angle) * 30) / 84) * 100}
+					{@const ny = ((42 + Math.sin(angle) * 30) / 84) * 100}
 					<button
 						type="button"
 						class="radar-station-node"
 						class:active={idx === activeStationIndex}
-						style="left: {nx}px; top: {ny}px;"
+						style="left: {nx}%; top: {ny}%;"
 						onclick={() => jumpToStation(idx)}
 						aria-label="{st.code} · {st.title[locale]}"
 						aria-current={idx === activeStationIndex ? 'step' : undefined}
@@ -919,6 +920,24 @@
 		overflow: hidden;
 	}
 
+	.spine-root[data-mode='editorial'] {
+		background-color: var(--spine-bg);
+		background-image:
+			radial-gradient(ellipse 80% 50% at 50% -10%, rgba(229, 144, 87, 0.12), transparent 70%),
+			radial-gradient(ellipse 60% 40% at 100% 40%, rgba(75, 220, 255, 0.08), transparent 60%),
+			radial-gradient(ellipse 60% 40% at 0% 70%, rgba(229, 144, 87, 0.07), transparent 60%);
+		background-attachment: fixed;
+	}
+
+	:root[data-theme='light'] .spine-root[data-mode='editorial'] {
+		background-color: var(--spine-bg);
+		background-image:
+			radial-gradient(ellipse 80% 50% at 50% -10%, rgba(150, 76, 39, 0.09), transparent 70%),
+			radial-gradient(ellipse 60% 40% at 100% 40%, rgba(0, 125, 156, 0.06), transparent 60%),
+			radial-gradient(ellipse 60% 40% at 0% 70%, rgba(150, 76, 39, 0.06), transparent 60%);
+		background-attachment: fixed;
+	}
+
 	.webgl-stage {
 		position: fixed;
 		inset: 0;
@@ -930,21 +949,31 @@
 		display: none;
 	}
 
-	/* Hanya kelompok teks mendapat pelapik; ruang kaca kekal telus. */
+	/* Kaca telus fros penuh; ruang butang dan ikon telus kaca tanpa kotak hitam legap. */
 	.minimal-topbar,
 	.bottom-compass {
 		--spatial-hud-bg: var(--glass);
 		--spatial-hud-border: var(--glass-border);
-		--spatial-pill-bg: var(--glass-text-bg);
-		--spatial-pill-hover-bg: var(--glass-text-hover-bg);
+		--spatial-pill-bg: rgba(255, 255, 255, 0.08);
+		--spatial-pill-border: rgba(255, 255, 255, 0.16);
+		--spatial-pill-hover-bg: rgba(255, 255, 255, 0.16);
+		--spatial-pill-hover-border: rgba(255, 255, 255, 0.3);
 		font-variant-numeric: tabular-nums;
+	}
+
+	:root[data-theme='light'] .minimal-topbar,
+	:root[data-theme='light'] .bottom-compass {
+		--spatial-pill-bg: rgba(255, 255, 255, 0.45);
+		--spatial-pill-border: rgba(20, 24, 32, 0.14);
+		--spatial-pill-hover-bg: rgba(255, 255, 255, 0.75);
+		--spatial-pill-hover-border: rgba(20, 24, 32, 0.26);
 	}
 
 	.brand-cluster,
 	.compass-info {
-		padding: 0.25rem 0.5rem;
+		padding: 0.15rem 0.35rem;
 		border-radius: var(--radius-md);
-		background: var(--glass-text-bg);
+		background: transparent;
 	}
 
 	/* Pengepala Kaca Minimalis (Glassmorphism Tier 1) */
@@ -1075,8 +1104,12 @@
 
 	.util-pill.active {
 		border-color: var(--spatial-accent, var(--accent));
-		background: var(--glass-text-hover-bg);
+		background: rgba(229, 144, 87, 0.18);
 		color: var(--spatial-chip-ink, var(--badge-ink));
+	}
+
+	:root[data-theme='light'] .util-pill.active {
+		background: rgba(150, 76, 39, 0.15);
 	}
 
 	.util-pill.mode-switch {
@@ -1194,9 +1227,13 @@
 		width: var(--size-radar, 84px);
 		height: var(--size-radar, 84px);
 		border-radius: var(--radius-pill, 9999px);
-		background: var(--spatial-radar-bg, var(--bg-subtle));
+		background: rgba(255, 255, 255, 0.05);
 		border: 1px solid var(--spatial-radar-border, var(--surface-border));
 		flex-shrink: 0;
+	}
+
+	:root[data-theme='light'] .orbital-radar-cluster {
+		background: rgba(20, 24, 32, 0.04);
 	}
 
 	.radar-orbit-backdrop {
@@ -1329,10 +1366,14 @@
 	}
 
 	.editorial-hero {
-		padding: 2rem;
+		padding: 2.2rem;
 		border-radius: var(--radius-2xl, 22px);
-		background: var(--spatial-card-bg, var(--surface));
-		border: 1px solid var(--spatial-card-border, var(--surface-border));
+		background-color: var(--glass);
+		background-image: var(--glass-sheen);
+		border: 1px solid var(--glass-border);
+		-webkit-backdrop-filter: var(--glass-filter);
+		backdrop-filter: var(--glass-filter);
+		box-shadow: var(--shadow-glass);
 	}
 
 	.hero-profile-row {
@@ -1409,13 +1450,25 @@
 	}
 
 	.secondary-cta {
-		background: var(--spatial-pill-bg, var(--surface-hover));
-		border: 1px solid var(--spatial-pill-border, var(--surface-border));
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid var(--glass-border);
 		color: var(--spatial-hud-ink, var(--ink));
+		-webkit-backdrop-filter: var(--glass-filter);
+		backdrop-filter: var(--glass-filter);
 	}
 
 	.secondary-cta:hover {
 		border-color: var(--spatial-accent, var(--accent));
+		background: rgba(255, 255, 255, 0.16);
+	}
+
+	:root[data-theme='light'] .secondary-cta {
+		background: rgba(255, 255, 255, 0.65);
+		border: 1px solid var(--glass-border);
+	}
+
+	:root[data-theme='light'] .secondary-cta:hover {
+		background: rgba(255, 255, 255, 0.9);
 	}
 
 	.editorial-section h2 {
@@ -1442,7 +1495,8 @@
 		background-color: var(--glass);
 		background-image: var(--glass-sheen);
 		border: 1px solid var(--glass-border);
-		/* Latar editorial statik: sheen mencukupi tanpa blur pada setiap kad. */
+		-webkit-backdrop-filter: var(--glass-filter);
+		backdrop-filter: var(--glass-filter);
 		box-shadow: var(--shadow-glass);
 		font-variant-numeric: tabular-nums;
 		transition: border-color var(--duration-normal) var(--ease-glass);
@@ -1492,11 +1546,16 @@
 	.chip {
 		font-family: var(--font-mono, monospace);
 		font-size: 0.72rem;
-		padding: 0.2rem 0.55rem;
+		padding: 0.22rem 0.6rem;
 		border-radius: var(--radius-xs, 6px);
-		background: var(--spatial-pill-bg, var(--surface-hover));
-		border: 1px solid var(--spatial-pill-border, var(--surface-border));
+		background: rgba(255, 255, 255, 0.07);
+		border: 1px solid rgba(255, 255, 255, 0.14);
 		color: var(--spatial-hud-ink, var(--ink));
+	}
+
+	:root[data-theme='light'] .chip {
+		background: rgba(20, 24, 32, 0.05);
+		border: 1px solid rgba(20, 24, 32, 0.1);
 	}
 
 	.project-links {
@@ -1547,6 +1606,120 @@
 			border-radius: var(--radius-lg, 18px);
 			gap: 0.5rem;
 			padding: 0.4rem 0.65rem;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.minimal-topbar {
+			top: 0.5rem;
+			left: 0.5rem;
+			right: 0.5rem;
+			padding: 0.4rem 0.65rem;
+			gap: 0.45rem;
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			scrollbar-width: none;
+			-ms-overflow-style: none;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.minimal-topbar::-webkit-scrollbar {
+			display: none;
+		}
+
+		.brand-cluster {
+			flex-shrink: 0;
+			gap: 0.45rem;
+			padding: 0;
+		}
+
+		.brand-avatar {
+			width: 28px;
+			height: 28px;
+		}
+
+		.brand-kicker {
+			display: none;
+		}
+
+		.brand-name {
+			font-size: 0.8rem;
+			white-space: nowrap;
+		}
+
+		.utility-actions {
+			flex-wrap: nowrap;
+			flex-shrink: 0;
+			gap: 0.35rem;
+		}
+
+		.util-pill {
+			min-height: 32px;
+			padding: 0.25rem 0.55rem;
+			font-size: 0.72rem;
+			white-space: nowrap;
+		}
+
+		.bottom-compass {
+			bottom: 0.5rem;
+			width: calc(100% - 1rem);
+			padding: 0.35rem 0.5rem;
+			gap: 0.35rem;
+		}
+
+		.compass-arrow {
+			width: 36px;
+			height: 36px;
+			flex-shrink: 0;
+		}
+
+		.orbital-radar-cluster {
+			width: 46px;
+			height: 46px;
+			--size-radar-node: 16px;
+			--size-dot-sm: 6px;
+			--size-dot-md: 9px;
+		}
+
+		.compass-info {
+			min-width: 0;
+			flex: 1;
+			padding: 0 0.2rem;
+		}
+
+		.compass-code {
+			font-size: 0.55rem;
+		}
+
+		.compass-title {
+			font-size: 0.74rem;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			max-width: 140px;
+		}
+
+		.spine-root[data-mode='editorial'] .minimal-topbar {
+			top: 0.5rem;
+			margin: 0.5rem 0.5rem 0;
+		}
+
+		.editorial-container {
+			padding: 1.25rem 0.75rem 3rem;
+			gap: 1.8rem;
+		}
+
+		.editorial-hero {
+			padding: 1.25rem;
+		}
+
+		.hero-profile-row {
+			gap: 0.75rem;
+		}
+
+		.editorial-avatar {
+			width: 60px;
+			height: 60px;
 		}
 	}
 
