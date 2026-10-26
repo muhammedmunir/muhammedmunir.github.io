@@ -15,9 +15,10 @@
 		locale: Locale;
 		onClose: () => void;
 		onJumpStation: (stationIndex: number) => void;
+		returnFocusTo?: HTMLElement | null;
 	}
 
-	let { open, locale, onClose, onJumpStation }: Props = $props();
+	let { open, locale, onClose, onJumpStation, returnFocusTo = null }: Props = $props();
 
 	let activeTab = $state<'career' | 'projects' | 'skills' | 'education'>('career');
 
@@ -32,10 +33,7 @@
 </script>
 
 {#if open}
-	<div
-		class="dossier-backdrop"
-		role="presentation"
-	>
+	<div class="dossier-backdrop" role="presentation">
 		<button
 			type="button"
 			class="backdrop-dismiss"
@@ -49,7 +47,7 @@
 			aria-modal="true"
 			aria-labelledby="dossier-modal-title"
 			tabindex="-1"
-			use:trapFocus={{ enabled: open, onClose, initialFocusSelector: '.close-btn' }}
+			use:trapFocus={{ enabled: open, onClose, initialFocusSelector: '.close-btn', returnFocusTo }}
 		>
 			<header class="dossier-header">
 				<div class="header-identity">
@@ -78,8 +76,23 @@
 					<a href={PROFILE.resumeUrl} target="_blank" rel="noopener noreferrer" class="resume-btn">
 						{locale === 'ms' ? 'Muat Turun Resume PDF' : 'Download Resume PDF'}
 					</a>
-					<button type="button" class="close-btn" onclick={onClose} aria-label={locale === 'ms' ? 'Tutup dialog (ESC)' : 'Close dialog (ESC)'}>
-						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<button
+						type="button"
+						class="close-btn"
+						onclick={onClose}
+						aria-label={locale === 'ms' ? 'Tutup dialog (ESC)' : 'Close dialog (ESC)'}
+					>
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
 							<line x1="18" y1="6" x2="6" y2="18"></line>
 							<line x1="6" y1="6" x2="18" y2="18"></line>
 						</svg>
@@ -88,11 +101,15 @@
 				</div>
 			</header>
 
-			<nav class="dossier-tabs" aria-label={locale === 'ms' ? 'Kategori rekod CV' : 'CV record categories'}>
+			<nav
+				class="dossier-tabs"
+				aria-label={locale === 'ms' ? 'Kategori rekod CV' : 'CV record categories'}
+			>
 				<button
 					type="button"
 					class="tab-btn"
 					class:active={activeTab === 'career'}
+					aria-pressed={activeTab === 'career'}
 					onclick={() => (activeTab = 'career')}
 				>
 					{locale === 'ms' ? 'Pengalaman Kerja (5)' : 'Work Experience (5)'}
@@ -101,6 +118,7 @@
 					type="button"
 					class="tab-btn"
 					class:active={activeTab === 'projects'}
+					aria-pressed={activeTab === 'projects'}
 					onclick={() => (activeTab = 'projects')}
 				>
 					{locale === 'ms' ? 'Sistem & Projek (11)' : 'Systems & Projects (11)'}
@@ -109,6 +127,7 @@
 					type="button"
 					class="tab-btn"
 					class:active={activeTab === 'skills'}
+					aria-pressed={activeTab === 'skills'}
 					onclick={() => (activeTab = 'skills')}
 				>
 					{locale === 'ms' ? 'Kemahiran Teknikal (5)' : 'Technical Skills (5)'}
@@ -117,6 +136,7 @@
 					type="button"
 					class="tab-btn"
 					class:active={activeTab === 'education'}
+					aria-pressed={activeTab === 'education'}
 					onclick={() => (activeTab = 'education')}
 				>
 					{locale === 'ms' ? 'Pendidikan UTM & Sijil (7)' : 'UTM Education & Certs (7)'}
@@ -245,12 +265,23 @@
 									<h3>{edu.qualification[locale]}</h3>
 									<p class="company-line">{edu.institution} · CGPA: {edu.cgpa}</p>
 									<div class="fyp-box">
-										<strong>{locale === 'ms' ? 'Projek Tahun Akhir (FYP):' : 'Final Year Project (FYP):'}</strong>
+										<strong
+											>{locale === 'ms'
+												? 'Projek Tahun Akhir (FYP):'
+												: 'Final Year Project (FYP):'}</strong
+										>
 										<p class="fyp-title">{edu.fypTitle[locale]}</p>
 										<p>{edu.fypSummary[locale]}</p>
 										{#if edu.fypRepo}
-											<a href={edu.fypRepo} target="_blank" rel="noopener noreferrer" class="repo-link">
-												{locale === 'ms' ? 'Buka Repositori FYP di GitHub ↗' : 'Open FYP Repository on GitHub ↗'}
+											<a
+												href={edu.fypRepo}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="repo-link"
+											>
+												{locale === 'ms'
+													? 'Buka Repositori FYP di GitHub ↗'
+													: 'Open FYP Repository on GitHub ↗'}
 											</a>
 										{/if}
 									</div>
@@ -273,7 +304,8 @@
 								<div class="cert-card">
 									<span class="cert-cat">
 										{cert.category === 'network' ? 'CISCO NETWORKING' : 'DATA ANALYTICS'}
-										{#if cert.period} · {cert.period}{/if}
+										{#if cert.period}
+											· {cert.period}{/if}
 									</span>
 									<h4>{cert.title}</h4>
 									<p>{cert.issuer}</p>
@@ -297,7 +329,6 @@
 		justify-content: center;
 		padding: clamp(0.75rem, 2.5vw, 2rem);
 		background: var(--spatial-backdrop, rgba(7, 8, 10, 0.72));
-		backdrop-filter: blur(var(--blur-glass, 16px));
 	}
 
 	.backdrop-dismiss {
@@ -309,6 +340,9 @@
 	}
 
 	.dossier-sheet {
+		--spatial-pill-bg: var(--glass-text-bg);
+		--spatial-pill-hover-bg: var(--glass-text-hover-bg);
+		font-variant-numeric: tabular-nums;
 		position: relative;
 		z-index: 1;
 		width: min(var(--size-modal-width, 1140px), 100%);
@@ -316,10 +350,13 @@
 		display: flex;
 		flex-direction: column;
 		border-radius: var(--radius-xl, 20px);
-		background: var(--spatial-card-bg, var(--surface));
-		border: 1px solid var(--spatial-card-border, var(--surface-border));
+		background-color: var(--glass-modal-bg);
+		background-image: var(--glass-sheen);
+		border: 1px solid var(--glass-border);
 		color: var(--spatial-hud-ink, var(--ink));
-		box-shadow: var(--shadow-lg, 0 28px 80px rgba(0, 0, 0, 0.45));
+		-webkit-backdrop-filter: var(--glass-filter);
+		backdrop-filter: var(--glass-filter);
+		box-shadow: var(--shadow-glass-modal);
 		overflow: hidden;
 	}
 
@@ -334,12 +371,18 @@
 	}
 
 	.header-identity {
+		min-width: 0;
+		padding: 0.5rem 0.75rem;
+		border-radius: var(--radius-md);
+		background: var(--glass-text-bg);
+		overflow-wrap: anywhere;
 		display: flex;
 		align-items: center;
 		gap: 0.95rem;
 	}
 
 	.header-avatar {
+		flex-shrink: 0;
 		width: var(--size-avatar-md, 52px);
 		height: var(--size-avatar-md, 52px);
 		border-radius: var(--radius-pill, 9999px);
@@ -365,6 +408,7 @@
 
 	.dossier-actions {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.65rem;
 	}
@@ -382,12 +426,15 @@
 		font-weight: 600;
 		text-decoration: none;
 		cursor: pointer;
-		transition: transform var(--duration-fast, 150ms) ease, background var(--duration-fast, 150ms) ease, border-color var(--duration-fast, 150ms) ease;
+		transition:
+			transform var(--duration-fast, 150ms) ease,
+			background var(--duration-fast, 150ms) ease,
+			border-color var(--duration-fast, 150ms) ease;
 	}
 
 	.resume-btn {
 		background: var(--spatial-accent, var(--accent));
-		color: var(--bg, #ffffff);
+		color: var(--on-accent);
 		border: 0;
 	}
 
@@ -425,7 +472,9 @@
 		font-size: 0.83rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: background var(--duration-fast, 150ms) ease, color var(--duration-fast, 150ms) ease;
+		transition:
+			background var(--duration-fast, 150ms) ease,
+			color var(--duration-fast, 150ms) ease;
 	}
 
 	.tab-btn:hover {
@@ -439,8 +488,10 @@
 	}
 
 	.dossier-body {
+		min-height: 0;
 		padding: 1.35rem 1.5rem;
 		overflow-y: auto;
+		overscroll-behavior: contain;
 	}
 
 	.timeline-list {
@@ -452,7 +503,7 @@
 	.project-grid,
 	.edu-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(var(--card-min-width, 300px), 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min-width, 300px)), 1fr));
 		gap: 1rem;
 	}
 
@@ -465,6 +516,7 @@
 
 	.card-top {
 		display: flex;
+		flex-wrap: wrap;
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 0.75rem;
@@ -508,7 +560,10 @@
 		font-weight: 600;
 		cursor: pointer;
 		white-space: nowrap;
-		transition: border-color var(--duration-fast, 150ms) ease, background var(--duration-fast, 150ms) ease, color var(--duration-fast, 150ms) ease;
+		transition:
+			border-color var(--duration-fast, 150ms) ease,
+			background var(--duration-fast, 150ms) ease,
+			color var(--duration-fast, 150ms) ease;
 	}
 
 	.jump-btn:hover {
@@ -563,6 +618,8 @@
 	.repo-link {
 		display: inline-flex;
 		align-items: center;
+		min-height: var(--size-target-min, 24px);
+		padding-block: var(--space-idle-y, 2px);
 		font-size: 0.8rem;
 		font-weight: 600;
 		color: var(--spatial-accent, var(--accent));
@@ -590,6 +647,10 @@
 	}
 
 	.cert-heading {
+		width: fit-content;
+		padding: 0.4rem 0.65rem;
+		border-radius: var(--radius-sm);
+		background: var(--glass-text-bg);
 		margin: 1.5rem 0 0.8rem;
 		font-size: 1rem;
 		color: var(--spatial-hud-ink, var(--ink));
@@ -597,7 +658,7 @@
 
 	.cert-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(var(--card-min-sm, 220px), 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min-sm, 220px)), 1fr));
 		gap: 0.75rem;
 	}
 

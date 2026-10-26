@@ -111,21 +111,79 @@ interface WeatherConfig {
 
 // 360° ORBITAL ARCHIPELAGO GEOMETRY (Mengelilingi Teras Reaktor Pusat di (0,0,0) — BUKAN lorong lurus!)
 export const ORBIT_RADIUS = 38;
+const ISLAND_DECK_HEIGHT = 1.2;
+const LOCAL_DECK_HEIGHT = 0.42;
 const STATION_ANGLES = [0, 1, 2, 3, 4, 5].map((i) => (i / 6) * Math.PI * 2);
+// Aras asal kumpulan pulau; dek tempatan pula 0.42 m di atasnya.
+const STATION_DECK_ORIGIN_Y = ISLAND_DECK_HEIGHT - LOCAL_DECK_HEIGHT;
 
 const STATION_ANCHORS: THREE.Vector3[] = STATION_ANGLES.map(
-	(angle, idx) =>
+	(angle) =>
 		new THREE.Vector3(
 			Math.sin(angle) * ORBIT_RADIUS,
-			idx % 2 === 0 ? 0.0 : 0.35,
+			STATION_DECK_ORIGIN_Y,
 			Math.cos(angle) * ORBIT_RADIUS
 		)
 );
 
 const PULSE_COUNT = 72;
-const MOTE_COUNT = 160;
+const MOTE_COUNT = 280;
 const EXHIBIT_PROP_HEIGHT = 3.32;
 const EXHIBIT_PROP_BOB = 0.04;
+
+// Laluan cahaya mengikut aras jambatan, bukan aras dek pulau: bebola denyut tidak lagi
+// menembusi lantai dek (dahulu y=1.12 lawan permukaan dek y=1.20).
+const CAUSEWAY_DECK_Y = 0.22;
+const CAUSEWAY_RAIL_Y = 0.32;
+const CAUSEWAY_CORE_Y = 0.28;
+const PULSE_RIDE_Y = 0.36;
+const PULSE_DIVE_RADIUS = 16.5; // Mula menyelam sebelum benteng ombak pulau (13.1 m).
+const PULSE_DIVE_FADE = 3.0;
+
+// Soket kabel pada rasuk atas gerbang pulau (gerbang tempatan z=-5.2, rasuk y=0.35+5.92).
+const TETHER_HUB_RADIUS = 4.35;
+const TETHER_HUB_Y = 10.5;
+const TETHER_SOCKET_RADIUS = ORBIT_RADIUS - 5.2;
+const TETHER_SOCKET_Y = STATION_DECK_ORIGIN_Y + 6.27;
+
+// Atribut statik; hanyutan, saiz perspektif dan denyutan dikira pada GPU.
+const MOTE_VERTEX_SHADER = /* glsl */ `
+	uniform float uTime;
+	uniform float uViewportHeight;
+	attribute float aPhase;
+	attribute float aSize;
+	varying float vGlow;
+	varying float vDistance;
+
+	void main() {
+		vec3 p = position;
+		p.x += sin(uTime * 0.17 + aPhase) * 0.65;
+		p.z += cos(uTime * 0.13 + aPhase) * 0.65;
+		p.y += sin(uTime * 0.55 + aPhase) * 0.55;
+		vec4 viewPosition = modelViewMatrix * vec4(p, 1.0);
+		vDistance = -viewPosition.z;
+		vGlow = 0.72 + 0.28 * sin(uTime * 0.8 + aPhase);
+		gl_PointSize = clamp(aSize * uViewportHeight * projectionMatrix[1][1] / max(1.0, vDistance), 1.0, 18.0);
+		gl_Position = projectionMatrix * viewPosition;
+	}
+`;
+
+const MOTE_FRAGMENT_SHADER = /* glsl */ `
+	uniform vec3 uColor;
+	uniform float uOpacity;
+	varying float vGlow;
+	varying float vDistance;
+
+	void main() {
+		float radius = length(gl_PointCoord - 0.5) * 2.0;
+		if (radius >= 1.0) discard;
+		float halo = exp(-radius * radius * 5.0) * (1.0 - smoothstep(0.65, 1.0, radius));
+		float fade = smoothstep(1.0, 4.0, vDistance) * (1.0 - smoothstep(65.0, 125.0, vDistance));
+		gl_FragColor = vec4(uColor * (1.1 + vGlow), halo * fade * uOpacity);
+		#include <tonemapping_fragment>
+		#include <colorspace_fragment>
+	}
+`;
 
 const OCEAN_VERTEX_SHADER = /* glsl */ `
 	uniform float uTime;
@@ -486,9 +544,12 @@ export class FiberSpineWorld {
 	private renderer: THREE.WebGLRenderer | null = null;
 	private composer: EffectComposer | null = null;
 	private bloomPass: UnrealBloomPass | null = null;
+	private basePixelRatio = 1;
+	private currentPixelRatio = 1;
 	private envTexture: THREE.Texture | null = null;
 	private pbrMaps: PBRSurfaceMaps | null = null;
 	private orbitalLoopCurve: THREE.CatmullRomCurve3;
+	private causewayLoopCurve: THREE.CatmullRomCurve3;
 
 	private targetProgress = 0;
 	private currentProgress = 0;
@@ -545,7 +606,13 @@ export class FiberSpineWorld {
 	private previousScreen: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> | null = null;
 	private previousScreenRecord: HotspotRecord | null = null;
 	private projectionCorners = Array.from({ length: 4 }, () => new THREE.Vector3());
-	private screenFrame: ProjectedScreenFrame = { left: 0, top: 0, width: 0, height: 0, ready: false };
+	private screenFrame: ProjectedScreenFrame = {
+		left: 0,
+		top: 0,
+		width: 0,
+		height: 0,
+		ready: false
+	};
 
 	private ambientLight!: THREE.AmbientLight;
 	private hemiLight!: THREE.HemisphereLight;
@@ -563,9 +630,9 @@ export class FiberSpineWorld {
 	private pulseOffsets: Float32Array;
 	private pulseSpeeds: Float32Array;
 	private dummy = new THREE.Object3D();
-	private moteInstanced!: THREE.InstancedMesh;
-	private moteData: Float32Array = new Float32Array(0);
-	private stationBob: number[] = [];
+	private motePoints: THREE.Points<THREE.BufferGeometry, THREE.ShaderMaterial> | null = null;
+	private motionTime = 0;
+	private buoyancyTime = 0;
 
 	private clock = new THREE.Clock();
 	private rafId: number | null = null;
@@ -589,6 +656,13 @@ export class FiberSpineWorld {
 		this.camera = new THREE.PerspectiveCamera(46, 1, 0.15, 380);
 		// Gelung tertutup (closed orbital loop) yang menghubungkan ke-6 pulau secara 360°
 		this.orbitalLoopCurve = new THREE.CatmullRomCurve3(STATION_ANCHORS, true, 'catmullrom', 0.5);
+		// Laluan yang sama pada aras jambatan: tiub cahaya & bebola denyut duduk di atas dek, bukan di dalamnya.
+		this.causewayLoopCurve = new THREE.CatmullRomCurve3(
+			STATION_ANCHORS.map((anchor) => new THREE.Vector3(anchor.x, 0, anchor.z)),
+			true,
+			'catmullrom',
+			0.5
+		);
 
 		this.pulseOffsets = new Float32Array(PULSE_COUNT);
 		this.pulseSpeeds = new Float32Array(PULSE_COUNT);
@@ -606,7 +680,11 @@ export class FiberSpineWorld {
 				alpha: false
 			});
 			const dpr = Math.min(window.devicePixelRatio || 1, 1.35);
+			this.basePixelRatio = dpr;
+			this.currentPixelRatio = dpr;
 			this.renderer.setPixelRatio(dpr);
+			// Biasan separuh resolusi; teks OLED kekal pada resolusi penuh.
+			this.renderer.transmissionResolutionScale = 0.5;
 			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			this.renderer.toneMappingExposure = 1.02;
 			this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -636,12 +714,14 @@ export class FiberSpineWorld {
 				type: THREE.HalfFloatType
 			});
 			this.composer = new EffectComposer(this.renderer, rt);
+			this.composer.setPixelRatio(dpr);
+			this.composer.setSize(width, height);
 			const renderPass = new RenderPass(this.scene, this.camera);
 			this.bloomPass = new UnrealBloomPass(
 				new THREE.Vector2(Math.round(width * 0.5), Math.round(height * 0.5)),
-				0.26,
-				0.48,
-				0.88
+				0.04,
+				0.18,
+				1.0
 			);
 			const outputPass = new OutputPass();
 			this.composer.addPass(renderPass);
@@ -673,15 +753,18 @@ export class FiberSpineWorld {
 	private readScreenPalette(): void {
 		const style = getComputedStyle(document.documentElement);
 		const token = (name: string) => style.getPropertyValue(name).trim();
+		// Token --screen-* mengekalkan skrin boleh dibaca tanpa mencerahkan palet global.
 		this.screenPalette = {
-			background: token('--bg'),
-			surface: token('--surface'),
+			background: token('--screen-bg') || token('--bg'),
+			surface: token('--screen-surface') || token('--surface'),
 			text: token('--ink'),
 			muted: token('--ink-secondary'),
 			accent: token('--badge-ink'),
 			border: token('--surface-border-hover'),
-			hover: token('--surface-hover'),
-			onAccent: token('--bg'),
+			hover: token('--screen-surface-hover') || token('--surface-hover'),
+			onAccent: token('--on-accent'),
+			online: token('--screen-online'),
+			halo: token('--screen-halo'),
 			fontBody: token('--font-body'),
 			fontMono: token('--font-mono') || token('--font-body')
 		};
@@ -1047,16 +1130,56 @@ export class FiberSpineWorld {
 		}
 
 		// 6 Alur Jambatan Optik Bercahaya (Radial Optical Tethers) dari Teras Pusat ke Setiap Pulau CV
-		STATION_ANCHORS.forEach((islandPos, idx) => {
-			const midPoint = islandPos.clone().multiplyScalar(0.5);
-			midPoint.y = 5.4 + (idx % 2) * 1.2;
-			const startPt = new THREE.Vector3(0, 9.2, 0);
-			const endPt = new THREE.Vector3(islandPos.x * 0.86, islandPos.y + 2.8, islandPos.z * 0.86);
+		// Hujung bermula pada kolar hub reaktor dan berakhir pada soket fizikal di rasuk gerbang pulau,
+		// jadi kabel kelihatan tersambung (dahulu hujungnya tergantung di udara kosong).
+		const socketMat = this.createBrushedMetalMaterial(0x1e293b, 0x38bdf8, 0.22);
+		STATION_ANGLES.forEach((angle, idx) => {
+			const dirX = Math.sin(angle);
+			const dirZ = Math.cos(angle);
+
+			const startPt = new THREE.Vector3(
+				dirX * TETHER_HUB_RADIUS,
+				TETHER_HUB_Y - 0.6,
+				dirZ * TETHER_HUB_RADIUS
+			);
+			const endPt = new THREE.Vector3(
+				dirX * TETHER_SOCKET_RADIUS,
+				TETHER_SOCKET_Y,
+				dirZ * TETHER_SOCKET_RADIUS
+			);
+
+			// Kawalan lengkung sedikit di bawah garis lurus supaya kabel melendut natural
+			// tanpa memotong rasuk gerbang.
+			const midPoint = startPt.clone().lerp(endPt, 0.55);
+			midPoint.y -= 0.75 + (idx % 2) * 0.25;
 
 			const tetherCurve = new THREE.QuadraticBezierCurve3(startPt, midPoint, endPt);
 			const tetherGeo = new THREE.TubeGeometry(tetherCurve, 48, 0.055, 12, false);
 			const tetherMesh = new THREE.Mesh(tetherGeo, idx % 2 === 0 ? cyanGlowMat : tealGlowMat);
 			reactorGroup.add(tetherMesh);
+
+			// Kolar hub: mengunci pangkal kabel pada cincin reaktor.
+			const hubSocket = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.34, 16), socketMat);
+			hubSocket.position.copy(startPt);
+			hubSocket.quaternion.setFromUnitVectors(
+				new THREE.Vector3(0, 1, 0),
+				new THREE.Vector3(dirX, 0, dirZ).normalize()
+			);
+			reactorGroup.add(hubSocket);
+
+			// Soket penerima pada rasuk gerbang pulau; kabel benar-benar masuk ke dalamnya.
+			const stationSocket = new THREE.Mesh(
+				new THREE.CylinderGeometry(0.18, 0.24, 0.42, 16),
+				socketMat
+			);
+			stationSocket.position.copy(endPt);
+			reactorGroup.add(stationSocket);
+
+			const socketRing = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.028, 10, 20), cyanGlowMat);
+			socketRing.position.copy(endPt);
+			socketRing.position.y += 0.22;
+			socketRing.rotation.x = Math.PI / 2;
+			reactorGroup.add(socketRing);
 		});
 
 		this.scene.add(reactorGroup);
@@ -1090,7 +1213,7 @@ export class FiberSpineWorld {
 		);
 		causewayRingGeo.rotateX(-Math.PI / 2);
 		const causewayRing = new THREE.Mesh(causewayRingGeo, deckMat);
-		causewayRing.position.y = 0.22;
+		causewayRing.position.y = CAUSEWAY_DECK_Y;
 		causewayRing.receiveShadow = true;
 		this.scene.add(causewayRing);
 
@@ -1098,20 +1221,20 @@ export class FiberSpineWorld {
 		const innerRailGeo = new THREE.TorusGeometry(ORBIT_RADIUS - 1.68, 0.055, 12, 180);
 		innerRailGeo.rotateX(Math.PI / 2);
 		const innerRail = new THREE.Mesh(innerRailGeo, railGlowMat);
-		innerRail.position.y = 0.32;
+		innerRail.position.y = CAUSEWAY_RAIL_Y;
 		this.scene.add(innerRail);
 
 		const outerRailGeo = new THREE.TorusGeometry(ORBIT_RADIUS + 1.68, 0.055, 12, 180);
 		outerRailGeo.rotateX(Math.PI / 2);
 		const outerRail = new THREE.Mesh(outerRailGeo, railGlowMat);
-		outerRail.position.y = 0.32;
+		outerRail.position.y = CAUSEWAY_RAIL_Y;
 		this.scene.add(outerRail);
 
 		// Tunjang Gentian Optik Bercahaya di Tengah Laluan Orbital
-		const coreGeo = new THREE.TubeGeometry(this.orbitalLoopCurve, 240, 0.06, 16, true);
+		const coreGeo = new THREE.TubeGeometry(this.causewayLoopCurve, 240, 0.06, 16, true);
 		this.coreTubeMat = this.createGlowMaterial(0x38bdf8, 0x0284c7, 0.45);
 		const coreMesh = new THREE.Mesh(coreGeo, this.coreTubeMat);
-		coreMesh.position.y = 0.28;
+		coreMesh.position.y = CAUSEWAY_CORE_Y;
 		this.scene.add(coreMesh);
 
 		// Denyutan Paket Data Optik Beredar 360° Sepanjang Kepulauan
@@ -1123,59 +1246,59 @@ export class FiberSpineWorld {
 		this.buildAtmosphericMotes();
 	}
 
-	/**
-	 * ZARAH CAHAYA ATMOSFERA MARIN (Luminous Cyber-Motes)
-	 * Satu InstancedMesh = satu draw call: suasana video game moden tanpa kejatuhan FPS.
-	 * Data per zarah: [sudut orbit, jejari, ketinggian asas, fasa, kelajuan].
-	 */
+	/** Satu kelompok Points untuk enam pulau dan reaktor; tiada muat naik matriks setiap frame. */
 	private buildAtmosphericMotes(): void {
-		const moteGeo = new THREE.SphereGeometry(0.075, 8, 6);
-		const moteMat = new THREE.MeshBasicMaterial({
-			color: 0x7dd3fc,
-			transparent: true,
-			opacity: 0.72,
-			depthWrite: false,
-			toneMapped: false
-		});
-		this.moteInstanced = new THREE.InstancedMesh(moteGeo, moteMat, MOTE_COUNT);
-		this.moteInstanced.frustumCulled = false;
-		this.moteData = new Float32Array(MOTE_COUNT * 5);
-
+		const positions = new Float32Array(MOTE_COUNT * 3);
+		const phases = new Float32Array(MOTE_COUNT);
+		const sizes = new Float32Array(MOTE_COUNT);
 		for (let i = 0; i < MOTE_COUNT; i++) {
-			const base = i * 5;
-			this.moteData[base] = Math.random() * Math.PI * 2;
-			this.moteData[base + 1] = 12 + Math.random() * (ORBIT_RADIUS + 12);
-			this.moteData[base + 2] = 0.6 + Math.random() * 13;
-			this.moteData[base + 3] = Math.random() * Math.PI * 2;
-			this.moteData[base + 4] = 0.35 + Math.random() * 0.85;
-			this.dummy.position.set(0, -40, 0);
-			this.dummy.scale.setScalar(1);
-			this.dummy.updateMatrix();
-			this.moteInstanced.setMatrixAt(i, this.dummy.matrix);
+			const anchor = STATION_ANCHORS[i % (STATION_ANCHORS.length + 1)];
+			const angle = i * 2.3999632297;
+			const radius = 2 + Math.sqrt(((i * 17) % MOTE_COUNT) / MOTE_COUNT) * 10;
+			positions[i * 3] = (anchor?.x ?? 0) + Math.sin(angle) * radius;
+			positions[i * 3 + 1] = ISLAND_DECK_HEIGHT + 0.8 + ((i * 13) % 37) * (anchor ? 0.22 : 0.4);
+			positions[i * 3 + 2] = (anchor?.z ?? 0) + Math.cos(angle) * radius;
+			phases[i] = angle % (Math.PI * 2);
+			sizes[i] = 0.035 + (i % 5) * 0.008;
 		}
-		this.moteInstanced.instanceMatrix.needsUpdate = true;
-		this.scene.add(this.moteInstanced);
+		const geometry = new THREE.BufferGeometry();
+		geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+		geometry.setAttribute('aPhase', new THREE.BufferAttribute(phases, 1));
+		geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+		geometry.computeBoundingSphere();
+		// Margin meliputi anjakan shader; frustum culling kekal selamat.
+		if (geometry.boundingSphere) geometry.boundingSphere.radius += 2;
+		const material = new THREE.ShaderMaterial({
+			vertexShader: MOTE_VERTEX_SHADER,
+			fragmentShader: MOTE_FRAGMENT_SHADER,
+			uniforms: {
+				uTime: { value: 0 },
+				uViewportHeight: {
+					value: this.container.clientHeight * (this.renderer?.getPixelRatio() ?? 1)
+				},
+				uColor: { value: new THREE.Color(0x7dd3fc) },
+				uOpacity: { value: 0.48 }
+			},
+			transparent: true,
+			blending: THREE.AdditiveBlending,
+			depthWrite: false
+		});
+		this.motePoints = new THREE.Points(geometry, material);
+		this.motePoints.name = 'atmospheric-data-embers';
+		this.scene.add(this.motePoints);
 	}
 
 	/** Alunan apungan marin halus: heave + pitch + roll berkunci semasa periksa (hydraulic lock). */
 	private applyStationBuoyancy(elapsed: number): void {
-		if (!this.stationBob.length) return;
-		// Kunci hidraulik: bacaan teks mesti stabil ketika pengguna memeriksa terminal.
-		const locked = Boolean(this.selectedHotspotId);
+		// Bekukan pose semasa (bukan snap ke sifar) supaya kamera inspect tidak tersentak.
+		if (this.reducedMotion || this.selectedHotspotId) return;
 		for (let i = 0; i < this.stationGroups.length; i++) {
 			const group = this.stationGroups[i];
 			const anchor = STATION_ANCHORS[i];
 			if (!anchor) continue;
-			const phase = this.stationBob[i] ?? i * 1.7;
-			if (this.reducedMotion || locked) {
-				group.position.y = anchor.y;
-				group.rotation.x = 0;
-				group.rotation.z = 0;
-				continue;
-			}
-			group.position.y = anchor.y + Math.sin(elapsed * 0.52 + phase) * 0.045;
-			group.rotation.x = Math.sin(elapsed * 0.41 + phase * 0.7) * 0.0032;
-			group.rotation.z = Math.cos(elapsed * 0.37 + phase * 1.3) * 0.0038;
+			group.position.y = anchor.y + Math.sin(elapsed * 0.9 + i) * 0.08;
+			group.rotation.x = Math.sin(elapsed * 0.9 + i) * 0.005;
+			group.rotation.z = Math.cos(elapsed * 0.9 + i) * 0.005;
 		}
 	}
 
@@ -1210,7 +1333,7 @@ export class FiberSpineWorld {
 		group.add(outerRing);
 
 		// --- KEJURUTERAAN MARIN: tapak sauh laut dalam, benteng ombak & tiang pylon ---
-		// Caisson balast: memberi berat visual supaya pelantar berpaut pada dasar laut, bukan terapung.
+		// Caisson balast separa tenggelam menyokong pontun terapung dan dinding aloi.
 		const caissonMat = this.createBrushedMetalMaterial(0x070d18, accentHex, 0.46);
 		const caisson = new THREE.Mesh(new THREE.CylinderGeometry(9.9, 10.9, 4.2, 40, 1), caissonMat);
 		caisson.position.y = -2.05;
@@ -1218,20 +1341,26 @@ export class FiberSpineWorld {
 		group.add(caisson);
 
 		// Cincin kolar keluli di pertemuan dek dengan caisson.
-		const collar = new THREE.Mesh(new THREE.CylinderGeometry(10.35, 10.35, 0.34, 40, 1, true), chromeMat);
+		const collar = new THREE.Mesh(
+			new THREE.CylinderGeometry(10.35, 10.35, 0.34, 40, 1, true),
+			chromeMat
+		);
 		collar.position.y = -0.3;
 		group.add(collar);
 
 		// Benteng pemecah ombak (breakwater seawall): dinding condong yang memecah gelombang sebelum dek.
 		const seawallMat = this.createBrushedMetalMaterial(0x111c2e, undefined, 0.62);
-		const seawall = new THREE.Mesh(new THREE.CylinderGeometry(11.9, 13.1, 1.5, 48, 1, true), seawallMat);
-		seawall.position.y = -0.42;
+		const seawall = new THREE.Mesh(
+			new THREE.CylinderGeometry(11.9, 13.1, 1.5, 48, 1, true),
+			seawallMat
+		);
+		seawall.position.y = LOCAL_DECK_HEIGHT - 0.75;
 		seawall.receiveShadow = true;
 		group.add(seawall);
 
 		const seawallLip = new THREE.Mesh(new THREE.TorusGeometry(11.92, 0.11, 10, 64), glowMat);
 		seawallLip.rotation.x = Math.PI / 2;
-		seawallLip.position.y = 0.3;
+		seawallLip.position.y = LOCAL_DECK_HEIGHT;
 		group.add(seawallLip);
 
 		// 6 tiang tambat (mooring bollards) di bibir benteng: butiran platform luar pesisir.
@@ -1250,7 +1379,7 @@ export class FiberSpineWorld {
 
 		// Monumen Kejuruteraan Pusat Pulau (Berbeza untuk setiap Stesen CV!)
 		const monumentGroup = new THREE.Group();
-		monumentGroup.position.set(0, 0.42, -1.8);
+		monumentGroup.position.set(0, LOCAL_DECK_HEIGHT, -1.8);
 
 		const plinth = new THREE.Mesh(new THREE.CylinderGeometry(1.65, 2.05, 0.55, 32), titaniumMat);
 		plinth.position.y = 0.28;
@@ -1304,20 +1433,20 @@ export class FiberSpineWorld {
 			}
 			// Letakkan radar di atas gerbang, bukan pada garis pandang papan tengah.
 			const radarMast = new THREE.Mesh(
-				new THREE.CylinderGeometry(0.12, 0.28, 4.4, 20),
+				new THREE.CylinderGeometry(0.12, 0.28, 4.7, 20),
 				titaniumMat
 			);
-			radarMast.position.set(0, 2.75, -0.6);
+			radarMast.position.set(0, 2.9, -0.6);
 			radarMast.castShadow = true;
 			monumentGroup.add(radarMast);
 
 			this.radarRotor = new THREE.Group();
-			this.radarRotor.position.set(0, 4.95, -0.6);
+			this.radarRotor.position.set(0, 5.22, -0.6);
 			monumentGroup.add(this.radarRotor);
 
 			chromeMat.side = THREE.DoubleSide;
 			const radarDish = new THREE.Mesh(new THREE.LatheGeometry(pts, 48), chromeMat);
-			radarDish.scale.setScalar(0.5);
+			radarDish.scale.setScalar(0.32);
 			radarDish.rotation.x = Math.PI * 0.18;
 			radarDish.castShadow = true;
 			this.radarRotor.add(radarDish);
@@ -1391,7 +1520,8 @@ export class FiberSpineWorld {
 		ctx.font = `500 28px ${palette.fontBody}`;
 		ctx.fillText(
 			this.locale === 'ms' ? 'Pilih terminal untuk meneroka' : 'Select a terminal to explore',
-			56, h - 34
+			56,
+			h - 34
 		);
 	}
 
@@ -1402,18 +1532,18 @@ export class FiberSpineWorld {
 		const pillarMat = this.createBrushedMetalMaterial(0x1e293b, 0x38bdf8, 0.22);
 
 		const leftPillar = new THREE.Mesh(
-			createBeveledSlabGeometry(0.32, 5.9, 0.32, 0.05, 0.02),
+			createBeveledSlabGeometry(0.32, 5.2, 0.32, 0.05, 0.02),
 			pillarMat
 		);
-		leftPillar.position.set(-4.6, 2.95, 0);
+		leftPillar.position.set(-4.6, 2.6, 0);
 		leftPillar.castShadow = true;
 		archGroup.add(leftPillar);
 
 		const rightPillar = new THREE.Mesh(
-			createBeveledSlabGeometry(0.32, 5.9, 0.32, 0.05, 0.02),
+			createBeveledSlabGeometry(0.32, 5.2, 0.32, 0.05, 0.02),
 			pillarMat
 		);
-		rightPillar.position.set(4.6, 2.95, 0);
+		rightPillar.position.set(4.6, 2.6, 0);
 		rightPillar.castShadow = true;
 		archGroup.add(rightPillar);
 
@@ -1421,7 +1551,7 @@ export class FiberSpineWorld {
 			createBeveledSlabGeometry(9.6, 0.26, 0.36, 0.05, 0.02),
 			pillarMat
 		);
-		topBeam.position.set(0, 5.92, 0);
+		topBeam.position.set(0, 5.22, 0);
 		topBeam.castShadow = true;
 		archGroup.add(topBeam);
 
@@ -1440,12 +1570,12 @@ export class FiberSpineWorld {
 			createBeveledSlabGeometry(8.2, 1.43, 0.16, 0.05, 0.02),
 			pillarMat
 		);
-		signBacking.position.set(0, 5.08, 0);
+		signBacking.position.set(0, 4.38, 0);
 		archGroup.add(signBacking);
 
 		const signMat = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false });
 		const signFace = new THREE.Mesh(new THREE.PlaneGeometry(8.0, 1.33), signMat);
-		signFace.position.set(0, 5.08, 0.09);
+		signFace.position.set(0, 4.38, 0.09);
 		archGroup.add(signFace);
 
 		this.stationHeaders.push({ station, canvas, texture });
@@ -1463,28 +1593,36 @@ export class FiberSpineWorld {
 		const siblings = STATIONS[location?.stationIndex ?? 0].hotspots;
 		// Potret hanya milik papan ringkasan profil; terminal lain kekal tanpa gambar.
 		const isProfileSummary = hotspot.id === 'core-monolith' && view.code === 'PROFIL-01';
-		const layout = drawExhibitScreen(canvas, {
-			view,
-			locale: this.locale,
-			inspecting,
-			canBack: this.screenHistory.length > 0,
-			index: siblings.findIndex((item) => item.id === hotspot.id),
-			total: siblings.length,
-			page: inspecting ? this.screenPage : 0,
-			hoveredId: inspecting ? this.hoveredRegionId : null,
-			focusedId: inspecting ? this.focusedRegionId : null,
-			pressedId: inspecting ? this.pressedRegionId : null,
-			avatar: isProfileSummary ? this.profileImage : null
-		}, this.screenPalette);
+		const layout = drawExhibitScreen(
+			canvas,
+			{
+				view,
+				locale: this.locale,
+				inspecting,
+				canBack: this.screenHistory.length > 0,
+				index: siblings.findIndex((item) => item.id === hotspot.id),
+				total: siblings.length,
+				page: inspecting ? this.screenPage : 0,
+				hoveredId: inspecting ? this.hoveredRegionId : null,
+				focusedId: inspecting ? this.focusedRegionId : null,
+				pressedId: inspecting ? this.pressedRegionId : null,
+				avatar: isProfileSummary ? this.profileImage : null
+			},
+			this.screenPalette
+		);
 		const record = this.hotspots.find((item) => item.id === hotspot.id);
 		if (record) record.regions = layout.regions;
 		if (inspecting) {
 			this.screenPage = layout.page;
 			this.screenPageCount = layout.pageCount;
 			this.callbacks.onScreenUpdate?.({
-				hotspotId: hotspot.id, view, regions: layout.regions,
-				width: canvas.width, height: canvas.height,
-				page: layout.page, pageCount: layout.pageCount
+				hotspotId: hotspot.id,
+				view,
+				regions: layout.regions,
+				width: canvas.width,
+				height: canvas.height,
+				page: layout.page,
+				pageCount: layout.pageCount
 			});
 		}
 	}
@@ -1496,7 +1634,9 @@ export class FiberSpineWorld {
 			? Math.max(
 					EXHIBIT_MIN_WIDTH,
 					Math.ceil(EXHIBIT_MIN_HEIGHT * ratio),
-					Math.round(Math.min(this.container.clientWidth, this.container.clientHeight * ratio) * 0.88)
+					Math.round(
+						Math.min(this.container.clientWidth, this.container.clientHeight * ratio) * 0.88
+					)
 				)
 			: 1440;
 		const height = inspecting ? Math.max(EXHIBIT_MIN_HEIGHT, Math.round(width / ratio)) : 920;
@@ -1556,7 +1696,12 @@ export class FiberSpineWorld {
 		texture.colorSpace = THREE.SRGBColorSpace;
 		this.previousScreen = new THREE.Mesh(
 			new THREE.PlaneGeometry(record.screenWidth, record.screenHeight),
-			new THREE.MeshBasicMaterial({ map: texture, transparent: true, toneMapped: false, depthWrite: false })
+			new THREE.MeshBasicMaterial({
+				map: texture,
+				transparent: true,
+				toneMapped: false,
+				depthWrite: false
+			})
 		);
 		this.previousScreen.position.set(0, 1.52, 0.097);
 		record.mesh.add(this.previousScreen);
@@ -1566,7 +1711,12 @@ export class FiberSpineWorld {
 	}
 
 	public setScreenFeedback(kind: 'hover' | 'focus' | 'press', regionId: string | null): void {
-		const key = kind === 'hover' ? 'hoveredRegionId' : kind === 'focus' ? 'focusedRegionId' : 'pressedRegionId';
+		const key =
+			kind === 'hover'
+				? 'hoveredRegionId'
+				: kind === 'focus'
+					? 'focusedRegionId'
+					: 'pressedRegionId';
 		if (this[key] === regionId) return;
 		this[key] = regionId;
 		this.redrawSelectedScreen();
@@ -1597,7 +1747,8 @@ export class FiberSpineWorld {
 			if (!record) return;
 			const siblings = STATIONS[record.stationIndex].hotspots;
 			const index = siblings.findIndex((item) => item.id === record.id);
-			const next = siblings[(index + (action.kind === 'next' ? 1 : -1) + siblings.length) % siblings.length];
+			const next =
+				siblings[(index + (action.kind === 'next' ? 1 : -1) + siblings.length) % siblings.length];
 			this.selectHotspot(next.id);
 			this.callbacks.onHotspotSelect?.(next.id, record.stationIndex);
 		} else if (action.kind === 'page') {
@@ -1617,7 +1768,8 @@ export class FiberSpineWorld {
 	private navigateScreen(route: ExhibitRoute, remember = true, page = 0): void {
 		if (!resolveExhibitView(route)) return;
 		const history = [...this.screenHistory];
-		if (remember && this.screenRoute) history.push({ route: this.screenRoute, page: this.screenPage });
+		if (remember && this.screenRoute)
+			history.push({ route: this.screenRoute, page: this.screenPage });
 		if (route.kind === 'hotspot' && route.id !== this.selectedHotspotId) {
 			const location = getHotspotLocation(route.id);
 			if (!location) return;
@@ -1763,12 +1915,15 @@ export class FiberSpineWorld {
 		root.position.copy(position);
 		root.rotation.y = yawAngle;
 
-		const frameMat = this.createBrushedMetalMaterial(0x1e293b, accentHex, 0.22);
+		const supportMat = this.createBrushedMetalMaterial(0x1e293b, accentHex, 0.22);
+		// Casis legap berus metal: kaca biasan dahulu mencuci skrin OLED dan memaksa
+		// 21 frame tambahan melalui pas transmission setiap frame.
+		const frameMat = this.createBrushedMetalMaterial(0x16202e, accentHex, 0.18);
 		const accentMat = this.createGlowMaterial(accentHex, accentHex, 0.45);
 
 		const basePlinth = new THREE.Mesh(
 			createBeveledSlabGeometry(2.85, 0.18, 0.85, 0.08, 0.03),
-			frameMat
+			supportMat
 		);
 		basePlinth.position.y = 0.09;
 		basePlinth.castShadow = true;
@@ -1776,14 +1931,14 @@ export class FiberSpineWorld {
 		root.add(basePlinth);
 
 		for (const sx of [-0.95, 0.95]) {
-			const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.62, 18), frameMat);
+			const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.62, 18), supportMat);
 			strut.position.set(sx, 0.35, 0);
 			strut.castShadow = true;
 			root.add(strut);
 		}
 
 		const chassis = new THREE.Mesh(
-			createBeveledSlabGeometry(2.82, 1.88, 0.16, 0.08, 0.03),
+			createBeveledSlabGeometry(2.96, 2.0, 0.16, 0.08, 0.03),
 			frameMat
 		);
 		chassis.position.set(0, 1.52, 0);
@@ -1791,11 +1946,22 @@ export class FiberSpineWorld {
 		chassis.receiveShadow = true;
 		root.add(chassis);
 
-		const accentRim = new THREE.Mesh(
-			createBeveledSlabGeometry(2.88, 1.94, 0.05, 0.09, 0.015),
-			accentMat
-		);
-		accentRim.position.set(0, 1.52, -0.02);
+		// Bingkai berlubang sebagai garis cahaya nipis di tepi aperture skrin.
+		const rimShape = new THREE.Shape();
+		rimShape.moveTo(-1.51, -1.03);
+		rimShape.lineTo(1.51, -1.03);
+		rimShape.lineTo(1.51, 1.03);
+		rimShape.lineTo(-1.51, 1.03);
+		rimShape.closePath();
+		const aperture = new THREE.Path();
+		aperture.moveTo(-1.46, -0.98);
+		aperture.lineTo(-1.46, 0.98);
+		aperture.lineTo(1.46, 0.98);
+		aperture.lineTo(1.46, -0.98);
+		aperture.closePath();
+		rimShape.holes.push(aperture);
+		const accentRim = new THREE.Mesh(new THREE.ShapeGeometry(rimShape), accentMat);
+		accentRim.position.set(0, 1.52, 0.104);
 		root.add(accentRim);
 
 		const canvas = document.createElement('canvas');
@@ -1809,15 +1975,18 @@ export class FiberSpineWorld {
 			texture.anisotropy = Math.min(8, this.renderer.capabilities.getMaxAnisotropy());
 		}
 
-		// Skrin OLED Anti-Silau: roughness tinggi sedikit & emissive terkawal supaya tidak silau di bawah matahari Light Mode
+		// Skrin unlit: albedo hitam mematikan pencahayaan diffuse, manakala emissiveMap
+		// memaparkan tekstur tepat. Tanpa ini, spekular IBL + emissive menambah cahaya
+		// pada piksel gelap dan teks hilang di bawah matahari Light Mode.
 		const screenMat = new THREE.MeshStandardMaterial({
 			map: texture,
+			color: 0x000000,
 			emissive: 0xffffff,
 			emissiveMap: texture,
-			emissiveIntensity: 0.22,
-			roughness: 0.42,
-			metalness: 0.04,
-			envMapIntensity: 0.25
+			emissiveIntensity: 1,
+			roughness: 1,
+			metalness: 0,
+			envMapIntensity: 0
 		});
 
 		const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.66, 1.7), screenMat);
@@ -1825,7 +1994,10 @@ export class FiberSpineWorld {
 		root.add(screenMesh);
 
 		// Tiang Penyangga Mikro Mekanikal di Puncak Panel (Penyambung Struktur Estetik)
-		const propPylon = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.055, 0.34, 16), frameMat);
+		const propPylon = new THREE.Mesh(
+			new THREE.CylinderGeometry(0.035, 0.055, 0.34, 16),
+			supportMat
+		);
 		propPylon.position.set(0, 2.65, 0);
 		propPylon.castShadow = true;
 		root.add(propPylon);
@@ -1890,7 +2062,6 @@ export class FiberSpineWorld {
 			group.userData.islandIndex = stationIndex;
 			this.scene.add(group);
 			this.stationGroups.push(group);
-			this.stationBob.push(stationIndex * 1.37 + 0.6);
 
 			const accentHex = stationAccents[stationIndex % stationAccents.length];
 			this.createStationPlazaAndMonument(group, stationIndex, accentHex);
@@ -1921,7 +2092,7 @@ export class FiberSpineWorld {
 					group,
 					stationIndex,
 					hs,
-					new THREE.Vector3(xPos, 0.42, zPos),
+					new THREE.Vector3(xPos, LOCAL_DECK_HEIGHT, zPos),
 					yaw,
 					hsColors[idx % hsColors.length]
 				);
@@ -2102,8 +2273,9 @@ export class FiberSpineWorld {
 		}
 		this.scene.environmentIntensity = isLight ? 0.72 : 0.42;
 		if (this.bloomPass) {
-			this.bloomPass.strength = isLight ? 0.08 : 0.12;
-			this.bloomPass.threshold = isLight ? 0.96 : 0.92;
+			this.bloomPass.strength = isLight ? 0.03 : 0.04;
+			this.bloomPass.radius = 0.18;
+			this.bloomPass.threshold = 1.0;
 		}
 
 		this.keyLight.color.copy(cfg.sunColor);
@@ -2117,6 +2289,10 @@ export class FiberSpineWorld {
 		if (this.pulseMat) {
 			this.pulseMat.color.setHex(isLight ? 0x0284c7 : 0x38bdf8);
 		}
+		if (this.motePoints) {
+			this.motePoints.material.uniforms.uColor.value.setHex(isLight ? 0x38bdf8 : 0x7dd3fc);
+			this.motePoints.material.uniforms.uOpacity.value = isLight ? 0.28 : 0.48;
+		}
 
 		for (const mat of this.glowMaterials) {
 			const base = (mat.userData.baseEmissive as number | undefined) ?? 0.5;
@@ -2128,6 +2304,7 @@ export class FiberSpineWorld {
 
 	public setTheme(theme: ThemeMode): void {
 		this.theme = theme;
+		this.readScreenPalette();
 		this.applyWeatherAndTheme();
 		this.redrawAllCanvases();
 	}
@@ -2233,8 +2410,6 @@ export class FiberSpineWorld {
 
 	private refreshHotspotHighlights(): void {
 		const isLight = this.theme === 'light';
-		// Emissive terkawal: waktu malam cukup sebagai lampu OLED lembut tanpa bloom menyilaukan
-		const baseEmissive = isLight ? 0.08 : 0.05;
 		const isInspecting = Boolean(this.selectedHotspotId);
 
 		for (const record of this.hotspots) {
@@ -2243,16 +2418,16 @@ export class FiberSpineWorld {
 			const isSibling = record.stationIndex === this.activeStationIndex && !isSelected;
 
 			if (isInspecting && isSibling) {
-				// Padamkan emissive terminal saudara semasa mod inspect supaya fokus 100% pada terminal terpilih
-				record.screenMat.emissiveIntensity = 0;
+				// Redupkan terminal saudara semasa mod inspect supaya fokus kekal pada terminal terpilih.
+				record.screenMat.emissiveIntensity = 0.4;
 				record.accentMat.emissiveIntensity = 0;
 			} else {
-				record.screenMat.emissiveIntensity = isHovered
-					? baseEmissive + 0.08
-					: isSelected
-						? baseEmissive + 0.05
-						: baseEmissive;
-				record.accentMat.emissiveIntensity = isHovered ? 0.85 : isSelected ? 0.65 : 0.35;
+				// Skrin unlit: keamatan emissive kekal 1 supaya warna tekstur tidak dicuci
+				// oleh pencahayaan; sorotan hanya melalui aksen rangka.
+				record.screenMat.emissiveIntensity = 1;
+				const accentBoost = isLight ? 1 : 1.4;
+				record.accentMat.emissiveIntensity =
+					(isHovered ? 0.85 : isSelected ? 0.65 : 0.35) * accentBoost;
 			}
 		}
 	}
@@ -2326,6 +2501,10 @@ export class FiberSpineWorld {
 		if (this.composer) {
 			this.composer.setSize(width, height);
 		}
+		if (this.motePoints) {
+			this.motePoints.material.uniforms.uViewportHeight.value =
+				height * this.renderer.getPixelRatio();
+		}
 		const record = this.hotspots.find((item) => item.id === this.selectedHotspotId);
 		if (record) {
 			this.clearScreenTransition();
@@ -2365,8 +2544,13 @@ export class FiberSpineWorld {
 
 	private onPointerDown = (e: PointerEvent): void => {
 		if (
-			!this.renderer || !this.inputEnabled || e.button !== 0 || !e.isPrimary || this.pointerId !== null
-		) return;
+			!this.renderer ||
+			!this.inputEnabled ||
+			e.button !== 0 ||
+			!e.isPrimary ||
+			this.pointerId !== null
+		)
+			return;
 		this.updatePointerNdcFromEvent(e);
 		this.pointerId = e.pointerId;
 		this.isDragging = true;
@@ -2382,8 +2566,11 @@ export class FiberSpineWorld {
 
 	private onPointerMove = (e: PointerEvent): void => {
 		if (
-			!this.renderer || !this.inputEnabled || (this.pointerId !== null && e.pointerId !== this.pointerId)
-		) return;
+			!this.renderer ||
+			!this.inputEnabled ||
+			(this.pointerId !== null && e.pointerId !== this.pointerId)
+		)
+			return;
 		this.updatePointerNdcFromEvent(e);
 		this.lastInteractionTime = this.clock.getElapsedTime();
 
@@ -2406,7 +2593,9 @@ export class FiberSpineWorld {
 			this.setScreenFeedback('hover', region?.id ?? null);
 			this.setScreenFeedback(
 				'press',
-				this.isDragging && !this.dragMoved && region?.id === this.pointerDownRegionId ? region.id : null
+				this.isDragging && !this.dragMoved && region?.id === this.pointerDownRegionId
+					? region.id
+					: null
 			);
 			this.renderer.domElement.style.cursor = region ? 'pointer' : 'default';
 			return;
@@ -2673,49 +2862,45 @@ export class FiberSpineWorld {
 	}
 
 	private animateScene(dt: number, elapsed: number): void {
+		if (!this.reducedMotion) this.motionTime += dt;
+		elapsed = this.motionTime;
 		if (this.oceanMaterial) {
-			this.oceanMaterial.uniforms.uTime.value = this.reducedMotion ? 0 : elapsed;
+			this.oceanMaterial.uniforms.uTime.value = elapsed;
 		}
 		if (this.skyMaterial) {
-			this.skyMaterial.uniforms.uTime.value = this.reducedMotion ? 0 : elapsed;
+			this.skyMaterial.uniforms.uTime.value = elapsed;
 		}
 
 		for (let i = 0; i < PULSE_COUNT; i++) {
 			if (!this.reducedMotion) {
 				this.pulseOffsets[i] = (this.pulseOffsets[i] + dt * this.pulseSpeeds[i]) % 1;
 			}
-			const pt = this.orbitalLoopCurve.getPointAt(this.pulseOffsets[i]);
-			this.dummy.position.set(pt.x, pt.y + 0.34, pt.z);
-			const s = 0.75 + 0.35 * Math.sin(elapsed * 3.6 + i);
-			this.dummy.scale.setScalar(s);
+			const pt = this.causewayLoopCurve.getPointAt(this.pulseOffsets[i]);
+			// Bola menyelam di bawah dek pulau apabila menghampiri pusat pulau, jadi ia
+			// tidak lagi menembusi lantai (dahulu laluan y=0.78 + 0.34 melepasi dek y=1.20).
+			let nearestIsland = Infinity;
+			for (let islandIdx = 0; islandIdx < STATION_ANCHORS.length; islandIdx++) {
+				const anchor = STATION_ANCHORS[islandIdx];
+				const dx = pt.x - anchor.x;
+				const dz = pt.z - anchor.z;
+				nearestIsland = Math.min(nearestIsland, Math.sqrt(dx * dx + dz * dz));
+			}
+			const dive = Math.min(1, Math.max(0, (PULSE_DIVE_RADIUS - nearestIsland) / PULSE_DIVE_FADE));
+			const rideY = PULSE_RIDE_Y - dive * 2.4;
+			this.dummy.position.set(pt.x, rideY, pt.z);
+			const scale = (0.75 + 0.35 * Math.sin(elapsed * 3.6 + i)) * (1 - dive * 0.85);
+			this.dummy.scale.setScalar(scale);
 			this.dummy.updateMatrix();
 			this.pulseInstanced.setMatrixAt(i, this.dummy.matrix);
 		}
 		this.pulseInstanced.instanceMatrix.needsUpdate = true;
 
-		// Zarah atmosfera: satu instanced draw call, drift perlahan mengelilingi archipelago.
-		if (this.moteInstanced) {
-			for (let i = 0; i < MOTE_COUNT; i++) {
-				const base = i * 5;
-				const angle = this.moteData[base] + (this.reducedMotion ? 0 : elapsed * 0.018 * this.moteData[base + 4]);
-				const radius = this.moteData[base + 1];
-				const phase = this.moteData[base + 3];
-				const rise = this.reducedMotion ? 0 : Math.sin(elapsed * 0.55 + phase) * 1.15;
-				this.dummy.position.set(
-					Math.sin(angle) * radius,
-					this.moteData[base + 2] + rise,
-					Math.cos(angle) * radius
-				);
-				const twinkle = this.reducedMotion ? 1 : 0.55 + 0.45 * Math.sin(elapsed * 1.9 + phase * 2.1);
-				this.dummy.scale.setScalar(twinkle);
-				this.dummy.rotation.set(0, 0, 0);
-				this.dummy.updateMatrix();
-				this.moteInstanced.setMatrixAt(i, this.dummy.matrix);
-			}
-			this.moteInstanced.instanceMatrix.needsUpdate = true;
+		if (this.motePoints) {
+			this.motePoints.material.uniforms.uTime.value = elapsed;
 		}
 
-		this.applyStationBuoyancy(elapsed);
+		if (!this.reducedMotion && !this.selectedHotspotId) this.buoyancyTime += dt;
+		this.applyStationBuoyancy(this.buoyancyTime);
 
 		// Putar cincin Teras Reaktor Pusat
 		if (!this.reducedMotion) {
@@ -2772,8 +2957,18 @@ export class FiberSpineWorld {
 	}
 
 	private startLoop(): void {
-		const tick = () => {
+		// Had 60 fps: skrin 120 Hz tidak perlu merender dua kali untuk animasi yang sama,
+		// dan GPU mudah alih kekal sejuk (input kekal responsif).
+		const frameBudget = 1000 / 60;
+		let lastRenderTime = 0;
+		let slowStreak = 0;
+		let fastStreak = 0;
+
+		const tick = (now: number) => {
 			this.rafId = requestAnimationFrame(tick);
+			if (now - lastRenderTime < frameBudget - 1) return;
+			const rawDelta = now - lastRenderTime;
+			lastRenderTime = now;
 			const dt = Math.min(this.clock.getDelta(), 0.1);
 			const elapsed = this.clock.getElapsedTime();
 
@@ -2787,8 +2982,48 @@ export class FiberSpineWorld {
 			} else if (this.renderer) {
 				this.renderer.render(this.scene, this.camera);
 			}
+
+			// Resolusi adaptif: hanya diturunkan apabila frame benar-benar lewat,
+			// dan dipulihkan perlahan-lahan apabila GPU kembali lapang.
+			if (rawDelta > 0 && rawDelta < 250) {
+				if (rawDelta > frameBudget * 1.55) {
+					slowStreak += 1;
+					fastStreak = 0;
+				} else if (rawDelta < frameBudget * 1.1) {
+					fastStreak += 1;
+					slowStreak = 0;
+				} else {
+					slowStreak = 0;
+					fastStreak = 0;
+				}
+				if (slowStreak >= 45) {
+					slowStreak = 0;
+					this.stepPixelRatio(-0.15);
+				} else if (fastStreak >= 180) {
+					fastStreak = 0;
+					this.stepPixelRatio(0.1);
+				}
+			}
 		};
 		this.rafId = requestAnimationFrame(tick);
+	}
+
+	/** Ubah pixel ratio dalam had selamat tanpa menyentuh saiz CSS kanvas. */
+	private stepPixelRatio(delta: number): void {
+		if (!this.renderer) return;
+		const base = this.basePixelRatio;
+		const next = Math.min(base, Math.max(0.7, this.currentPixelRatio + delta));
+		if (Math.abs(next - this.currentPixelRatio) < 0.001) return;
+		this.currentPixelRatio = next;
+		this.renderer.setPixelRatio(next);
+		if (this.composer) {
+			this.composer.setPixelRatio(next);
+			this.composer.setSize(this.container.clientWidth || 1, this.container.clientHeight || 1);
+		}
+		if (this.motePoints) {
+			this.motePoints.material.uniforms.uViewportHeight.value =
+				(this.container.clientHeight || 1) * next;
+		}
 	}
 
 	public dispose(): void {

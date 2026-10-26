@@ -11,7 +11,7 @@
 		PROJECT_ARCHIVE,
 		type Locale
 	} from './spine-data';
-	import { FiberSpineWorld, type ThemeMode } from './FiberSpineWorld';
+	import type { FiberSpineWorld, ThemeMode } from './FiberSpineWorld';
 	import SpineDossierModal from './SpineDossierModal.svelte';
 
 	let locale = $state<Locale>('ms');
@@ -22,6 +22,7 @@
 	let uiIdle = $state(false);
 	let mounted = $state(false);
 	let motionPaused = $state(false);
+	let pageVisible = $state(true);
 
 	let activeStationIndex = $state(0);
 	let spineProgress = $state(0);
@@ -31,7 +32,10 @@
 	let oceanWeatherIndex = $state(0);
 
 	let canvasContainer: HTMLDivElement | undefined = $state();
+	let dossierTriggerEl: HTMLButtonElement | undefined = $state();
 	let world: FiberSpineWorld | null = null;
+	let worldLoading = false;
+	let disposed = false;
 	let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const currentStation = $derived(STATIONS[activeStationIndex] ?? STATIONS[0]);
@@ -127,6 +131,58 @@
 		world?.setLocale(next);
 	}
 
+	async function ensureWorld() {
+		if (world || worldLoading || disposed || !mounted || !canvasContainer || !webglReady) return;
+		worldLoading = true;
+		try {
+			const { FiberSpineWorld } = await import('./FiberSpineWorld');
+			if (disposed || !canvasContainer || viewMode !== '3d' || dossierOpen || !pageVisible) return;
+			world = new FiberSpineWorld(canvasContainer, {
+				onStationChange: (idx, progress) => {
+					spineProgress = progress;
+					if (idx !== activeStationIndex) syncStationSelection(idx);
+				},
+				onHotspotHover: (id, islandLabel) => {
+					hoveredHotspotId = id;
+					hoveredIslandLabel = islandLabel ?? null;
+				},
+				onHotspotSelect: (id, stationIdx) => openExhibit(id, stationIdx),
+				onOpenDossier: openDossier
+			});
+			if (!world.init()) {
+				world.dispose();
+				world = null;
+				webglReady = false;
+				viewMode = 'editorial';
+				return;
+			}
+			world.setTheme(theme);
+			world.setLocale(locale);
+			world.setReducedMotion(motionPaused);
+			world.setSimulationMode(activeStationIndex, currentWeather.id);
+			world.goToStation(activeStationIndex);
+			world.selectHotspot(selectedHotspotId);
+			syncWorldActivity();
+		} catch (error) {
+			if (!disposed) {
+				world?.dispose();
+				world = null;
+				webglReady = false;
+				viewMode = 'editorial';
+				console.error('Dunia 3D tidak dapat dimuatkan.', error);
+			}
+		} finally {
+			worldLoading = false;
+		}
+	}
+
+	function syncWorldActivity() {
+		const active = viewMode === '3d' && !dossierOpen && pageVisible;
+		if (active && mounted && !world) void ensureWorld();
+		world?.setActive(active);
+		world?.setInputEnabled(active);
+	}
+
 	function toggleViewMode() {
 		const next = viewMode === '3d' ? 'editorial' : '3d';
 		if (next === 'editorial') {
@@ -134,8 +190,12 @@
 			if (dossierOpen) closeDossier();
 		}
 		viewMode = next;
-		world?.setActive?.(next === '3d');
-		world?.setInputEnabled?.(next === '3d' && !dossierOpen);
+		try {
+			localStorage.setItem('spine-view-mode', next);
+		} catch {
+			// Abaikan ralat storan peribadi.
+		}
+		syncWorldActivity();
 	}
 
 	function toggleMotionPause() {
@@ -148,12 +208,12 @@
 			closeExhibit();
 		}
 		dossierOpen = true;
-		world?.setInputEnabled?.(false);
+		syncWorldActivity();
 	}
 
 	function closeDossier() {
 		dossierOpen = false;
-		world?.setInputEnabled?.(viewMode === '3d');
+		syncWorldActivity();
 	}
 
 	function openExhibit(id: string, stationIdx: number) {
@@ -171,7 +231,7 @@
 			jumpToStation(stationIdx);
 		}
 		world?.selectHotspot(id);
-		world?.setInputEnabled(true);
+		syncWorldActivity();
 	}
 
 	function closeExhibit() {
@@ -179,7 +239,7 @@
 		hoveredHotspotId = null;
 		hoveredIslandLabel = null;
 		world?.selectHotspot(null);
-		world?.setInputEnabled?.(viewMode === '3d' && !dossierOpen);
+		syncWorldActivity();
 	}
 
 	function nextHotspot() {
@@ -246,13 +306,7 @@
 	}
 
 	$effect(() => {
-		const is3DActive = viewMode === '3d';
-		world?.setActive?.(is3DActive);
-	});
-
-	$effect(() => {
-		const isInputAllowed = viewMode === '3d' && !dossierOpen;
-		world?.setInputEnabled?.(isInputAllowed);
+		syncWorldActivity();
 	});
 
 	onMount(() => {
@@ -265,6 +319,10 @@
 			const savedLocale = localStorage.getItem('spine-locale');
 			if (savedLocale === 'ms' || savedLocale === 'en') {
 				locale = savedLocale;
+			}
+			const savedViewMode = localStorage.getItem('spine-view-mode');
+			if (savedViewMode === '3d' || savedViewMode === 'editorial') {
+				viewMode = savedViewMode;
 			}
 		} catch {
 			// abaikan ralat storan
@@ -283,43 +341,21 @@
 		};
 		mediaQuery.addEventListener('change', handleMediaChange);
 
-		if (canvasContainer) {
-			world = new FiberSpineWorld(canvasContainer, {
-				onStationChange: (idx, progress) => {
-					spineProgress = progress;
-					if (idx !== activeStationIndex) {
-						syncStationSelection(idx);
-					}
-				},
-				onHotspotHover: (id, islandLabel) => {
-					hoveredHotspotId = id;
-					hoveredIslandLabel = islandLabel ?? null;
-				},
-				onHotspotSelect: (id, stationIdx) => {
-					openExhibit(id, stationIdx);
-				},
-				onOpenDossier: openDossier
-			});
+		pageVisible = !document.hidden;
+		const handleVisibilityChange = () => {
+			pageVisible = !document.hidden;
+			syncWorldActivity();
+		};
+		document.addEventListener('visibilitychange', handleVisibilityChange);
 
-			const ok = world.init();
-			webglReady = ok;
-			if (!ok) {
-				viewMode = 'editorial';
-			} else {
-				world.setTheme(theme);
-				world.setLocale(locale);
-				world.setReducedMotion(motionPaused);
-				world.selectHotspot(selectedHotspotId);
-				world?.setActive?.(viewMode === '3d');
-				world?.setInputEnabled?.(viewMode === '3d');
-			}
-		}
-
+		syncWorldActivity();
 		resetIdleTimer();
 
 		return () => {
+			disposed = true;
 			if (idleTimer) clearTimeout(idleTimer);
 			mediaQuery.removeEventListener('change', handleMediaChange);
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
 			world?.setActive?.(false);
 			world?.setInputEnabled?.(false);
 			world?.dispose();
@@ -404,14 +440,8 @@
 					type="button"
 					class="util-pill"
 					class:active={motionPaused}
+					aria-pressed={motionPaused}
 					onclick={toggleMotionPause}
-					aria-label={motionPaused
-						? locale === 'ms'
-							? 'Sambung semula simulasi gerakan 3D'
-							: 'Resume 3D motion simulation'
-						: locale === 'ms'
-							? 'Jeda simulasi gerakan 3D'
-							: 'Pause 3D motion simulation'}
 					title={motionPaused
 						? locale === 'ms'
 							? 'Sambung semula gerakan 3D'
@@ -432,6 +462,11 @@
 						</svg>
 						<span>{locale === 'ms' ? 'Gerakan: Aktif' : 'Motion: Active'}</span>
 					{/if}
+					<span class="sr-only">
+						{locale === 'ms'
+							? '— jeda atau sambung simulasi 3D'
+							: '— pause or resume 3D simulation'}
+					</span>
 				</button>
 			{/if}
 
@@ -447,25 +482,18 @@
 				</button>
 			{/if}
 
-			<button type="button" class="util-pill" onclick={openDossier}>
+			<button type="button" class="util-pill" bind:this={dossierTriggerEl} onclick={openDossier}>
 				{locale === 'ms' ? 'Arkib Penuh' : 'Full Archive'}
 			</button>
 
-			<button
-				type="button"
-				class="util-pill"
-				onclick={toggleLocale}
-				aria-label={locale === 'ms' ? 'Switch to English' : 'Tukar ke Bahasa Melayu'}
-			>
-				{locale === 'ms' ? 'BM / EN' : 'EN / BM'}
+			<button type="button" class="util-pill" onclick={toggleLocale}>
+				<span>{locale === 'ms' ? 'BM / EN' : 'EN / BM'}</span>
+				<span class="sr-only">
+					{locale === 'ms' ? '— tukar ke Bahasa Inggeris' : '— switch to Bahasa Melayu'}
+				</span>
 			</button>
 
-			<button
-				type="button"
-				class="util-pill"
-				onclick={toggleTheme}
-				aria-label={locale === 'ms' ? 'Tukar tema gelap atau cerah' : 'Toggle dark or light theme'}
-			>
+			<button type="button" class="util-pill" onclick={toggleTheme}>
 				{#if theme === 'dark'}
 					<svg
 						width="12"
@@ -505,6 +533,15 @@
 					</svg>
 					<span>Light</span>
 				{/if}
+				<span class="sr-only">
+					{theme === 'dark'
+						? locale === 'ms'
+							? '— tukar ke tema cerah'
+							: '— switch to light theme'
+						: locale === 'ms'
+							? '— tukar ke tema gelap'
+							: '— switch to dark theme'}
+				</span>
 			</button>
 		</div>
 	</header>
@@ -628,7 +665,6 @@
 				</svg>
 			</button>
 		</footer>
-
 	{/if}
 
 	<!-- MOD EDITORIAL CV LENGKAP (Sentiasa wujud dalam SSR untuk SEO/Aksesibiliti; inert semasa Mod 3D aktif untuk mencegah focus ghost) -->
@@ -847,6 +883,7 @@
 		open={dossierOpen}
 		{locale}
 		onClose={closeDossier}
+		returnFocusTo={dossierTriggerEl}
 		onJumpStation={(idx) => {
 			closeDossier();
 			viewMode = '3d';
@@ -893,7 +930,24 @@
 		display: none;
 	}
 
-	/* Pengepala Kaca Minimalis */
+	/* Hanya kelompok teks mendapat pelapik; ruang kaca kekal telus. */
+	.minimal-topbar,
+	.bottom-compass {
+		--spatial-hud-bg: var(--glass);
+		--spatial-hud-border: var(--glass-border);
+		--spatial-pill-bg: var(--glass-text-bg);
+		--spatial-pill-hover-bg: var(--glass-text-hover-bg);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.brand-cluster,
+	.compass-info {
+		padding: 0.25rem 0.5rem;
+		border-radius: var(--radius-md);
+		background: var(--glass-text-bg);
+	}
+
+	/* Pengepala Kaca Minimalis (Glassmorphism Tier 1) */
 	.minimal-topbar {
 		position: fixed;
 		top: 0.85rem;
@@ -906,19 +960,27 @@
 		justify-content: space-between;
 		gap: 0.75rem;
 		padding: 0.55rem 0.95rem;
-		border-radius: var(--radius-pill, 9999px);
-		background: var(--spatial-hud-bg, var(--surface));
+		border-radius: var(--radius-xl);
+		background-color: var(--spatial-hud-bg, var(--surface));
+		background-image: var(--glass-sheen);
 		color: var(--spatial-hud-ink, var(--ink));
 		border: 1px solid var(--spatial-hud-border, var(--surface-border));
-		backdrop-filter: blur(var(--blur-glass, 16px));
-		box-shadow: var(--shadow-md, 0 12px 32px rgba(0, 0, 0, 0.25));
+		-webkit-backdrop-filter: var(--glass-filter);
+		backdrop-filter: var(--glass-filter);
+		box-shadow: var(--shadow-glass, 0 12px 32px rgba(0, 0, 0, 0.25));
 		transition:
 			opacity var(--duration-normal, 300ms) ease,
-			transform var(--duration-normal, 300ms) ease;
+			transform var(--duration-normal, 300ms) ease,
+			border-color var(--duration-fast, 150ms) ease;
+	}
+
+	.minimal-topbar:hover,
+	.minimal-topbar:focus-within {
+		border-color: var(--glass-border-hover, var(--spatial-hud-border));
 	}
 
 	.minimal-topbar.ui-idle {
-		opacity: 0.88;
+		opacity: 1;
 		transform: translateY(calc(-1 * var(--space-idle-y, 2px)));
 	}
 
@@ -931,13 +993,18 @@
 	.minimal-topbar.hidden-on-inspect {
 		opacity: 0;
 		pointer-events: none;
-		transform: translateY(-16px);
+		transform: translateY(calc(-1 * var(--space-inspect-y)));
 	}
 
 	.brand-cluster {
 		display: flex;
 		align-items: center;
 		gap: 0.68rem;
+		min-width: 0;
+	}
+
+	.brand-cluster img {
+		flex-shrink: 0;
 	}
 
 	.brand-avatar {
@@ -951,6 +1018,8 @@
 	.brand-meta {
 		display: flex;
 		flex-direction: column;
+		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 
 	.brand-kicker {
@@ -981,30 +1050,38 @@
 		padding: 0.32rem 0.78rem;
 		border-radius: var(--radius-pill, 9999px);
 		border: 1px solid var(--spatial-pill-border, var(--surface-border));
-		background: var(--spatial-pill-bg, var(--surface-hover));
+		background-color: var(--spatial-pill-bg, var(--surface-hover));
 		color: var(--spatial-hud-ink, var(--ink));
 		font-size: 0.76rem;
 		font-weight: 600;
 		cursor: pointer;
 		transition:
-			background var(--duration-fast, 150ms) ease,
-			border-color var(--duration-fast, 150ms) ease;
+			background-color var(--duration-fast, 150ms) ease,
+			border-color var(--duration-fast, 150ms) ease,
+			color var(--duration-fast, 150ms) ease;
 	}
 
 	.util-pill:hover {
 		border-color: var(--spatial-pill-hover-border, var(--accent));
-		background: var(--spatial-pill-hover-bg, var(--surface-hover));
+		background-color: var(--spatial-pill-hover-bg, var(--surface-hover));
+	}
+
+	.util-pill:active,
+	.compass-arrow:active,
+	.primary-cta:active,
+	.secondary-cta:active {
+		transform: translateY(var(--space-pressed-y)) scale(0.98);
 	}
 
 	.util-pill.active {
 		border-color: var(--spatial-accent, var(--accent));
-		background: var(--spatial-chip-bg, var(--badge-bg));
+		background: var(--glass-text-hover-bg);
 		color: var(--spatial-chip-ink, var(--badge-ink));
 	}
 
 	.util-pill.mode-switch {
 		background: var(--spatial-accent, var(--accent));
-		color: var(--bg, #ffffff);
+		color: var(--on-accent);
 		border-color: transparent;
 		font-weight: 700;
 	}
@@ -1053,19 +1130,27 @@
 		align-items: center;
 		gap: 0.85rem;
 		padding: 0.48rem 0.95rem;
-		border-radius: var(--radius-pill, 9999px);
-		background: var(--spatial-hud-bg, var(--surface));
+		border-radius: var(--radius-xl);
+		background-color: var(--spatial-hud-bg, var(--surface));
+		background-image: var(--glass-sheen);
 		color: var(--spatial-hud-ink, var(--ink));
 		border: 1px solid var(--spatial-hud-border, var(--surface-border));
-		backdrop-filter: blur(var(--blur-glass, 16px));
-		box-shadow: var(--shadow-md, 0 14px 36px rgba(0, 0, 0, 0.35));
+		-webkit-backdrop-filter: var(--glass-filter);
+		backdrop-filter: var(--glass-filter);
+		box-shadow: var(--shadow-glass, 0 14px 36px rgba(0, 0, 0, 0.35));
 		transition:
 			opacity var(--duration-normal, 300ms) ease,
-			transform var(--duration-normal, 300ms) ease;
+			transform var(--duration-normal, 300ms) ease,
+			border-color var(--duration-fast, 150ms) ease;
+	}
+
+	.bottom-compass:hover,
+	.bottom-compass:focus-within {
+		border-color: var(--glass-border-hover, var(--spatial-hud-border));
 	}
 
 	.bottom-compass.ui-idle {
-		opacity: 0.88;
+		opacity: 1;
 		transform: translateX(-50%) translateY(var(--space-idle-y, 2px));
 	}
 
@@ -1078,12 +1163,13 @@
 	.bottom-compass.hidden-on-inspect {
 		opacity: 0;
 		pointer-events: none;
-		transform: translateX(-50%) translateY(16px);
+		transform: translateX(-50%) translateY(var(--space-inspect-y));
 	}
 
 	.compass-arrow {
-		width: var(--size-avatar-sm, 36px);
-		height: var(--size-avatar-sm, 36px);
+		width: var(--size-touch);
+		height: var(--size-touch);
+		flex-shrink: 0;
 		border-radius: var(--radius-pill, 9999px);
 		border: 1px solid var(--spatial-pill-border, var(--surface-border));
 		background: var(--spatial-pill-bg, var(--surface-hover));
@@ -1215,10 +1301,15 @@
 	}
 
 	/* MOD EDITORIAL CV */
+	.spine-root[data-mode='editorial'] .minimal-topbar {
+		position: sticky;
+		margin: 0.85rem 1rem 0;
+	}
+
 	.editorial-container {
 		max-width: var(--size-editorial-max, 1120px);
 		margin: 0 auto;
-		padding: 6.2rem 1.5rem 4rem;
+		padding: 2rem 1rem 4rem;
 		display: flex;
 		flex-direction: column;
 		gap: 2.8rem;
@@ -1310,7 +1401,7 @@
 
 	.primary-cta {
 		background: var(--spatial-accent, var(--accent));
-		color: var(--bg, #ffffff);
+		color: var(--on-accent);
 	}
 
 	.primary-cta:hover {
@@ -1335,7 +1426,7 @@
 
 	.editorial-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(var(--card-min-md, 310px), 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min-md, 310px)), 1fr));
 		gap: 1rem;
 	}
 
@@ -1348,8 +1439,18 @@
 	.editorial-card {
 		padding: 1.35rem;
 		border-radius: var(--radius-lg, 18px);
-		background: var(--spatial-card-bg, var(--surface));
-		border: 1px solid var(--spatial-card-border, var(--surface-border));
+		background-color: var(--glass);
+		background-image: var(--glass-sheen);
+		border: 1px solid var(--glass-border);
+		/* Latar editorial statik: sheen mencukupi tanpa blur pada setiap kad. */
+		box-shadow: var(--shadow-glass);
+		font-variant-numeric: tabular-nums;
+		transition: border-color var(--duration-normal) var(--ease-glass);
+	}
+
+	.editorial-card:hover,
+	.editorial-card:focus-within {
+		border-color: var(--glass-border-hover);
 	}
 
 	.meta-badge {
@@ -1418,7 +1519,7 @@
 
 	.cert-editorial-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(var(--card-min-sm, 220px), 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--card-min-sm, 220px)), 1fr));
 		gap: 0.85rem;
 		margin-top: 1rem;
 	}
@@ -1434,12 +1535,15 @@
 			display: none;
 		}
 		.compass-info {
-			min-width: var(--size-compass-mobile, 155px);
+			min-width: 0;
+			flex: 1;
+			overflow-wrap: anywhere;
 		}
 		.minimal-topbar {
 			border-radius: var(--radius-lg, 18px);
 		}
 		.bottom-compass {
+			width: calc(100% - 2rem);
 			border-radius: var(--radius-lg, 18px);
 			gap: 0.5rem;
 			padding: 0.4rem 0.65rem;
@@ -1450,6 +1554,16 @@
 		.minimal-topbar,
 		.bottom-compass {
 			transition: none;
+		}
+		.minimal-topbar.ui-idle,
+		.util-pill:active,
+		.compass-arrow:active,
+		.primary-cta:active,
+		.secondary-cta:active {
+			transform: none;
+		}
+		.bottom-compass.ui-idle {
+			transform: translateX(-50%);
 		}
 	}
 </style>

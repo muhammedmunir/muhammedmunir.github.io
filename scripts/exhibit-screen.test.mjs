@@ -1,22 +1,21 @@
 import assert from 'node:assert/strict';
-import test from 'node:test';
+import { after, test } from 'node:test';
 import { createServer } from 'vite';
 
 // Mulakan pelayan Vite bagi memanfaatkan ssrLoadModule untuk memuatkan modul TypeScript secara terus.
 const vite = await createServer({
-	server: { middlewareMode: true },
+	configFile: false,
+	server: { middlewareMode: true, hmr: false, ws: false, watch: null },
+	optimizeDeps: { noDiscovery: true },
 	appType: 'custom'
 });
+after(() => vite.close());
 
 const navModule = await vite.ssrLoadModule('/src/lib/spine/exhibit-navigation.ts');
 const screenModule = await vite.ssrLoadModule('/src/lib/spine/exhibit-screen.ts');
 const spineData = await vite.ssrLoadModule('/src/lib/spine/spine-data.ts');
 
-const {
-	resolveExhibitView,
-	getChipAction,
-	getHotspotLocation
-} = navModule;
+const { resolveExhibitView, getChipAction, getHotspotLocation } = navModule;
 
 const {
 	drawExhibitScreen,
@@ -27,12 +26,7 @@ const {
 	EXHIBIT_TOUCH_SIZE
 } = screenModule;
 
-const {
-	STATIONS,
-	PROJECT_ARCHIVE,
-	TECHNICAL_SKILLS,
-	PROFILE
-} = spineData;
+const { STATIONS, PROJECT_ARCHIVE, TECHNICAL_SKILLS, PROFILE } = spineData;
 
 const testPalette = {
 	background: '#0b0c0e',
@@ -158,7 +152,10 @@ test('Semua 21 stesen hotspot rasmi dalam STATIONS berjaya diselesaikan ke Exhib
 			assert.equal(view.code, hotspot.code);
 			assert.equal(view.title.ms, hotspot.title.ms);
 			assert.equal(view.title.en, hotspot.title.en);
-			assert.ok(view.actions.some((a) => a.id === 'archive'), 'Wajib sertakan tindakan arkib');
+			assert.ok(
+				view.actions.some((a) => a.id === 'archive'),
+				'Wajib sertakan tindakan arkib'
+			);
 		}
 	}
 	assert.equal(count, 21, 'Wajib terdapat tepat 21 hotspot rasmi daripada 6 stesen');
@@ -201,16 +198,25 @@ test('Pembetulan pautan ent-adims: PDF Infinity World yang tidak berkaitan disin
 	const hasWrongPdf = view.actions.some(
 		(a) => a.action.kind === 'link' && a.action.url.includes('infinity-landing-case-study')
 	);
-	assert.equal(hasWrongPdf, false, 'ent-adims TIDAK boleh mengandungi PDF kajian kes Infinity World');
+	assert.equal(
+		hasWrongPdf,
+		false,
+		'ent-adims TIDAK boleh mengandungi PDF kajian kes Infinity World'
+	);
 
 	// Memastikan ia mempunyai pautan repo Onboardx dan navigasi ke projek proj-onboardx
 	const hasOnboardxRepo = view.actions.some(
-		(a) => a.action.kind === 'link' && a.action.url === 'https://github.com/muhammedmunir/onboardx_tnb_app'
+		(a) =>
+			a.action.kind === 'link' &&
+			a.action.url === 'https://github.com/muhammedmunir/onboardx_tnb_app'
 	);
 	assert.equal(hasOnboardxRepo, true, 'ent-adims mesti mengandungi pautan repo Onboardx rasmi');
 
 	const hasOnboardxProject = view.actions.some(
-		(a) => a.action.kind === 'navigate' && a.action.route.kind === 'project' && a.action.route.id === 'proj-onboardx'
+		(a) =>
+			a.action.kind === 'navigate' &&
+			a.action.route.kind === 'project' &&
+			a.action.route.id === 'proj-onboardx'
 	);
 	assert.equal(hasOnboardxProject, true, 'ent-adims mesti mempunyai navigasi ke projek Onboardx');
 });
@@ -291,7 +297,10 @@ test('Laluan teknologi menjana konteks sebenar daripada kategori dan projek CV',
 
 	// Tindakan mesti menyenaraikan projek berkaitan (cth: TINDAK, Onboardx, Baby Kicking)
 	const hasTindak = techView.actions.some(
-		(a) => a.action.kind === 'navigate' && a.action.route.kind === 'project' && a.action.route.id === 'proj-tindak'
+		(a) =>
+			a.action.kind === 'navigate' &&
+			a.action.route.kind === 'project' &&
+			a.action.route.id === 'proj-tindak'
 	);
 	assert.equal(hasTindak, true, 'Pandangan teknologi Flutter mesti memautkan ke projek TINDAK');
 });
@@ -570,7 +579,7 @@ test('Ujian formula optik kamera getInspectDistance merentas pelbagai nisbah asp
 
 	// 3. Skrin telefon tegak (aspect = 9/16 = 0.5625)
 	const distPortrait = getInspectDistance(boardW, boardH, 9 / 16, fov, fill);
-	const expectedPortrait = (4 / (9 / 16)) / (2 * Math.tan((fov * Math.PI) / 360) * fill);
+	const expectedPortrait = 4 / (9 / 16) / (2 * Math.tan((fov * Math.PI) / 360) * fill);
 	assert.ok(Math.abs(distPortrait - expectedPortrait) < 1e-9);
 
 	// Nilai tidak sah
@@ -624,7 +633,12 @@ test('Potret profil tidak bertindih dengan butang Tutup dan tidak melimpah ke ha
 	const view = resolveExhibitView({ kind: 'hotspot', id: 'core-monolith' });
 	assert.ok(view);
 	const avatar = { width: 512, height: 512 };
-	const sizes = [[640, 380], [900, 575], [1200, 760], [1920, 1080]];
+	const sizes = [
+		[640, 380],
+		[900, 575],
+		[1200, 760],
+		[1920, 1080]
+	];
 
 	for (const [width, height] of sizes) {
 		const canvas = createMockCanvas(width, height);
@@ -653,14 +667,8 @@ test('Potret profil tidak bertindih dengan butang Tutup dan tidak melimpah ke ha
 			image.y >= close.y + close.height,
 			`Potret (y=${image.y}) bertindih dengan butang Tutup (bawah=${close.y + close.height}) pada ${width}x${height}`
 		);
-		assert.ok(
-			image.y + image.h <= height,
-			`Potret melimpah bawah kanvas pada ${width}x${height}`
-		);
-		assert.ok(
-			image.x + image.w <= width,
-			`Potret melimpah kanan kanvas pada ${width}x${height}`
-		);
+		assert.ok(image.y + image.h <= height, `Potret melimpah bawah kanvas pada ${width}x${height}`);
+		assert.ok(image.x + image.w <= width, `Potret melimpah kanan kanvas pada ${width}x${height}`);
 
 		// Halaman kedua tidak lagi memaparkan potret.
 		const secondCanvas = createMockCanvas(width, height);
@@ -696,7 +704,3 @@ test('Papan tanpa potret tidak melukis imej langsung', () => {
 	);
 	assert.equal(canvas._operations.filter((op) => op.op === 'drawImage').length, 0);
 });
-
-// Tutup pelayan Vite selepas semua ujian selesai
-await vite.close();
-console.log('Semua ujian unit dan regresi kanvas papan berjaya dijalankan tanpa sebarang ralat.');
