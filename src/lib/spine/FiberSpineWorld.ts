@@ -58,6 +58,8 @@ export interface WorldCallbacks {
 	onScreenUpdate?: (screen: ExhibitScreenSnapshot | null) => void;
 	onScreenProjection?: (frame: ProjectedScreenFrame | null) => void;
 	onOpenDossier?: () => void;
+	onProgress?: (progress: number, stageMessage: string) => void;
+	onReady?: () => void;
 }
 
 interface HotspotRecord {
@@ -524,6 +526,8 @@ export class FiberSpineWorld {
 	private locale: Locale = 'ms';
 	private reducedMotion = false;
 	private weatherPresetId = 'golden_horizon';
+	private lastLightStationIndex = -1;
+	private firstFrameNotified = false;
 
 	private pointerNdc = new THREE.Vector2(0, 0);
 	private smoothPointer = new THREE.Vector2(0, 0);
@@ -699,17 +703,47 @@ export class FiberSpineWorld {
 			return false;
 		}
 
+		this.callbacks.onProgress?.(
+			20,
+			this.locale === 'ms'
+				? 'Memulakan Enjin Grafiks 3D WebGL...'
+				: 'Initializing 3D WebGL Engine...'
+		);
 		this.readScreenPalette();
+		this.callbacks.onProgress?.(
+			38,
+			this.locale === 'ms'
+				? 'Menjana Peta Permukaan PBR & Dinamik Marin...'
+				: 'Compiling PBR Surfaces & Ocean Dynamics...'
+		);
 		this.pbrMaps = this.generatePBRSurfaceMaps();
 
 		this.setupLights();
 		this.buildSkyAndOcean();
+		this.callbacks.onProgress?.(
+			60,
+			this.locale === 'ms'
+				? 'Mengaktifkan Teras Reaktor & Alur Gentian Optik...'
+				: 'Powering Sovereign Reactor & Optical Tethers...'
+		);
 		this.buildCentralSovereignReactor();
 		this.buildOrbitalRingCauseway();
+		this.callbacks.onProgress?.(
+			80,
+			this.locale === 'ms'
+				? 'Membina 6 Pulau Balai Cerap & Pangkalan Sistem...'
+				: 'Assembling 6 Archipelago Stations & Systems...'
+		);
 		this.buildArchipelagoStations();
 		this.applyWeatherAndTheme();
 		this.attachEvents();
 		this.updateCamera(0, 0);
+		this.callbacks.onProgress?.(
+			95,
+			this.locale === 'ms'
+				? 'Menyelaras Protokol Rangkaian UTM & TNB SOC...'
+				: 'Synchronizing Network Security Protocols...'
+		);
 		this.startLoop();
 		void document.fonts?.ready.then(() => {
 			if (!this.disposed) this.redrawAllCanvases();
@@ -2270,6 +2304,7 @@ export class FiberSpineWorld {
 	}
 
 	public setTheme(theme: ThemeMode): void {
+		if (this.theme === theme && this.screenPalette) return;
 		this.theme = theme;
 		this.readScreenPalette();
 		this.applyWeatherAndTheme();
@@ -2788,12 +2823,14 @@ export class FiberSpineWorld {
 			this.skyMesh.position.copy(this.camera.position);
 		}
 
-		this.keyLight.position.set(anchorPt.x + 14, 26, anchorPt.z + 14);
-		this.keyLight.target.position.copy(anchorPt);
-		this.keyLight.target.updateMatrixWorld();
-
-		this.stationSpotLight.position.set(anchorPt.x, anchorPt.y + 6.8, anchorPt.z);
-		this.rimLight.position.set(anchorPt.x - 6, anchorPt.y + 5.0, anchorPt.z - 3);
+		if (this.lastLightStationIndex !== this.activeStationIndex) {
+			this.lastLightStationIndex = this.activeStationIndex;
+			this.keyLight.position.set(anchorPt.x + 14, 26, anchorPt.z + 14);
+			this.keyLight.target.position.copy(anchorPt);
+			this.keyLight.target.updateMatrixWorld();
+			this.stationSpotLight.position.set(anchorPt.x, anchorPt.y + 6.8, anchorPt.z);
+			this.rimLight.position.set(anchorPt.x - 6, anchorPt.y + 5.0, anchorPt.z - 3);
+		}
 	}
 
 	private updateProjectedMarkers(): void {
@@ -2946,11 +2983,18 @@ export class FiberSpineWorld {
 			this.updateScreenTransition(dt);
 			this.updateProjectedMarkers();
 
-			if (this.isMobile && this.renderer) {
-				this.renderer.render(this.scene, this.camera);
-			} else if (this.composer) {
-				this.composer.render();
-			} else if (this.renderer) {
+			if (!this.firstFrameNotified) {
+				this.firstFrameNotified = true;
+				this.callbacks.onProgress?.(
+					100,
+					this.locale === 'ms'
+						? 'Sistem Beroperasi Sepenuhnya · 360° Sedia'
+						: 'System Fully Operational · 360° Ready'
+				);
+				this.callbacks.onReady?.();
+			}
+
+			if (this.renderer) {
 				this.renderer.render(this.scene, this.camera);
 			}
 
