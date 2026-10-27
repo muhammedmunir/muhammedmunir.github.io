@@ -13,6 +13,7 @@
 	} from './spine-data';
 	import type { FiberSpineWorld, ThemeMode } from './FiberSpineWorld';
 	import SpineDossierModal from './SpineDossierModal.svelte';
+	import SpineLoadingScreen from './SpineLoadingScreen.svelte';
 
 	let locale = $state<Locale>('ms');
 	let theme = $state<ThemeMode>('dark');
@@ -23,6 +24,10 @@
 	let mounted = $state(false);
 	let motionPaused = $state(false);
 	let pageVisible = $state(true);
+	let loadingProgress = $state(0);
+	let loadingStage = $state('');
+	let sceneReady = $state(false);
+	let showLoadingScreen = $state(true);
 
 	let activeStationIndex = $state(0);
 	let spineProgress = $state(0);
@@ -134,6 +139,11 @@
 	async function ensureWorld() {
 		if (world || worldLoading || disposed || !mounted || !canvasContainer || !webglReady) return;
 		worldLoading = true;
+		loadingProgress = 12;
+		loadingStage =
+			locale === 'ms'
+				? 'Memuatkan modul 3D The Living Fiber Spine...'
+				: 'Loading 3D Living Fiber Spine module...';
 		try {
 			const { FiberSpineWorld } = await import('./FiberSpineWorld');
 			if (disposed || !canvasContainer || viewMode !== '3d' || dossierOpen || !pageVisible) return;
@@ -147,13 +157,22 @@
 					hoveredIslandLabel = islandLabel ?? null;
 				},
 				onHotspotSelect: (id, stationIdx) => openExhibit(id, stationIdx),
-				onOpenDossier: openDossier
+				onOpenDossier: openDossier,
+				onProgress: (p, stageMsg) => {
+					loadingProgress = p;
+					if (stageMsg) loadingStage = stageMsg;
+				},
+				onReady: () => {
+					loadingProgress = 100;
+					sceneReady = true;
+				}
 			});
 			if (!world.init()) {
 				world.dispose();
 				world = null;
 				webglReady = false;
 				viewMode = 'editorial';
+				showLoadingScreen = false;
 				return;
 			}
 			world.setTheme(theme);
@@ -169,6 +188,7 @@
 				world = null;
 				webglReady = false;
 				viewMode = 'editorial';
+				showLoadingScreen = false;
 				console.error('Dunia 3D tidak dapat dimuatkan.', error);
 			}
 		} finally {
@@ -334,6 +354,9 @@
 		if (motionPaused) {
 			viewMode = 'editorial';
 		}
+		if (motionPaused || viewMode === 'editorial') {
+			showLoadingScreen = false;
+		}
 
 		const handleMediaChange = (evt: MediaQueryListEvent) => {
 			motionPaused = evt.matches;
@@ -387,6 +410,19 @@
 		bind:this={canvasContainer}
 		aria-hidden="true"
 	></div>
+
+	<!-- Skrin Memuatkan Futuristik (Living Fiber Spine Loading Screen) -->
+	{#if showLoadingScreen && viewMode === '3d'}
+		<SpineLoadingScreen
+			progress={loadingProgress}
+			stageMessage={loadingStage}
+			{locale}
+			ready={sceneReady}
+			onComplete={() => {
+				showLoadingScreen = false;
+			}}
+		/>
+	{/if}
 
 	<!-- Pengepala Kaca Minimalis (HUD Terpelihara; Sembunyi semasa mod periksa atau arkib aktif) -->
 	<header
