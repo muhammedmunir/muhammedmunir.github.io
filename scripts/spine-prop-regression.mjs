@@ -12,13 +12,15 @@ try {
 	const world = new FiberSpineWorld({});
 	world.drawHotspotExhibitCanvas = () => {};
 	world.pulseInstanced = new THREE.InstancedMesh(
-		new THREE.SphereGeometry(0.01), new THREE.MeshBasicMaterial(), 72
+		new THREE.SphereGeometry(0.01),
+		new THREE.MeshBasicMaterial(),
+		72
 	);
 	STATIONS.forEach((station, index) => {
 		const group = new THREE.Group();
-		station.hotspots.forEach((hotspot) => world.createHotspotExhibitMonolith(
-			group, index, hotspot, new THREE.Vector3(), 0, 0x38bdf8
-		));
+		station.hotspots.forEach((hotspot) =>
+			world.createHotspotExhibitMonolith(group, index, hotspot, new THREE.Vector3(), 0, 0x38bdf8)
+		);
 	});
 	const monument = new THREE.Group();
 	world.createStationPlazaAndMonument(monument, 2, 0x38bdf8);
@@ -59,7 +61,11 @@ try {
 		const triangle = new THREE.Triangle();
 		let face = 0;
 		do {
-			triangle.set(...[0, 1, 2].map((i) => new THREE.Vector3().fromBufferAttribute(positions, indices.getX(face + i))));
+			triangle.set(
+				...[0, 1, 2].map((i) =>
+					new THREE.Vector3().fromBufferAttribute(positions, indices.getX(face + i))
+				)
+			);
 			face += 3;
 		} while (triangle.getArea() < 0.00001 && face < indices.count);
 		for (const angle of [0, Math.PI / 2, Math.PI, Math.PI * 1.5]) {
@@ -68,8 +74,16 @@ try {
 			const center = triangle.getMidpoint(new THREE.Vector3()).applyMatrix4(dish.matrixWorld);
 			const normal = triangle.getNormal(new THREE.Vector3()).transformDirection(dish.matrixWorld);
 			for (const side of [-1, 1]) {
-				const ray = new THREE.Raycaster(center.clone().addScaledVector(normal, side * 0.001), normal.clone().multiplyScalar(-side), 0, 0.002);
-				assert.ok(ray.intersectObject(dish, false).length > 0, 'Permukaan radar mesti kelihatan dari kedua-dua sisi');
+				const ray = new THREE.Raycaster(
+					center.clone().addScaledVector(normal, side * 0.001),
+					normal.clone().multiplyScalar(-side),
+					0,
+					0.002
+				);
+				assert.ok(
+					ray.intersectObject(dish, false).length > 0,
+					'Permukaan radar mesti kelihatan dari kedua-dua sisi'
+				);
 			}
 		}
 		dish.rotation.copy(originalRotation);
@@ -90,8 +104,7 @@ try {
 		radarTop = Math.max(radarTop, radarBounds.max.y);
 		if (radarBounds.min.y < headerTop + 0.02)
 			failures.add('radar-monument: siluet bertindih dengan papan hadapan');
-		if (radarBounds.max.y > 0.82)
-			failures.add('radar-monument: siluet terpotong oleh HUD atas');
+		if (radarBounds.max.y > 0.82) failures.add('radar-monument: siluet terpotong oleh HUD atas');
 		for (const [index, record] of world.hotspots.entries()) {
 			record.mesh.updateMatrixWorld(true);
 			const prop = new THREE.Box3().setFromObject(record.propObject, true);
@@ -108,10 +121,30 @@ try {
 		}
 	}
 	world.reducedMotion = true;
-	const frozen = world.hotspots.map(({ propObject }) => [...propObject.position, propObject.rotation.y]);
+	const frozen = world.hotspots.map(({ propObject }) => [
+		...propObject.position,
+		propObject.rotation.y
+	]);
 	world.animateScene(1, 60);
-	assert.deepEqual(world.hotspots.map(({ propObject }) => [...propObject.position, propObject.rotation.y]), frozen);
-	console.log(JSON.stringify({ props: world.hotspots.length, frames: 721, minimumClearance, radarBottom, radarTop, headerTop, failures: [...failures] }, null, 2));
+	assert.deepEqual(
+		world.hotspots.map(({ propObject }) => [...propObject.position, propObject.rotation.y]),
+		frozen
+	);
+	console.log(
+		JSON.stringify(
+			{
+				props: world.hotspots.length,
+				frames: 721,
+				minimumClearance,
+				radarBottom,
+				radarTop,
+				headerTop,
+				failures: [...failures]
+			},
+			null,
+			2
+		)
+	);
 	assert.equal(failures.size, 0, 'Ikon mesti kekal di atas papan sepanjang putaran');
 } finally {
 	globalThis.document = previousDocument;

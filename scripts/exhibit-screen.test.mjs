@@ -153,8 +153,8 @@ test('Semua 21 stesen hotspot rasmi dalam STATIONS berjaya diselesaikan ke Exhib
 			assert.equal(view.title.ms, hotspot.title.ms);
 			assert.equal(view.title.en, hotspot.title.en);
 			assert.ok(
-				view.actions.some((a) => a.id === 'archive'),
-				'Wajib sertakan tindakan arkib'
+				view.actions.some((a) => a.id === 'editorial' && a.action.kind === 'editorial'),
+				'Wajib sertakan tindakan editorial'
 			);
 		}
 	}

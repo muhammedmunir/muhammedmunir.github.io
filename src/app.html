@@ -34,13 +34,17 @@
 			(function () {
 				try {
 					var t;
-					try { t = localStorage.getItem('theme'); } catch (e) {}
+					try {
+						t = localStorage.getItem('theme');
+					} catch (e) {}
 					if (t !== 'light' && t !== 'dark') {
 						t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 					}
 					document.documentElement.setAttribute('data-theme', t);
 					document.documentElement.style.colorScheme = t;
-					document.querySelector('meta[name="theme-color"]').setAttribute('content', t === 'dark' ? '#0c2028' : '#e8ece4');
+					document
+						.querySelector('meta[name="theme-color"]')
+						.setAttribute('content', t === 'dark' ? '#0c2028' : '#e8ece4');
 				} catch (e) {}
 			})();
 		</script>

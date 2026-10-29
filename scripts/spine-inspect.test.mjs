@@ -375,7 +375,7 @@ test('Klik halaman menamatkan peralihan; skrin lama dilupus dan kawalan kembali 
 	});
 });
 
-test('Mod reduced-motion melangkau peralihan dan butang arkib memanggil callback', () => {
+test('Mod reduced-motion melangkau peralihan dan butang editorial memanggil callback', () => {
 	const { world } = fixture();
 	world.reducedMotion = true;
 	world.selectHotspot('ent-emesys');
@@ -386,10 +386,10 @@ test('Mod reduced-motion melangkau peralihan dan butang arkib memanggil callback
 	assert.equal(world.previousScreen, null);
 	assert.equal(world.screenReady, true);
 	let opened = false;
-	world.callbacks.onOpenDossier = () => {
+	world.callbacks.onOpenEditorial = () => {
 		opened = true;
 	};
-	world.performScreenAction({ kind: 'archive' });
+	world.performScreenAction({ kind: 'editorial' });
 	assert.equal(opened, true);
 });
 

@@ -29,18 +29,42 @@
 			return [
 				{ threshold: 0, code: 'SYS_INIT', label: 'Memulakan Enjin Grafiks 3D WebGL...' },
 				{ threshold: 25, code: 'PBR_CALC', label: 'Menjana Peta Permukaan PBR & Dinamik Marin...' },
-				{ threshold: 50, code: 'SOVEREIGN', label: 'Mengaktifkan Teras Reaktor & Alur Gentian Optik...' },
-				{ threshold: 75, code: 'ORBITAL', label: 'Membina 6 Pulau Balai Cerap & Pangkalan Sistem...' },
-				{ threshold: 92, code: 'CYBER_SEC', label: 'Menyelaras Protokol Rangkaian UTM & TNB SOC...' },
-				{ threshold: 100, code: 'ONLINE', label: 'Sistem Beroperasi Sepenuhnya · Menuju ke Orbit 360°' }
+				{
+					threshold: 50,
+					code: 'SOVEREIGN',
+					label: 'Mengaktifkan Teras Reaktor & Alur Gentian Optik...'
+				},
+				{
+					threshold: 75,
+					code: 'ORBITAL',
+					label: 'Membina 6 Pulau Balai Cerap & Pangkalan Sistem...'
+				},
+				{
+					threshold: 92,
+					code: 'CYBER_SEC',
+					label: 'Menyelaras Protokol Rangkaian UTM & TNB SOC...'
+				},
+				{
+					threshold: 100,
+					code: 'ONLINE',
+					label: 'Sistem Beroperasi Sepenuhnya · Menuju ke Orbit 360°'
+				}
 			];
 		}
 		return [
 			{ threshold: 0, code: 'SYS_INIT', label: 'Initializing 3D WebGL Graphics Engine...' },
 			{ threshold: 25, code: 'PBR_CALC', label: 'Compiling PBR Surfaces & Ocean Dynamics...' },
-			{ threshold: 50, code: 'SOVEREIGN', label: 'Powering Sovereign Reactor & Optical Tethers...' },
+			{
+				threshold: 50,
+				code: 'SOVEREIGN',
+				label: 'Powering Sovereign Reactor & Optical Tethers...'
+			},
 			{ threshold: 75, code: 'ORBITAL', label: 'Assembling 6 Archipelago Stations & Systems...' },
-			{ threshold: 92, code: 'CYBER_SEC', label: 'Synchronizing UTM & TNB SOC Security Protocols...' },
+			{
+				threshold: 92,
+				code: 'CYBER_SEC',
+				label: 'Synchronizing UTM & TNB SOC Security Protocols...'
+			},
 			{ threshold: 100, code: 'ONLINE', label: 'System Fully Operational · Entering 360° Orbit' }
 		];
 	});
@@ -248,10 +272,7 @@
 				aria-valuemin="0"
 				aria-valuemax="100"
 			>
-				<div
-					class="progress-fill"
-					style="width: {displayProgress}%;"
-				>
+				<div class="progress-fill" style="width: {displayProgress}%;">
 					<span class="lead-sparkle"></span>
 				</div>
 			</div>
@@ -267,8 +288,15 @@
 				<span class="tel-item"><span class="t-kicker">FPS</span> 60 LOCKED</span>
 			</div>
 			<div class="security-chip">
-				<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+				<svg
+					width="12"
+					height="12"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
 				</svg>
 				<span>SEC_CHANNEL_ENC</span>
 			</div>
@@ -292,7 +320,8 @@
 		overflow: hidden;
 		user-select: none;
 		pointer-events: all;
-		transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+		transition:
+			opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
 			transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
 			filter 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 		will-change: opacity, transform, filter;
@@ -310,12 +339,12 @@
 		position: absolute;
 		inset: 0;
 		background: radial-gradient(
-				circle at 50% 48%,
-				rgba(14, 165, 233, 0.16) 0%,
-				rgba(13, 148, 136, 0.08) 35%,
-				rgba(3, 7, 18, 0.96) 72%,
-				#030712 100%
-			);
+			circle at 50% 48%,
+			rgba(14, 165, 233, 0.16) 0%,
+			rgba(13, 148, 136, 0.08) 35%,
+			rgba(3, 7, 18, 0.96) 72%,
+			#030712 100%
+		);
 		pointer-events: none;
 	}
 
@@ -403,7 +432,9 @@
 		border-radius: 50%;
 		background: #f59e0b;
 		box-shadow: 0 0 10px #f59e0b;
-		transition: background 0.3s, box-shadow 0.3s;
+		transition:
+			background 0.3s,
+			box-shadow 0.3s;
 	}
 
 	.live-dot.online {
@@ -458,7 +489,9 @@
 
 	.station-node-dot {
 		fill: #38bdf8;
-		transition: r 0.3s, fill 0.3s;
+		transition:
+			r 0.3s,
+			fill 0.3s;
 	}
 
 	.station-node-dot.active-node {
@@ -588,7 +621,9 @@
 		height: 12px;
 		border-radius: 50%;
 		background: #ffffff;
-		box-shadow: 0 0 14px 4px #38bdf8, 0 0 6px 1px #2dd4bf;
+		box-shadow:
+			0 0 14px 4px #38bdf8,
+			0 0 6px 1px #2dd4bf;
 	}
 
 	/* Kaki Bawah */
