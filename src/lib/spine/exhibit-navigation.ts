@@ -20,7 +20,7 @@ export type ExhibitAction =
 	| { kind: 'close' }
 	| { kind: 'page'; delta: number }
 	| { kind: 'link'; url: string }
-	| { kind: 'archive' };
+	| { kind: 'editorial' };
 
 export interface ExhibitView {
 	key: string;
@@ -146,11 +146,11 @@ function relatedLabels(name: string, labels: string[]): string[] {
 	);
 }
 
-function archiveAction(): ExhibitView['actions'][number] {
+function editorialAction(): ExhibitView['actions'][number] {
 	return {
-		id: 'archive',
-		label: text('Semua projek dalam arkib', 'All projects in the archive'),
-		action: { kind: 'archive' }
+		id: 'editorial',
+		label: text('Baca Mod Editorial CV', 'Read Editorial CV Mode'),
+		action: { kind: 'editorial' }
 	};
 }
 
@@ -166,10 +166,12 @@ export function getHotspotLocation(
 
 function technologyView(name: string): ExhibitView | null {
 	if (!isTechnology(name)) return null;
-	const categories = TECHNICAL_SKILLS.filter((category) =>
-		relatedLabels(name, category.skills).length > 0
+	const categories = TECHNICAL_SKILLS.filter(
+		(category) => relatedLabels(name, category.skills).length > 0
 	);
-	const projects = PROJECT_ARCHIVE.filter((project) => relatedLabels(name, project.stack).length > 0);
+	const projects = PROJECT_ARCHIVE.filter(
+		(project) => relatedLabels(name, project.stack).length > 0
+	);
 	const hotspots = allHotspots.filter((hotspot) => relatedLabels(name, hotspot.tech).length > 0);
 	const actions: ExhibitView['actions'] = projects.map((project) => ({
 		id: `project:${project.id}`,
@@ -227,7 +229,7 @@ function technologyView(name: string): ExhibitView | null {
 		tech: [...new Set(categories.flatMap((category) => category.skills))].filter(
 			(skill) => skill !== name
 		),
-		actions: [...actions, archiveAction()]
+		actions: [...actions, editorialAction()]
 	};
 }
 
@@ -256,7 +258,7 @@ export function resolveExhibitView(route: ExhibitRoute): ExhibitView | null {
 				`${project.summary.en}\n\nArchitecture\n${project.architecture.en}`
 			),
 			tech: [...project.stack],
-			actions: [...actions, archiveAction()]
+			actions: [...actions, editorialAction()]
 		};
 	}
 	if (route.kind !== 'hotspot') return null;
@@ -296,7 +298,7 @@ export function resolveExhibitView(route: ExhibitRoute): ExhibitView | null {
 		subtitle: copyText(hotspot.subtitle),
 		summary: copyText(hotspot.summary),
 		tech: [...hotspot.tech],
-		actions: [...actions, archiveAction()]
+		actions: [...actions, editorialAction()]
 	};
 }
 
@@ -304,7 +306,9 @@ export function getChipAction(view: ExhibitView, chip: string): ExhibitAction | 
 	if (!view.tech.includes(chip)) return null;
 	const url = contactChips.get(chip);
 	if (url) return { kind: 'link', url };
-	const route = namedChips.get(chip) ?? (isTechnology(chip) ? { kind: 'technology' as const, name: chip } : null);
+	const route =
+		namedChips.get(chip) ??
+		(isTechnology(chip) ? { kind: 'technology' as const, name: chip } : null);
 	if (!route || routeKey(route) === view.key) return null;
 	return { kind: 'navigate', route: { ...route } };
 }

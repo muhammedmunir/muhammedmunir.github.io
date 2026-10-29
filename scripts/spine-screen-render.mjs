@@ -50,6 +50,7 @@ try {
 	});
 
 	for (const theme of ['light', 'dark']) {
+		await page.setViewportSize({ width: 1280, height: 800 });
 		if ((await page.locator('html').getAttribute('data-theme')) !== theme)
 			await page.getByRole('button', { name: /tukar ke tema/ }).click();
 		for (const [width, height] of [
@@ -103,7 +104,8 @@ try {
 							ctx.fillRect(index * cell, 0, cell, canvas.height);
 						});
 						record.texture.needsUpdate = true;
-						world.composer.render();
+						if (world.composer) world.composer.render();
+						else renderer.render(world.scene, world.camera);
 						gl.readPixels(
 							0,
 							0,
@@ -151,7 +153,8 @@ try {
 					world.currentProgress = 0;
 					world.targetProgress = 0;
 					world.updateCamera(1, 0);
-					world.composer.render();
+					if (world.composer) world.composer.render();
+					else renderer.render(world.scene, world.camera);
 					return result;
 				},
 				{ theme, width, height }

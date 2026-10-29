@@ -1,12 +1,6 @@
 export type Locale = 'ms' | 'en';
 
-export type StationId =
-	| 'core'
-	| 'enterprise'
-	| 'network'
-	| 'ai_vision'
-	| 'mobility'
-	| 'terminal';
+export type StationId = 'core' | 'enterprise' | 'network' | 'ai_vision' | 'mobility' | 'terminal';
 
 export interface LocalizedText {
 	ms: string;
@@ -291,15 +285,24 @@ export const STATIONS: SpineStation[] = [
 			},
 			{
 				value: '5 Projek Utama',
-				label: { ms: 'TINDAK, 9Router, CV Suite, Baby Kicking, Lumina', en: 'TINDAK, 9Router, CV Suite, Baby Kicking, Lumina' }
+				label: {
+					ms: 'TINDAK, 9Router, CV Suite, Baby Kicking, Lumina',
+					en: 'TINDAK, 9Router, CV Suite, Baby Kicking, Lumina'
+				}
 			},
 			{
 				value: '5 Kategori Skill',
-				label: { ms: 'Frontend, Backend, DB/Cloud, DevOps/Sec, AI', en: 'Frontend, Backend, DB/Cloud, DevOps/Sec, AI' }
+				label: {
+					ms: 'Frontend, Backend, DB/Cloud, DevOps/Sec, AI',
+					en: 'Frontend, Backend, DB/Cloud, DevOps/Sec, AI'
+				}
 			},
 			{
 				value: 'UTM + 7 Sijil',
-				label: { ms: 'Ijazah & Diploma UTM + 5 Sijil Cisco + 2 Data', en: 'UTM Degree & Diploma + 5 Cisco + 2 Data Certs' }
+				label: {
+					ms: 'Ijazah & Diploma UTM + 5 Sijil Cisco + 2 Data',
+					en: 'UTM Degree & Diploma + 5 Cisco + 2 Data Certs'
+				}
 			}
 		],
 		stack: [
@@ -335,7 +338,14 @@ export const STATIONS: SpineStation[] = [
 					ms: PROFILE.summary.ms,
 					en: PROFILE.summary.en
 				},
-				tech: ['Vue.js 3', 'Laravel 11/12 (Filament)', 'SvelteKit', 'Flutter', 'Docker Swarm', 'Python Computer Vision'],
+				tech: [
+					'Vue.js 3',
+					'Laravel 11/12 (Filament)',
+					'SvelteKit',
+					'Flutter',
+					'Docker Swarm',
+					'Python Computer Vision'
+				],
 				link: '/resume.pdf',
 				linkLabel: { ms: 'Muat Turun Resume PDF', en: 'Download Resume PDF' }
 			},
@@ -355,7 +365,12 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Berpengalaman membangunkan dan menyelenggara sistem sektor awam (eMesys, Sutera, ADIMS), sistem pinjaman bercagar FinTech (IWA001), portal korporat (Infinity World), dan aplikasi mudah alih merentas platform (Onboardx, TINDAK, Baby Kicking Suite).',
 					en: 'Experienced in developing and maintaining public sector systems (eMesys, Sutera, ADIMS), collateralized FinTech loan platforms (IWA001), corporate portals (Infinity World), and cross-platform mobile apps (Onboardx, TINDAK, Baby Kicking Suite).'
 				},
-				tech: ['eMesys · Sutera · ADIMS', 'IWA001 Supabase RLS', 'Infinity World', 'Onboardx Flutter']
+				tech: [
+					'eMesys · Sutera · ADIMS',
+					'IWA001 Supabase RLS',
+					'Infinity World',
+					'Onboardx Flutter'
+				]
 			},
 			{
 				id: 'core-ring-net',
@@ -373,7 +388,14 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Disokong oleh Ijazah Sarjana Muda Sains Komputer (Keselamatan Rangkaian) dari UTM, 5 sijil rangkaian Cisco (CCNAv7, DevNet, Network Security, IoT), pengalaman pertahanan ancaman SOC di TNB (Splunk SIEM, Vulhub, ISO 27001/NIST), serta pemetaan laluan gentian optik di TNB ICT.',
 					en: 'Backed by a Bachelor of Computer Science (Network Security) from UTM, 5 Cisco networking certifications, hands-on SOC threat defense at TNB (Splunk SIEM, Vulhub, ISO 27001/NIST), and regional fiber-optic route mapping at TNB ICT.'
 				},
-				tech: ['Splunk SIEM', 'Vulhub CVE', 'ISO 27001 & NIST', 'CCNAv7 & DevNet', 'Docker Swarm', 'Linux & Windows Server']
+				tech: [
+					'Splunk SIEM',
+					'Vulhub CVE',
+					'ISO 27001 & NIST',
+					'CCNAv7 & DevNet',
+					'Docker Swarm',
+					'Linux & Windows Server'
+				]
 			}
 		]
 	},
@@ -406,19 +428,31 @@ export const STATIONS: SpineStation[] = [
 		metrics: [
 			{
 				value: 'YHCM Sdn Bhd',
-				label: { ms: 'Apr 2026 – Kini · eMesys, Sutera & ADIMS', en: 'Apr 2026 – Present · eMesys, Sutera & ADIMS' }
+				label: {
+					ms: 'Apr 2026 – Kini · eMesys, Sutera & ADIMS',
+					en: 'Apr 2026 – Present · eMesys, Sutera & ADIMS'
+				}
 			},
 			{
 				value: 'Nova Bitara',
-				label: { ms: 'Dis 2025 – Mac 2026 · IWA001 & Infinity World', en: 'Dec 2025 – Mar 2026 · IWA001 & Infinity World' }
+				label: {
+					ms: 'Dis 2025 – Mac 2026 · IWA001 & Infinity World',
+					en: 'Dec 2025 – Mar 2026 · IWA001 & Infinity World'
+				}
 			},
 			{
 				value: 'TNB Protégé',
-				label: { ms: 'Apr 2025 – Dis 2025 · Aplikasi Onboardx Flutter', en: 'Apr 2025 – Dec 2025 · Onboardx Flutter App' }
+				label: {
+					ms: 'Apr 2025 – Dis 2025 · Aplikasi Onboardx Flutter',
+					en: 'Apr 2025 – Dec 2025 · Onboardx Flutter App'
+				}
 			},
 			{
 				value: 'Docker & Azure',
-				label: { ms: 'Docker Swarm, Vercel, Cloudflare WAF & Jenkins', en: 'Docker Swarm, Vercel, Cloudflare WAF & Jenkins' }
+				label: {
+					ms: 'Docker Swarm, Vercel, Cloudflare WAF & Jenkins',
+					en: 'Docker Swarm, Vercel, Cloudflare WAF & Jenkins'
+				}
 			}
 		],
 		stack: [
@@ -455,7 +489,15 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Menyelenggara dan menaik taraf sistem web perusahaan kritikal untuk sektor awam/kerajaan (termasuk eMesys, Sutera, dan ADIMS) dengan mematuhi piawaian keselamatan data, RBAC, dan audit. Membina antara muka modular Vue.js 3 dan aliran kerja Laravel Filament; mengoptimumkan pangkalan data MySQL, MariaDB & PostgreSQL 17; melancarkan servis Docker & Docker Swarm; mentadbir pelayan hibrid Linux (Ubuntu) & Windows Server; serta menyediakan sokongan teknikal Tier-2/3.',
 					en: 'Maintain and upgrade mission-critical enterprise web systems for the public/government sector (including eMesys, Sutera, and ADIMS), complying with stringent data security, RBAC, and audit standards. Architect modular Vue.js 3 interfaces and Laravel Filament workflows; optimize MySQL, MariaDB & PostgreSQL 17 databases; deploy Docker & Docker Swarm services; harden Linux (Ubuntu) & Windows Server infrastructure; and provide tier-2/3 technical support.'
 				},
-				tech: ['Vue.js 3', 'Laravel Filament', 'PostgreSQL 17', 'MySQL & MariaDB', 'Docker Swarm', 'RBAC & Audit', 'Ubuntu & Windows Server']
+				tech: [
+					'Vue.js 3',
+					'Laravel Filament',
+					'PostgreSQL 17',
+					'MySQL & MariaDB',
+					'Docker Swarm',
+					'RBAC & Audit',
+					'Ubuntu & Windows Server'
+				]
 			},
 			{
 				id: 'ent-sutera',
@@ -473,7 +515,15 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Membangunkan dan melancarkan Sistem Permohonan Pinjaman Bercagar produksi (IWA001) menggunakan SvelteKit dan Supabase (polisi RLS & pengesahan JWT) dihoskan di Vercel dengan GoDaddy DNS. Membina portal korporat pelbagai bahasa (Infinity World) menggunakan SvelteKit, Redis caching, dan API e-mel Resend. Membangunkan platform e-dagang komersial Laravel & MySQL pada DirectAdmin/IPserverone dengan Cloudflare WAF/CDN, serta menyampaikan sokongan IT dalaman menyeluruh.',
 					en: 'Engineered and deployed a production Collateralized Loan Application System (IWA001) using SvelteKit and Supabase (RLS policies & JWT authentication) hosted on Vercel with GoDaddy DNS. Built the multilingual corporate portal (Infinity World) with SvelteKit, Redis caching, and Resend API. Maintained a commercial Laravel & MySQL e-commerce platform on DirectAdmin/IPserverone with Cloudflare WAF/CDN, and delivered comprehensive internal IT support.'
 				},
-				tech: ['SvelteKit', 'Supabase RLS & JWT', 'Redis', 'Resend API', 'Laravel & MySQL', 'Cloudflare WAF/CDN', 'Vercel'],
+				tech: [
+					'SvelteKit',
+					'Supabase RLS & JWT',
+					'Redis',
+					'Resend API',
+					'Laravel & MySQL',
+					'Cloudflare WAF/CDN',
+					'Vercel'
+				],
 				link: 'https://github.com/muhammedmunir/loan-infinity-world',
 				linkLabel: { ms: 'Repo GitHub IWA001', en: 'IWA001 GitHub Repo' },
 				secondaryLink: '/docs/iwa001-case-study.pdf',
@@ -495,11 +545,24 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Menerajui pembangunan full-stack Onboardx, aplikasi onboarding merentas platform perusahaan menggunakan Flutter (Dart) dan JavaScript. Membangunkan seni bina berbilang pangkalan data (Firebase Realtime DB, MongoDB, Supabase, MySQL); mengkonfigurasi pelayan awan Ubuntu di Microsoft Azure (NSG & pemantauan sumber); mengautomasikan saluran paip binaan dengan Jenkins CI/CD dan Kubernetes; serta mereka bentuk wireframe UI/UX dalam Figma.',
 					en: 'Spearheaded full-stack development of Onboardx, an enterprise cross-platform onboarding application utilizing Flutter (Dart) and JavaScript. Engineered multi-database architecture (Firebase Realtime DB, MongoDB, Supabase, MySQL); configured Ubuntu cloud servers on Microsoft Azure (NSGs & resource monitoring); automated build pipelines with Jenkins CI/CD and Kubernetes; and designed UI/UX wireframes in Figma.'
 				},
-				tech: ['Flutter (Dart)', 'JavaScript', 'Firebase Realtime DB', 'MongoDB', 'Supabase', 'MySQL', 'Microsoft Azure', 'Jenkins CI/CD', 'Figma'],
+				tech: [
+					'Flutter (Dart)',
+					'JavaScript',
+					'Firebase Realtime DB',
+					'MongoDB',
+					'Supabase',
+					'MySQL',
+					'Microsoft Azure',
+					'Jenkins CI/CD',
+					'Figma'
+				],
 				link: 'https://github.com/muhammedmunir/onboardx_tnb_app',
 				linkLabel: { ms: 'Repo GitHub Onboardx', en: 'Onboardx GitHub Repo' },
 				secondaryLink: '/docs/infinity-landing-case-study.pdf',
-				secondaryLinkLabel: { ms: 'Kajian Kes PDF (Infinity World)', en: 'PDF Case Study (Infinity World)' }
+				secondaryLinkLabel: {
+					ms: 'Kajian Kes PDF (Infinity World)',
+					en: 'PDF Case Study (Infinity World)'
+				}
 			}
 		]
 	},
@@ -532,19 +595,31 @@ export const STATIONS: SpineStation[] = [
 		metrics: [
 			{
 				value: 'Splunk SIEM',
-				label: { ms: 'Pemantauan Trafik Masa Nyata di TNB SOC', en: 'Real-Time Traffic Monitoring at TNB SOC' }
+				label: {
+					ms: 'Pemantauan Trafik Masa Nyata di TNB SOC',
+					en: 'Real-Time Traffic Monitoring at TNB SOC'
+				}
 			},
 			{
 				value: 'Vulhub CVE',
-				label: { ms: 'Makmal Docker Red Team & Analisis Kerentanan', en: 'Red Team Docker Labs & CVE Analysis' }
+				label: {
+					ms: 'Makmal Docker Red Team & Analisis Kerentanan',
+					en: 'Red Team Docker Labs & CVE Analysis'
+				}
 			},
 			{
 				value: 'ISO 27001 / NIST',
-				label: { ms: 'Pengukuhan Blue Team, Audit Log & Patch', en: 'Blue Team Hardening, Log & Patch Audits' }
+				label: {
+					ms: 'Pengukuhan Blue Team, Audit Log & Patch',
+					en: 'Blue Team Hardening, Log & Patch Audits'
+				}
 			},
 			{
 				value: 'Fiber Topology',
-				label: { ms: 'Pemetaan Gentian Optik TNB & Redaman Isyarat', en: 'TNB Fiber Route Mapping & Signal Attenuation' }
+				label: {
+					ms: 'Pemetaan Gentian Optik TNB & Redaman Isyarat',
+					en: 'TNB Fiber Route Mapping & Signal Attenuation'
+				}
 			}
 		],
 		stack: [
@@ -567,7 +642,10 @@ export const STATIONS: SpineStation[] = [
 			{
 				id: 'net-soc',
 				code: 'TNB-SOC',
-				pinLabel: { ms: 'TNB Cyber Security SOC (2023–2024)', en: 'TNB Cyber Security SOC (2023–2024)' },
+				pinLabel: {
+					ms: 'TNB Cyber Security SOC (2023–2024)',
+					en: 'TNB Cyber Security SOC (2023–2024)'
+				},
 				title: {
 					ms: 'Cyber Security Threat Defense (Internship) — Tenaga Nasional Berhad',
 					en: 'Cyber Security Threat Defense (Internship) — Tenaga Nasional Berhad'
@@ -580,12 +658,22 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Memantau trafik rangkaian perusahaan dan log akses web secara masa nyata menggunakan papan pemuka Splunk SIEM dalam persekitaran SOC aktif. Bekerjasama dengan Red Team menggunakan makmal Docker Vulhub untuk menghasilkan semula, menguji, dan menganalisis kerentanan CVE yang diketahui. Membantu Blue Team dalam pengukuhan pertahanan, audit log, pengesahan tampalan keselamatan, dan penjajaran pematuhan dengan garis panduan ISO 27001 serta NIST.',
 					en: 'Monitored enterprise network traffic and web access logs in real time using Splunk SIEM dashboards within an active SOC environment. Collaborated with the Red Team using Vulhub Docker laboratories to reproduce, test, and analyze known CVE vulnerabilities. Assisted the Blue Team in defense hardening, log audits, security patch verifications, and compliance alignment with ISO 27001 and NIST guidelines.'
 				},
-				tech: ['Splunk SIEM', 'Vulhub Docker Labs', 'Red Team CVE Analysis', 'Blue Team Hardening', 'ISO 27001', 'NIST']
+				tech: [
+					'Splunk SIEM',
+					'Vulhub Docker Labs',
+					'Red Team CVE Analysis',
+					'Blue Team Hardening',
+					'ISO 27001',
+					'NIST'
+				]
 			},
 			{
 				id: 'net-tnb-fiber',
 				code: 'TNB-ICT',
-				pinLabel: { ms: 'TNB ICT Fiber Topology (2019–2020)', en: 'TNB ICT Fiber Topology (2019–2020)' },
+				pinLabel: {
+					ms: 'TNB ICT Fiber Topology (2019–2020)',
+					en: 'TNB ICT Fiber Topology (2019–2020)'
+				},
 				title: {
 					ms: 'Information & Communication Technology (Internship) — Tenaga Nasional Berhad',
 					en: 'Information & Communication Technology (Internship) — Tenaga Nasional Berhad'
@@ -598,7 +686,13 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Memetakan topologi laluan gentian optik serantau menggunakan Google Earth; mengira jarak laluan yang tepat dan model anggaran kos pemasangan dalam Excel. Membantu jurutera rangkaian dengan ujian redaman isyarat (signal attenuation testing), audit infrastruktur fizikal, dan penyelenggaraan pencegahan.',
 					en: 'Mapped regional fiber optic route topologies using Google Earth; computed precision route distances and deployment costing models in Excel. Assisted network engineers with signal attenuation testing, physical infrastructure audits, and preventative maintenance.'
 				},
-				tech: ['Fiber-Optic Route Topology', 'Google Earth', 'Excel Costing Models', 'Signal Attenuation Testing', 'Physical Infrastructure Audit']
+				tech: [
+					'Fiber-Optic Route Topology',
+					'Google Earth',
+					'Excel Costing Models',
+					'Signal Attenuation Testing',
+					'Physical Infrastructure Audit'
+				]
 			},
 			{
 				id: 'net-utm-degree',
@@ -616,7 +710,13 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Repositori eksperimen infrastruktur pelayan rumah sendiri (self-hosted homelab) untuk menguji konfigurasi rangkaian Linux, container Docker, firewall, dan automasi keselamatan.',
 					en: 'Self-hosted homelab infrastructure repository for testing Linux networking configurations, Docker containers, firewall rules, and security automation.'
 				},
-				tech: ['Linux (Ubuntu, Kali)', 'Docker', 'Firewall & VPN', 'Wireshark', 'Self-Hosted Infrastructure'],
+				tech: [
+					'Linux (Ubuntu, Kali)',
+					'Docker',
+					'Firewall & VPN',
+					'Wireshark',
+					'Self-Hosted Infrastructure'
+				],
 				link: 'https://github.com/muhammedmunir/homelab',
 				linkLabel: { ms: 'Buka Repo Homelab di GitHub', en: 'Open Homelab Repo on GitHub' }
 			}
@@ -651,19 +751,31 @@ export const STATIONS: SpineStation[] = [
 		metrics: [
 			{
 				value: 'TINDAK AI',
-				label: { ms: 'Flutter Share Intent + Gemini AI + Supabase RLS', en: 'Flutter Share Intent + Gemini AI + Supabase RLS' }
+				label: {
+					ms: 'Flutter Share Intent + Gemini AI + Supabase RLS',
+					en: 'Flutter Share Intent + Gemini AI + Supabase RLS'
+				}
 			},
 			{
 				value: '9Router Office',
-				label: { ms: 'Node.js 22+ + Three.js + MCP + Playwright', en: 'Node.js 22+ + Three.js + MCP + Playwright' }
+				label: {
+					ms: 'Node.js 22+ + Three.js + MCP + Playwright',
+					en: 'Node.js 22+ + Three.js + MCP + Playwright'
+				}
 			},
 			{
 				value: 'OpenCV Suite',
-				label: { ms: 'SIFT + CIELAB + Visual Servoing + Win32 API', en: 'SIFT + CIELAB + Visual Servoing + Win32 API' }
+				label: {
+					ms: 'SIFT + CIELAB + Visual Servoing + Win32 API',
+					en: 'SIFT + CIELAB + Visual Servoing + Win32 API'
+				}
 			},
 			{
 				value: 'Baby Kicking & Lumina',
-				label: { ms: 'Flutter Firestore PDF + Laravel 11 100% PHPUnit', en: 'Flutter Firestore PDF + Laravel 11 100% PHPUnit' }
+				label: {
+					ms: 'Flutter Firestore PDF + Laravel 11 100% PHPUnit',
+					en: 'Flutter Firestore PDF + Laravel 11 100% PHPUnit'
+				}
 			}
 		],
 		stack: [
@@ -700,7 +812,14 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Membangunkan utiliti tindakan pantas Android yang menangkap Share Intents mudah alih untuk menghurai URL, nombor kenalan, dan butiran pembayaran secara tempatan. Mereka bentuk penghurai regex/peraturan local-first dengan fallback Gemini AI, digandingkan dengan backend Supabase yang disahkan melalui polisi keselamatan RLS yang ketat.',
 					en: 'Engineered an Android rapid-action utility capturing mobile Share Intents to parse URLs, contact numbers, and payment details locally. Designed a local-first regex/rule parser with Gemini AI fallback, coupled with a Supabase backend validated with strict RLS security policies.'
 				},
-				tech: ['Flutter', 'Dart', 'Supabase RLS', 'Gemini AI', 'Android Share Intents', 'Local-First Parser']
+				tech: [
+					'Flutter',
+					'Dart',
+					'Supabase RLS',
+					'Gemini AI',
+					'Android Share Intents',
+					'Local-First Parser'
+				]
 			},
 			{
 				id: 'ai-9router',
@@ -718,7 +837,13 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Mencipta ruang kerja maya 3D interaktif dalam Three.js di mana ejen AI autonomi berkomunikasi secara masa nyata melalui Model Context Protocol (MCP). Mengintegrasikan sintesis suara dinamik, penyimpanan keadaan ejen (agent state persistence), dan ujian UI/API automatik hujung-ke-hujung menggunakan Playwright MCP.',
 					en: 'Created an interactive 3D virtual workspace in Three.js where autonomous AI agents communicate in real time via Model Context Protocol (MCP). Integrated dynamic voice synthesis, agent state persistence, and end-to-end automated UI/API testing utilizing Playwright MCP.'
 				},
-				tech: ['Node.js 22+', 'Three.js', 'Model Context Protocol (MCP)', 'Playwright MCP', 'Voice Synthesis']
+				tech: [
+					'Node.js 22+',
+					'Three.js',
+					'Model Context Protocol (MCP)',
+					'Playwright MCP',
+					'Voice Synthesis'
+				]
 			},
 			{
 				id: 'ai-cv-rag',
@@ -736,7 +861,14 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Membina suite automasi desktop lanjutan menggunakan padanan piramid SIFT berbilang skala, segmentasi CIELAB, dan visual servoing gelung tertutup. Melaksanakan pengekstrakan teks OCR dinamik, sempadan keselamatan tetingkap Win32 asli, dan GUI kawalan CustomTkinter berbilang benang. Turut merangkumi projek sumber terbuka AI Policy & Product Helper (RAG).',
 					en: 'Built an advanced desktop automation suite utilizing multi-scale SIFT pyramid matching, CIELAB segmentation, and closed-loop visual servoing. Implemented dynamic OCR text extraction, native Win32 window safety boundaries, and a multithreaded CustomTkinter control GUI, alongside the open-source AI Policy & Product Helper (RAG).'
 				},
-				tech: ['Python', 'OpenCV (SIFT & CIELAB)', 'Visual Servoing', 'Dynamic OCR', 'Win32 API', 'CustomTkinter'],
+				tech: [
+					'Python',
+					'OpenCV (SIFT & CIELAB)',
+					'Visual Servoing',
+					'Dynamic OCR',
+					'Win32 API',
+					'CustomTkinter'
+				],
 				link: 'https://github.com/muhammedmunir/ai-policy-helper-starter-pack',
 				linkLabel: { ms: 'Repo GitHub AI Policy Helper', en: 'AI Policy Helper GitHub Repo' }
 			},
@@ -756,7 +888,13 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Membangunkan aplikasi kesihatan ibu mengandung merentas platform dalam Flutter yang membolehkan ibu merekod dan menjejak corak pergerakan janin. Melaksanakan penyegerakan masa nyata Firebase Cloud Firestore, analitik amaran ketidakaturan pergerakan, dan eksport laporan PDF klinikal automatik untuk lawatan doktor.',
 					en: 'Developed a cross-platform Flutter maternal wellness app enabling expectant mothers to record and track fetal movement patterns. Implemented Firebase Cloud Firestore real-time sync, movement irregularity alert analytics, and automated clinical PDF export for doctor visits.'
 				},
-				tech: ['Flutter', 'Dart', 'Firebase Cloud Firestore', 'Firebase Functions', 'Clinical PDF Export'],
+				tech: [
+					'Flutter',
+					'Dart',
+					'Firebase Cloud Firestore',
+					'Firebase Functions',
+					'Clinical PDF Export'
+				],
 				link: 'https://github.com/muhammedmunir/baby_kicking_project',
 				linkLabel: { ms: 'Repo GitHub Baby Kicking Suite', en: 'Baby Kicking Suite GitHub Repo' }
 			},
@@ -776,9 +914,18 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Membina konfigurator cermin pintar LED interaktif yang menampilkan kawalan suhu Kelvin masa nyata (3000K–6500K) dan shader tekstur. Membangunkan backend RESTful Laravel 11 dengan model Eloquent, pengesahan Form Request, dan 100% liputan ujian ciri PHPUnit.',
 					en: 'Built an interactive LED smart mirror configurator featuring real-time Kelvin temperature (3000K–6500K) controls and texture shaders. Engineered a Laravel 11 RESTful backend with Eloquent models, Form Request validations, and 100% PHPUnit feature test coverage.'
 				},
-				tech: ['SvelteKit', 'Tailwind CSS', 'Laravel 11 RESTful API', 'Eloquent ORM', '100% PHPUnit Tests'],
+				tech: [
+					'SvelteKit',
+					'Tailwind CSS',
+					'Laravel 11 RESTful API',
+					'Eloquent ORM',
+					'100% PHPUnit Tests'
+				],
 				link: 'https://github.com/muhammedmunir/welding-project',
-				linkLabel: { ms: 'Repo GitHub Lumina / Welding Project', en: 'Lumina / Welding Project Repo' }
+				linkLabel: {
+					ms: 'Repo GitHub Lumina / Welding Project',
+					en: 'Lumina / Welding Project Repo'
+				}
 			}
 		]
 	},
@@ -811,19 +958,31 @@ export const STATIONS: SpineStation[] = [
 		metrics: [
 			{
 				value: '10 Teknologi',
-				label: { ms: 'Frontend & Mobile (Vue 3, SvelteKit, Flutter)', en: 'Frontend & Mobile (Vue 3, SvelteKit, Flutter)' }
+				label: {
+					ms: 'Frontend & Mobile (Vue 3, SvelteKit, Flutter)',
+					en: 'Frontend & Mobile (Vue 3, SvelteKit, Flutter)'
+				}
 			},
 			{
 				value: '8 Teknologi',
-				label: { ms: 'Backend & APIs (Laravel 11/12, Filament, Python)', en: 'Backend & APIs (Laravel 11/12, Filament, Python)' }
+				label: {
+					ms: 'Backend & APIs (Laravel 11/12, Filament, Python)',
+					en: 'Backend & APIs (Laravel 11/12, Filament, Python)'
+				}
 			},
 			{
 				value: '9 Platform',
-				label: { ms: 'Databases & Cloud (PostgreSQL RLS, Azure, Vercel)', en: 'Databases & Cloud (PostgreSQL RLS, Azure, Vercel)' }
+				label: {
+					ms: 'Databases & Cloud (PostgreSQL RLS, Azure, Vercel)',
+					en: 'Databases & Cloud (PostgreSQL RLS, Azure, Vercel)'
+				}
 			},
 			{
 				value: '21 Alatan',
-				label: { ms: 'DevOps, Security (Docker Swarm, SIEM) & AI/MCP', en: 'DevOps, Security (Docker Swarm, SIEM) & AI/MCP' }
+				label: {
+					ms: 'DevOps, Security (Docker Swarm, SIEM) & AI/MCP',
+					en: 'DevOps, Security (Docker Swarm, SIEM) & AI/MCP'
+				}
 			}
 		],
 		stack: [
@@ -856,12 +1015,27 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Frontend & Mobile: Vue.js 3, SvelteKit, Flutter (Dart), React.js, Tailwind CSS, HTML5, CSS3, JavaScript (ES6+), TypeScript, Three.js. Backend & APIs: Laravel 11/12 (PHP 8.2+), Laravel Filament, Node.js, Python, RESTful APIs, C#, C++, Java.',
 					en: 'Frontend & Mobile: Vue.js 3, SvelteKit, Flutter (Dart), React.js, Tailwind CSS, HTML5, CSS3, JavaScript (ES6+), TypeScript, Three.js. Backend & APIs: Laravel 11/12 (PHP 8.2+), Laravel Filament, Node.js, Python, RESTful APIs, C#, C++, Java.'
 				},
-				tech: ['Vue.js 3', 'SvelteKit', 'Flutter (Dart)', 'React.js', 'Tailwind CSS', 'TypeScript', 'Three.js', 'Laravel 11/12', 'Laravel Filament', 'Node.js', 'Python']
+				tech: [
+					'Vue.js 3',
+					'SvelteKit',
+					'Flutter (Dart)',
+					'React.js',
+					'Tailwind CSS',
+					'TypeScript',
+					'Three.js',
+					'Laravel 11/12',
+					'Laravel Filament',
+					'Node.js',
+					'Python'
+				]
 			},
 			{
 				id: 'mob-onboardx',
 				code: 'SKILL-02',
-				pinLabel: { ms: 'Databases, Cloud, DevOps & Security', en: 'Databases, Cloud, DevOps & Security' },
+				pinLabel: {
+					ms: 'Databases, Cloud, DevOps & Security',
+					en: 'Databases, Cloud, DevOps & Security'
+				},
 				title: {
 					ms: 'Databases & Cloud + DevOps & Security',
 					en: 'Databases & Cloud + DevOps & Security'
@@ -874,7 +1048,22 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Databases & Cloud: PostgreSQL (RLS), MySQL, MariaDB, Supabase, Firebase (Firestore & Realtime DB), MongoDB, Redis, Microsoft Azure, Vercel. DevOps & Security: Docker, Docker Swarm, Jenkins, Kubernetes (Basic), Git / GitHub, Cloudflare WAF/CDN, DirectAdmin, Splunk SIEM, Wireshark, Vulhub, Firewall & VPN, ISO 27001, NIST.',
 					en: 'Databases & Cloud: PostgreSQL (RLS), MySQL, MariaDB, Supabase, Firebase (Firestore & Realtime DB), MongoDB, Redis, Microsoft Azure, Vercel. DevOps & Security: Docker, Docker Swarm, Jenkins, Kubernetes (Basic), Git / GitHub, Cloudflare WAF/CDN, DirectAdmin, Splunk SIEM, Wireshark, Vulhub, Firewall & VPN, ISO 27001, NIST.'
 				},
-				tech: ['PostgreSQL (RLS)', 'MySQL', 'MariaDB', 'Supabase', 'Firebase', 'MongoDB', 'Redis', 'Microsoft Azure', 'Vercel', 'Docker Swarm', 'Jenkins', 'Cloudflare WAF', 'Splunk SIEM', 'ISO 27001 & NIST']
+				tech: [
+					'PostgreSQL (RLS)',
+					'MySQL',
+					'MariaDB',
+					'Supabase',
+					'Firebase',
+					'MongoDB',
+					'Redis',
+					'Microsoft Azure',
+					'Vercel',
+					'Docker Swarm',
+					'Jenkins',
+					'Cloudflare WAF',
+					'Splunk SIEM',
+					'ISO 27001 & NIST'
+				]
 			},
 			{
 				id: 'mob-bik-lumina',
@@ -892,7 +1081,16 @@ export const STATIONS: SpineStation[] = [
 					ms: 'AI, Automation & Tools: Model Context Protocol (MCP), OpenCV, Gemini AI, Playwright, Linux (Ubuntu, Kali), Windows Server, Figma, Microsoft Power BI.',
 					en: 'AI, Automation & Tools: Model Context Protocol (MCP), OpenCV, Gemini AI, Playwright, Linux (Ubuntu, Kali), Windows Server, Figma, Microsoft Power BI.'
 				},
-				tech: ['Model Context Protocol (MCP)', 'OpenCV', 'Gemini AI', 'Playwright', 'Linux (Ubuntu, Kali)', 'Windows Server', 'Figma', 'Microsoft Power BI']
+				tech: [
+					'Model Context Protocol (MCP)',
+					'OpenCV',
+					'Gemini AI',
+					'Playwright',
+					'Linux (Ubuntu, Kali)',
+					'Windows Server',
+					'Figma',
+					'Microsoft Power BI'
+				]
 			}
 		]
 	},
@@ -925,19 +1123,31 @@ export const STATIONS: SpineStation[] = [
 		metrics: [
 			{
 				value: 'CGPA 3.17',
-				label: { ms: 'B.CompSc (Network Security) — UTM JB (2021–2024)', en: 'B.CompSc (Network Security) — UTM JB (2021–2024)' }
+				label: {
+					ms: 'B.CompSc (Network Security) — UTM JB (2021–2024)',
+					en: 'B.CompSc (Network Security) — UTM JB (2021–2024)'
+				}
 			},
 			{
 				value: 'CGPA 2.72',
-				label: { ms: 'Diploma in Computer Science — UTM KL (2017–2020)', en: 'Diploma in Computer Science — UTM KL (2017–2020)' }
+				label: {
+					ms: 'Diploma in Computer Science — UTM KL (2017–2020)',
+					en: 'Diploma in Computer Science — UTM KL (2017–2020)'
+				}
 			},
 			{
 				value: '5 Sijil Cisco',
-				label: { ms: 'CCNAv7 (×2), DevNet, Network Security & IoT', en: 'CCNAv7 (×2), DevNet, Network Security & IoT' }
+				label: {
+					ms: 'CCNAv7 (×2), DevNet, Network Security & IoT',
+					en: 'CCNAv7 (×2), DevNet, Network Security & IoT'
+				}
 			},
 			{
 				value: '+60 13-563 6124',
-				label: { ms: 'Puchong, Selangor · E-mel, WhatsApp & Resume PDF', en: 'Puchong, Selangor · Email, WhatsApp & Resume PDF' }
+				label: {
+					ms: 'Puchong, Selangor · E-mel, WhatsApp & Resume PDF',
+					en: 'Puchong, Selangor · Email, WhatsApp & Resume PDF'
+				}
 			}
 		],
 		stack: [
@@ -960,7 +1170,10 @@ export const STATIONS: SpineStation[] = [
 			{
 				id: 'term-email',
 				code: 'EDU-01',
-				pinLabel: { ms: 'Ijazah UTM (Network Security, CGPA 3.17)', en: 'UTM Degree (Network Security, CGPA 3.17)' },
+				pinLabel: {
+					ms: 'Ijazah UTM (Network Security, CGPA 3.17)',
+					en: 'UTM Degree (Network Security, CGPA 3.17)'
+				},
 				title: {
 					ms: 'Bachelor of Computer Science (Network Security) — UTM (2021 – 2024)',
 					en: 'Bachelor of Computer Science (Network Security) — UTM (2021 – 2024)'
@@ -973,14 +1186,25 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Final Year Project: Geospatial Reporting Management System for UTM (SvelteKit, Tailwind CSS, Google Maps API, Supabase). Relevant Coursework: Ethical Hacking & Penetration Testing, Cybersecurity Governance & Compliance, Network Security.',
 					en: 'Final Year Project: Geospatial Reporting Management System for UTM (SvelteKit, Tailwind CSS, Google Maps API, Supabase). Relevant Coursework: Ethical Hacking & Penetration Testing, Cybersecurity Governance & Compliance, Network Security.'
 				},
-				tech: ['SvelteKit', 'Tailwind CSS', 'Google Maps API', 'Supabase', 'Ethical Hacking', 'Cybersecurity Governance', 'Network Security'],
+				tech: [
+					'SvelteKit',
+					'Tailwind CSS',
+					'Google Maps API',
+					'Supabase',
+					'Ethical Hacking',
+					'Cybersecurity Governance',
+					'Network Security'
+				],
 				link: 'https://github.com/muhammedmunir/Reporting-Management-System-',
 				linkLabel: { ms: 'Buka Repo FYP Ijazah UTM', en: 'Open UTM Degree FYP Repo' }
 			},
 			{
 				id: 'term-whatsapp',
 				code: 'EDU-02',
-				pinLabel: { ms: 'Diploma UTM & 7 Sijil Cisco/Data', en: 'UTM Diploma & 7 Cisco/Data Certs' },
+				pinLabel: {
+					ms: 'Diploma UTM & 7 Sijil Cisco/Data',
+					en: 'UTM Diploma & 7 Cisco/Data Certs'
+				},
 				title: {
 					ms: 'Diploma in Computer Science — UTM (2017 – 2020) & 7 Sijil Profesional',
 					en: 'Diploma in Computer Science — UTM (2017 – 2020) & 7 Professional Certifications'
@@ -993,12 +1217,23 @@ export const STATIONS: SpineStation[] = [
 					ms: 'Diploma FYP: E-Commerce Web Platform dengan pengesahan pengguna, pengurusan katalog & aliran pembayaran (PHP, MySQL, Azure Ubuntu). Kursus: OOP (C#), Structured Programming (C++), Java. Pensijilan Cisco: CCNAv7 Intro to Networks, CCNAv7 SRWE, Cisco DevNet Associate, Cisco Network Security, IoT Fundamentals. Analitik: Microsoft Power BI Data Analysis (Jan 2025) & Python for Data Analysis (Dis 2024).',
 					en: 'Diploma FYP: E-Commerce Web Platform with user authentication, catalog management & payment flows (PHP, MySQL, Azure Ubuntu). Coursework: OOP (C#), Structured Programming (C++), Java. Cisco Certifications: CCNAv7 Intro to Networks, CCNAv7 SRWE, Cisco DevNet Associate, Cisco Network Security, IoT Fundamentals. Analytics: Microsoft Power BI Data Analysis (Jan 2025) & Python for Data Analysis (Dec 2024).'
 				},
-				tech: ['CCNAv7', 'Cisco DevNet Associate', 'Cisco Network Security', 'IoT Fundamentals', 'Microsoft Power BI', 'Python Data Analysis', 'PHP & MySQL']
+				tech: [
+					'CCNAv7',
+					'Cisco DevNet Associate',
+					'Cisco Network Security',
+					'IoT Fundamentals',
+					'Microsoft Power BI',
+					'Python Data Analysis',
+					'PHP & MySQL'
+				]
 			},
 			{
 				id: 'term-github',
 				code: 'CONTACT-01',
-				pinLabel: { ms: 'WhatsApp (+60 13-563 6124) & E-mel', en: 'WhatsApp (+60 13-563 6124) & Email' },
+				pinLabel: {
+					ms: 'WhatsApp (+60 13-563 6124) & E-mel',
+					en: 'WhatsApp (+60 13-563 6124) & Email'
+				},
 				title: {
 					ms: 'Hubungi Terus: Telefon, WhatsApp & E-mel Rasmi',
 					en: 'Direct Contact: Phone, WhatsApp & Official Email'
@@ -1182,7 +1417,14 @@ export const CAREER_TIMELINE: CareerEntry[] = [
 				'Assisted the Blue Team in defense hardening, log audits, security patch verifications, and compliance alignment with ISO 27001 and NIST guidelines.'
 			]
 		},
-		stack: ['Splunk SIEM', 'Vulhub Docker Labs', 'Red Team CVE Analysis', 'Blue Team Hardening', 'ISO 27001', 'NIST']
+		stack: [
+			'Splunk SIEM',
+			'Vulhub Docker Labs',
+			'Red Team CVE Analysis',
+			'Blue Team Hardening',
+			'ISO 27001',
+			'NIST'
+		]
 	},
 	{
 		id: 'tnb-ict',
@@ -1204,7 +1446,13 @@ export const CAREER_TIMELINE: CareerEntry[] = [
 				'Assisted network engineers with signal attenuation testing, physical infrastructure audits, and preventative maintenance.'
 			]
 		},
-		stack: ['Fiber-Optic Route Topology', 'Google Earth', 'Signal Attenuation Testing', 'Infrastructure Audit', 'Excel Costing Models']
+		stack: [
+			'Fiber-Optic Route Topology',
+			'Google Earth',
+			'Signal Attenuation Testing',
+			'Infrastructure Audit',
+			'Excel Costing Models'
+		]
 	}
 ];
 
@@ -1304,7 +1552,10 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 	{
 		id: 'proj-tindak',
 		name: 'TINDAK — AI-Powered Mobile Action Engine',
-		badge: { ms: 'Projek Unggulan CV · Dalam Pembangunan', en: 'CV Featured System · In Development' },
+		badge: {
+			ms: 'Projek Unggulan CV · Dalam Pembangunan',
+			en: 'CV Featured System · In Development'
+		},
 		status: 'in_development',
 		stationId: 'ai_vision',
 		summary: {
@@ -1320,7 +1571,10 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 	{
 		id: 'proj-9router',
 		name: '9Router Office — Autonomous AI Agent 3D Workspace',
-		badge: { ms: 'Projek Unggulan CV · Ruang Kerja 3D MCP', en: 'CV Featured System · 3D MCP Workspace' },
+		badge: {
+			ms: 'Projek Unggulan CV · Ruang Kerja 3D MCP',
+			en: 'CV Featured System · 3D MCP Workspace'
+		},
 		status: 'active',
 		stationId: 'ai_vision',
 		summary: {
@@ -1352,7 +1606,10 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 	{
 		id: 'proj-baby-kicking',
 		name: 'Baby Kicking Suite — Mobile Maternal Health Tracker',
-		badge: { ms: 'Projek Unggulan CV · Dalam Pembangunan', en: 'CV Featured System · In Development' },
+		badge: {
+			ms: 'Projek Unggulan CV · Dalam Pembangunan',
+			en: 'CV Featured System · In Development'
+		},
 		status: 'in_development',
 		stationId: 'ai_vision',
 		summary: {
@@ -1369,7 +1626,10 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 	{
 		id: 'proj-lumina-wedding',
 		name: 'Lumina Glass Studio & Smart Mirror Visualizer',
-		badge: { ms: 'Projek Unggulan CV · Web App & REST API', en: 'CV Featured System · Web App & REST API' },
+		badge: {
+			ms: 'Projek Unggulan CV · Web App & REST API',
+			en: 'CV Featured System · Web App & REST API'
+		},
 		status: 'active',
 		stationId: 'ai_vision',
 		summary: {
@@ -1397,7 +1657,14 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 			ms: 'Antara muka modular Vue.js 3, aliran kerja pentadbiran Laravel Filament, pengoptimuman pangkalan data MySQL, MariaDB & PostgreSQL 17, serta orkestrasi Docker Swarm di atas Linux (Ubuntu) & Windows Server.',
 			en: 'Modular Vue.js 3 interfaces, Laravel Filament administration workflows, MySQL, MariaDB & PostgreSQL 17 optimization, and Docker Swarm orchestration across Linux (Ubuntu) & Windows Server.'
 		},
-		stack: ['Vue.js 3', 'Laravel 11/12', 'Laravel Filament', 'PostgreSQL 17', 'MySQL & MariaDB', 'Docker Swarm']
+		stack: [
+			'Vue.js 3',
+			'Laravel 11/12',
+			'Laravel Filament',
+			'PostgreSQL 17',
+			'MySQL & MariaDB',
+			'Docker Swarm'
+		]
 	},
 	{
 		id: 'proj-loan-iwa001',
@@ -1420,7 +1687,10 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 	{
 		id: 'proj-real-estate',
 		name: 'Infinity World Corporate Portal & Real Estate Landing',
-		badge: { ms: 'Nova Bitara · Portal Korporat 3 Bahasa', en: 'Nova Bitara · Trilingual Corporate Portal' },
+		badge: {
+			ms: 'Nova Bitara · Portal Korporat 3 Bahasa',
+			en: 'Nova Bitara · Trilingual Corporate Portal'
+		},
 		status: 'production',
 		stationId: 'enterprise',
 		summary: {
@@ -1450,7 +1720,16 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 			ms: 'Flutter (Dart) dan JavaScript dengan seni bina berbilang pangkalan data (Firebase Realtime DB, MongoDB, Supabase, MySQL), pelayan awan Ubuntu di Microsoft Azure (NSGs), saluran paip Jenkins CI/CD, asas Kubernetes, dan reka bentuk Figma.',
 			en: 'Flutter (Dart) and JavaScript backed by a multi-database architecture (Firebase Realtime DB, MongoDB, Supabase, MySQL), Microsoft Azure Ubuntu cloud servers (NSGs), Jenkins CI/CD pipelines, foundational Kubernetes, and Figma wireframes.'
 		},
-		stack: ['Flutter (Dart)', 'JavaScript', 'Firebase Realtime DB', 'MongoDB', 'Supabase', 'MySQL', 'Microsoft Azure', 'Jenkins CI/CD'],
+		stack: [
+			'Flutter (Dart)',
+			'JavaScript',
+			'Firebase Realtime DB',
+			'MongoDB',
+			'Supabase',
+			'MySQL',
+			'Microsoft Azure',
+			'Jenkins CI/CD'
+		],
 		repoUrl: 'https://github.com/muhammedmunir/onboardx_tnb_app'
 	},
 	{
@@ -1473,7 +1752,10 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 	{
 		id: 'proj-utm-fyp-homelab',
 		name: 'Geospatial Reporting Management System (UTM FYP) & Homelab',
-		badge: { ms: 'FYP Ijazah UTM & Infrastruktur Homelab', en: 'UTM Degree FYP & Homelab Infrastructure' },
+		badge: {
+			ms: 'FYP Ijazah UTM & Infrastruktur Homelab',
+			en: 'UTM Degree FYP & Homelab Infrastructure'
+		},
 		status: 'academic',
 		stationId: 'terminal',
 		summary: {
