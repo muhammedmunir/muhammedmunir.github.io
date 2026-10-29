@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-10-29 — The Living Fiber Spine: Kawalan Responsif, Navigasi Pintar & Pengoptimuman WebGL
+
+- **Pemecahan Kod Berdinamik (Dynamic Code-Splitting)**: Three.js dan vendor diasingkan ke dalam chunk khusus `three-vendor` bagi memastikan muatan permulaan awal ringan dan pantas tanpa membebankan rendering awal.
+- **Kemas Kini Bahan PBR Kaca & Logam Monitor**: Peningkatan bahan `MeshPhysicalMaterial` dengan indeks biasan `ior: 1.52`, `clearcoat: 0.35`, kemasan satin berus logam PBR dengan `normalMap`/`roughnessMap`, dan pantulan HDR persekitaran (cubemap) pada monitor konsol.
+- **Penyingkiran Arkib Penuh CV (Dossier Modal)**: Memadamkan komponen modal `SpineDossierModal.svelte` dan `modal-focus.ts` demi antaramuka minimalis yang memfokuskan pameran skrin 3D penuh.
+- **Pembersihan Bersih Kod Zombi**: Menyingkirkan lebih 70 fail dan 7 direktori prototaip lama terbengkalai (`facility`, `motion`, `living`, `engine`, `spatial`, `deck`, `components`) bagi meringankan saiz repositori dan melajukan binaan.
+- **Sifar Alokasi Memori dalam Animasi**: Menggantikan alokasi `.clone()` dan vektor dinamik dalam `updateCamera()` dengan kolam vektor scratch (`tempRadialOut`, `tempTangentRight`, `tempAnchorPt`, dsb.) untuk menghapuskan micro-stutter Garbage Collector.
+- **Prapengiraan Selaman Denyutan Optik**: 432 kalkulasi jarak geometri berulang per bingkai dihapuskan dan digantikan dengan jadual prapengiraan 360 sampel pantas.
+- **Skala Resolusi Dinamik (DRS)**: Mengintegrasikan pengawal selia kadar bingkai pintar yang melaraskan nisbah piksel (DPR) secara automatik jika GPU dikesan bergelut di bawah 40 FPS.
+- **Nyahaktifkan Bayang Objek Mikro**: Menyingkirkan `castShadow` pada puluhan objek kecil (tiang tambat bollards, struts, pylon props) bagi mengurangkan beban pas render bayang GPU.
+- **Migrasi Pemasa Bebas Deprecation**: Menyingkirkan `THREE.Clock` lapuk dan menggantikannya dengan `WorldTimer` berketepatan tinggi berasaskan `performance.now()`.
+- **Lautan Bioluminesensi Siber**: Menyuntik kesan pendaran biru neon/cyan pada puncak buih ombak (`OCEAN_FRAGMENT_SHADER`) untuk impak visual atmosfera yang memukau.
+- **Maklum Balas Audio Haptik Mikro**: Mengintegrasikan sintesis bunyi Web Audio API tulen (`sound.ts`) untuk interaksi sinematik (lonjakan stesen, sentuhan terminal, pensuisan tema) bersama butang togol audio HUD.
+- **Navigasi Kanvas Dinamik**: Label butang navigasi pada terminal skrin 3D (`exhibit-screen.ts`) kini menyesuaikan teks secara pintar (`← Papan` / `Papan →` atau `← Halaman` / `Halaman →`) mengikut resolusi monitor kanvas.
+- **Butang Terapung 'Kembali ke Orbit'**: Menambah butang tindakan terapung beranimasi pada mod 3D ketika periksa (`selectedHotspotId`) untuk memastikan laluan keluar sentiasa boleh diakses dengan jelas merentas skrin desktop dan sentuh mudah alih.
+- **Ergonomik Mudah Alih & Zon Selamat**: Sasaran sentuhan `min-height`/`min-width` dipertingkatkan ke standard minimum 44px dengan sokongan `env(safe-area-inset-*)`. Teks penjenamaan bertukar secara automatik kepada nama pendek pada skrin kecil bagi mengelakkan limpahan tajuk.
+- **Redaman Ombak Lautan**: Pelantar pulau mengira jarak minimum untuk redaman ketinggian Gerstner Wave secara tepat, menghalang gelombang laut menembusi dek pulau 3D.
+
+## 2026-10-27 — feat(spine): Tambah halaman pemuatan animasi 3D & papan pameran skrin penuh
+
+- **Halaman Pemuatan Beranimasi (`SpineLoadingScreen.svelte`)**: Antaramuka telemetri permulaan dengan indikator kemajuan masa nyata, status inisialisasi WebGL, dan peralihan lembut ke dunia 3D.
+- **Papan Pameran Terminal Interaktif**: Skrin monitor 3D kini menyokong raycast UV, pensuisan stesen secara langsung, rendering potret profil, dan navigasi arkib berasaskan cip interaktif.
+- **Sistem Ujian Audit Kualiti**: Menambah 68 ujian unit lulus automatik merangkumi matematik trajektori orbit, formulasi optik jarak kamera `getInspectDistance`, pengesanan sentuhan tanpa pertindihan, dan semakan dwibahasa (MS/EN).
+- **Semakan Kontras Tema**: 314 pasangan token lulus piawaian aksesibiliti kontras dengan nisbah minimum 4.68:1.
+
 ## 2026-10-22 — Systems in Motion native-scroll prototype (unpublished)
 
 - Replaced button-driven homepage composition with continuous SSR HTML: direct identity, three inline projects, career and Contact. Both routes share SystemsPortfolio; no core reader dialogs or forced chapter sequence.

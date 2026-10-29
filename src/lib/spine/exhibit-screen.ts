@@ -879,14 +879,27 @@ export function drawExhibitScreen(
 				palette
 			);
 			setType(ctx, button, palette);
-			const previousText = `← ${labels.previous}`;
-			const nextText = `${labels.next} →`;
+			const isBoardGroup = group.previousId === 'previous';
+			const customPrev = isBoardGroup ? `← ${labels.board}` : `← ${labels.page}`;
+			const customNext = isBoardGroup ? `${labels.board} →` : `${labels.page} →`;
+			const prevFull = `← ${labels.previous}`;
+			const nextFull = `${labels.next} →`;
+			const displayPrev =
+				ctx.measureText(customPrev).width <= controlWidth - CONTROL_PADDING * 2
+					? customPrev
+					: ctx.measureText(prevFull).width <= controlWidth - CONTROL_PADDING * 2
+						? prevFull
+						: '←';
+			const displayNext =
+				ctx.measureText(customNext).width <= controlWidth - CONTROL_PADDING * 2
+					? customNext
+					: ctx.measureText(nextFull).width <= controlWidth - CONTROL_PADDING * 2
+						? nextFull
+						: '→';
 			chrome(
 				group.previousId,
 				group.previousLabel,
-				ctx.measureText(previousText).width <= controlWidth - CONTROL_PADDING * 2
-					? previousText
-					: '←',
+				displayPrev,
 				group.previous,
 				group.x,
 				footerButtonsY,
@@ -896,7 +909,7 @@ export function drawExhibitScreen(
 			chrome(
 				group.nextId,
 				group.nextLabel,
-				ctx.measureText(nextText).width <= controlWidth - CONTROL_PADDING * 2 ? nextText : '→',
+				displayNext,
 				group.next,
 				group.x + controlWidth + GAP,
 				footerButtonsY,

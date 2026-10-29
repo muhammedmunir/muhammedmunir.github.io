@@ -1,9 +1,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import type { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { STATIONS, PROFILE, type Locale, type HotspotItem, type SpineStation } from './spine-data';
 import {
 	resolveExhibitView,
@@ -57,6 +55,7 @@ export interface WorldCallbacks {
 	onMarkersUpdate?: (markers: ProjectedMarker[]) => void;
 	onScreenUpdate?: (screen: ExhibitScreenSnapshot | null) => void;
 	onScreenProjection?: (frame: ProjectedScreenFrame | null) => void;
+	onOpenEditorial?: () => void;
 	onOpenDossier?: () => void;
 	onProgress?: (progress: number, stageMessage: string) => void;
 	onReady?: () => void;
@@ -197,6 +196,7 @@ const OCEAN_VERTEX_SHADER = /* glsl */ `
 	varying vec3 vNormal;
 	varying float vJacobian;
 	varying float vElevation;
+	varying float vIslandDist;
 
 	void gerstnerWave(
 		vec2 xz,
@@ -250,10 +250,13 @@ const OCEAN_VERTEX_SHADER = /* glsl */ `
 
 		// Redam ombak di bawah setiap pelantar pulau: air tidak boleh menembusi dek.
 		float islandClearance = 1.0;
+		float minIslandD = length(worldInitial.xz);
 		for (int i = 0; i < 6; i++) {
 			float islandDist = length(worldInitial.xz - uIslands[i].xz);
+			minIslandD = min(minIslandD, islandDist);
 			islandClearance = min(islandClearance, smoothstep(12.6, 17.4, islandDist));
 		}
+		vIslandDist = minIslandD;
 
 		// Redam ombak di sekitar cincin jambatan orbital (R=38) dan teras pusat (R=0)
 		float radialDist = length(worldInitial.xz);
@@ -286,6 +289,7 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 	uniform vec3 uWaterShallow;
 	uniform vec3 uWaterScatter;
 	uniform vec3 uFogColor;
+	uniform float uNightFactor;
 	uniform float uSunSpecScale;
 	uniform vec3 uIslands[6];
 
@@ -293,6 +297,7 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 	varying vec3 vNormal;
 	varying float vJacobian;
 	varying float vElevation;
+	varying float vIslandDist;
 
 	void main() {
 		vec3 viewVec = cameraPosition - vWorldPos;
@@ -329,12 +334,8 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 		float sunBacklight = max(dot(V, -vec3(uSunDir.x, -uSunDir.y * 0.25, uSunDir.z)), 0.0);
 		vec3 sss = uWaterScatter * (crestScatter * 0.72 + sunBacklight * crestScatter * 0.95);
 
-		// Jarak ke 6 pulau stesen & teras pusat (0,0)
-		float minIslandDist = length(vWorldPos.xz);
-		for (int i = 0; i < 6; i++) {
-			float d = length(vWorldPos.xz - uIslands[i].xz);
-			minIslandDist = min(minIslandDist, d);
-		}
+		// Jarak ke pulau dikira pada bucu bagi mengurangkan beban per-piksel
+		float minIslandDist = vIslandDist;
 
 		// Cincin Koral & Tunjang Optik Bawah Laut pada R = 38m dan jejari ke pusat
 		float ringDist = abs(length(vWorldPos.xz) - 38.0);
@@ -365,9 +366,13 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 		float totalFoam = clamp(whitecap * 0.55 + shoreFoam * 0.82, 0.0, 1.0);
 
 		vec3 foamColor = mix(vec3(0.88, 0.95, 1.0), uSunColor, 0.18);
-		color = mix(color, foamColor, totalFoam);
+		vec3 bioLuminescentEdge = vec3(0.08, 0.85, 0.98) * smoothstep(0.38, 0.78, whitecap) * (0.8 + 0.2 * uNightFactor);
+		color = mix(color, foamColor + bioLuminescentEdge, totalFoam);
 
-		float fogFactor = smoothstep(48.0, 175.0, dist);
+		// ponytail: kabus permukaan sahaja; raymarch hanya jika perlu bayang volumetrik.
+		float fogDrift = 1.0 + 0.06 * sin(dot(vWorldPos.xz, vec2(0.012, 0.009)) + uTime * 0.08);
+		float fogDepth = max(dist - 48.0, 0.0) * 0.018 * fogDrift;
+		float fogFactor = 1.0 - exp2(-fogDepth * fogDepth * 1.442695);
 		color = mix(color, uFogColor, fogFactor);
 
 		gl_FragColor = vec4(color, 1.0);
@@ -399,29 +404,6 @@ const SKY_FRAGMENT_SHADER = /* glsl */ `
 		return fract(p.x * p.y);
 	}
 
-	float noise2D(vec2 p) {
-		vec2 i = floor(p);
-		vec2 f = fract(p);
-		float a = hash21(i);
-		float b = hash21(i + vec2(1.0, 0.0));
-		float c = hash21(i + vec2(0.0, 1.0));
-		float d = hash21(i + vec2(1.0, 1.0));
-		vec2 u = f * f * (3.0 - 2.0 * f);
-		return mix(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
-	}
-
-	float fbm(vec2 p) {
-		float v = 0.0;
-		float a = 0.5;
-		mat2 rot = mat2(0.8, 0.6, -0.6, 0.8);
-		for (int i = 0; i < 2; i++) {
-			v += a * noise2D(p);
-			p = rot * p * 2.02;
-			a *= 0.5;
-		}
-		return v;
-	}
-
 	void main() {
 		vec3 dir = normalize(vWorldDir);
 		float y = clamp(dir.y, 0.0, 1.0);
@@ -433,20 +415,6 @@ const SKY_FRAGMENT_SHADER = /* glsl */ `
 		float sunDisc = smoothstep(0.9986, 0.9997, sunCos);
 		sky += uSunColor * mieGlow;
 		sky = mix(sky, uSunColor * 1.25, sunDisc);
-
-		if (dir.y > 0.015) {
-			vec2 cloudUv = (dir.xz / (dir.y + 0.16)) * 0.5 + vec2(uTime * 0.01, -uTime * 0.007);
-			float c1 = fbm(cloudUv);
-			float c2 = fbm(cloudUv * 2.15 + vec2(1.7, -2.3));
-			float cloudDensity = smoothstep(0.48, 0.78, c1 * 0.72 + c2 * 0.28)
-				* smoothstep(0.015, 0.22, dir.y)
-				* smoothstep(0.92, 0.34, dir.y);
-
-			vec3 cloudLit = mix(uSkyHorizon * 1.05, uSunColor + vec3(0.18), 0.45 + 0.35 * pow(sunCos, 4.0));
-			vec3 cloudShadow = mix(uSkyZenith * 0.65, uSkyHorizon * 0.78, 0.5);
-			vec3 cloudCol = mix(cloudShadow, cloudLit, smoothstep(0.32, 0.78, c2));
-			sky = mix(sky, cloudCol, cloudDensity * 0.62);
-		}
 
 		if (uNightFactor > 0.05 && dir.y > 0.06) {
 			vec2 starGrid = floor(dir.xz / (dir.y + 0.1) * 195.0);
@@ -501,6 +469,28 @@ function createBeveledSlabGeometry(
 	return geo;
 }
 
+class WorldTimer {
+	private lastTime = 0;
+	private startTime = 0;
+
+	constructor() {
+		this.startTime = typeof performance !== 'undefined' ? performance.now() : 0;
+		this.lastTime = this.startTime;
+	}
+
+	public getDelta(): number {
+		const now = typeof performance !== 'undefined' ? performance.now() : 0;
+		const delta = (now - this.lastTime) / 1000;
+		this.lastTime = now;
+		return Math.max(0, delta);
+	}
+
+	public getElapsedTime(): number {
+		const now = typeof performance !== 'undefined' ? performance.now() : 0;
+		return Math.max(0, (now - this.startTime) / 1000);
+	}
+}
+
 export class FiberSpineWorld {
 	private container: HTMLElement;
 	private callbacks: WorldCallbacks;
@@ -509,12 +499,14 @@ export class FiberSpineWorld {
 	private renderer: THREE.WebGLRenderer | null = null;
 	private composer: EffectComposer | null = null;
 	private bloomPass: UnrealBloomPass | null = null;
+	private renderUntil = 0;
 	private basePixelRatio = 1;
 	private currentPixelRatio = 1;
 	private envTexture: THREE.Texture | null = null;
 	private pbrMaps: PBRSurfaceMaps | null = null;
 	private orbitalLoopCurve: THREE.CatmullRomCurve3;
 	private causewayLoopCurve: THREE.CatmullRomCurve3;
+	private causewayLoopSamples: THREE.Vector3[] = [];
 
 	private targetProgress = 0;
 	private currentProgress = 0;
@@ -602,11 +594,19 @@ export class FiberSpineWorld {
 	private buoyancyTime = 0;
 	private isMobile = false;
 
-	private clock = new THREE.Clock();
+	private clock = new WorldTimer();
 	private rafId: number | null = null;
 	private resizeObserver: ResizeObserver | null = null;
 	private tempWorldVec = new THREE.Vector3();
 	private tempPulsePt = new THREE.Vector3();
+	private tempRadialOut = new THREE.Vector3();
+	private tempTangentRight = new THREE.Vector3();
+	private tempAnchorPt = new THREE.Vector3();
+	private tempCamPos = new THREE.Vector3();
+	private tempLookTarget = new THREE.Vector3();
+	private causewayLoopDives: Float32Array;
+	private consecutiveSlowFrames = 0;
+	private consecutiveFastFrames = 0;
 	private inspectBlend = 0;
 	private currentInspectCamPos = new THREE.Vector3();
 	private currentInspectLookAt = new THREE.Vector3();
@@ -632,6 +632,24 @@ export class FiberSpineWorld {
 			'catmullrom',
 			0.5
 		);
+		this.causewayLoopSamples = this.causewayLoopCurve.getSpacedPoints(360);
+		this.causewayLoopDives = new Float32Array(360);
+		for (let s = 0; s < 360; s++) {
+			const pt = this.causewayLoopSamples[s];
+			let nearestIslandSq = Infinity;
+			for (let islandIdx = 0; islandIdx < STATION_ANCHORS.length; islandIdx++) {
+				const anchor = STATION_ANCHORS[islandIdx];
+				const dx = pt.x - anchor.x;
+				const dz = pt.z - anchor.z;
+				const d2 = dx * dx + dz * dz;
+				if (d2 < nearestIslandSq) nearestIslandSq = d2;
+			}
+			const nearestIsland = Math.sqrt(nearestIslandSq);
+			this.causewayLoopDives[s] = Math.min(
+				1,
+				Math.max(0, (PULSE_DIVE_RADIUS - nearestIsland) / PULSE_DIVE_FADE)
+			);
+		}
 
 		this.pulseOffsets = new Float32Array(PULSE_COUNT);
 		this.pulseSpeeds = new Float32Array(PULSE_COUNT);
@@ -660,8 +678,14 @@ export class FiberSpineWorld {
 			this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
 			this.renderer.toneMappingExposure = 1.02;
 			this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-			this.renderer.shadowMap.enabled = true;
-			this.renderer.shadowMap.type = THREE.PCFShadowMap;
+			if (this.renderer.shadowMap) {
+				this.renderer.shadowMap.enabled = !this.isMobile;
+				if (this.renderer.shadowMap.enabled) {
+					this.renderer.shadowMap.type = THREE.PCFShadowMap;
+					this.renderer.shadowMap.autoUpdate = false;
+					this.renderer.shadowMap.needsUpdate = true;
+				}
+			}
 
 			const width = Math.max(this.container.clientWidth, 1);
 			const height = Math.max(this.container.clientHeight, 1);
@@ -680,25 +704,6 @@ export class FiberSpineWorld {
 			this.scene.environmentIntensity = 1.15;
 			roomEnv.dispose();
 			pmrem.dispose();
-
-			const rt = new THREE.WebGLRenderTarget(width * dpr, height * dpr, {
-				samples: 0,
-				type: THREE.HalfFloatType
-			});
-			this.composer = new EffectComposer(this.renderer, rt);
-			this.composer.setPixelRatio(dpr);
-			this.composer.setSize(width, height);
-			const renderPass = new RenderPass(this.scene, this.camera);
-			this.bloomPass = new UnrealBloomPass(
-				new THREE.Vector2(Math.round(width * 0.5), Math.round(height * 0.5)),
-				0.04,
-				0.18,
-				1.0
-			);
-			const outputPass = new OutputPass();
-			this.composer.addPass(renderPass);
-			this.composer.addPass(this.bloomPass);
-			this.composer.addPass(outputPass);
 		} catch {
 			return false;
 		}
@@ -941,25 +946,29 @@ export class FiberSpineWorld {
 		// Ini membuang highlight putih besar yang memakan teks dan menyilaukan pada waktu malam.
 		return new THREE.MeshPhysicalMaterial({
 			color: colorHex,
-			metalness: 0.6,
-			roughness: Math.min(0.92, roughness + 0.42),
+			metalness: 0.68,
+			roughness: Math.min(0.92, roughness + 0.4),
 			normalMap: this.pbrMaps?.normalMap ?? null,
-			normalScale: new THREE.Vector2(0.22, 0.22),
+			normalScale: new THREE.Vector2(0.24, 0.24),
 			roughnessMap: this.pbrMaps?.roughnessMap ?? null,
 			metalnessMap: this.pbrMaps?.metalnessMap ?? null,
+			clearcoat: 0.18,
+			clearcoatRoughness: 0.22,
 			emissive: accentHex ?? 0x000000,
 			emissiveIntensity: accentHex ? 0.04 : 0.0,
-			envMapIntensity: 0.7
+			envMapIntensity: 0.92
 		});
 	}
 
 	private createOpticalGlassMaterial(tintHex = 0x38bdf8): THREE.MeshPhysicalMaterial {
 		return new THREE.MeshPhysicalMaterial({
 			color: tintHex,
-			metalness: 0.05,
-			roughness: 0.18,
-			ior: 1.45,
-			envMapIntensity: 0.85,
+			metalness: 0.08,
+			roughness: 0.14,
+			ior: 1.52,
+			envMapIntensity: 1.05,
+			clearcoat: 0.35,
+			clearcoatRoughness: 0.1,
 			transparent: true,
 			opacity: 0.38,
 			depthWrite: false
@@ -1055,6 +1064,7 @@ export class FiberSpineWorld {
 				uWaterShallow: { value: new THREE.Color(0x084c61) },
 				uWaterScatter: { value: new THREE.Color(0x14b8a6) },
 				uFogColor: { value: new THREE.Color(0x172e4d) },
+				uNightFactor: { value: 0.15 },
 				uSunSpecScale: { value: 1.0 },
 				uIslands: { value: STATION_ANCHORS.map((v) => v.clone()) }
 			}
@@ -1369,7 +1379,6 @@ export class FiberSpineWorld {
 			const ang = (p / 6) * Math.PI * 2;
 			const bollard = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.26, 1.05, 12), caissonMat);
 			bollard.position.set(Math.sin(ang) * 12.05, 0.32, Math.cos(ang) * 12.05);
-			bollard.castShadow = true;
 			group.add(bollard);
 
 			const cap = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 10), glowMat);
@@ -1734,8 +1743,8 @@ export class FiberSpineWorld {
 		if (action.kind === 'close') {
 			this.selectHotspot(null);
 			this.callbacks.onHotspotSelect?.('', this.activeStationIndex);
-		} else if (action.kind === 'archive') {
-			this.callbacks.onOpenDossier?.();
+		} else if (action.kind === 'editorial' || (action as { kind: string }).kind === 'archive') {
+			(this.callbacks.onOpenEditorial ?? this.callbacks.onOpenDossier)?.();
 		} else if (action.kind === 'link') {
 			// Tolak skim aktif walaupun data navigasi datang daripada repositori sendiri.
 			if (/^(https?:\/\/|mailto:|tel:|\/(?!\/))/.test(action.url)) {
@@ -1869,7 +1878,6 @@ export class FiberSpineWorld {
 			chromeMat.side = THREE.DoubleSide;
 			const dish = new THREE.Mesh(new THREE.LatheGeometry(pts, 36), chromeMat);
 			dish.rotation.x = Math.PI * 0.28;
-			dish.castShadow = true;
 			propGroup.add(dish);
 
 			const feedHorn = new THREE.Mesh(
@@ -1933,7 +1941,6 @@ export class FiberSpineWorld {
 		for (const sx of [-0.95, 0.95]) {
 			const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.07, 0.62, 18), supportMat);
 			strut.position.set(sx, 0.35, 0);
-			strut.castShadow = true;
 			root.add(strut);
 		}
 
@@ -1999,7 +2006,6 @@ export class FiberSpineWorld {
 			supportMat
 		);
 		propPylon.position.set(0, 2.65, 0);
-		propPylon.castShadow = true;
 		root.add(propPylon);
 
 		const pylonCollar = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.016, 12, 24), accentMat);
@@ -2260,6 +2266,7 @@ export class FiberSpineWorld {
 		this.oceanMaterial.uniforms.uWaterShallow.value.copy(cfg.waterShallow);
 		this.oceanMaterial.uniforms.uWaterScatter.value.copy(cfg.waterScatter);
 		this.oceanMaterial.uniforms.uFogColor.value.copy(cfg.fogColor);
+		this.oceanMaterial.uniforms.uNightFactor.value = cfg.nightFactor;
 		this.oceanMaterial.uniforms.uSunSpecScale.value = isLight ? 0.35 : 0.45;
 
 		this.skyMaterial.uniforms.uSunDir.value.copy(sunDir);
@@ -2273,11 +2280,6 @@ export class FiberSpineWorld {
 			this.renderer.toneMappingExposure = isLight ? 0.84 : 0.58;
 		}
 		this.scene.environmentIntensity = isLight ? 0.72 : 0.42;
-		if (this.bloomPass) {
-			this.bloomPass.strength = isLight ? 0.03 : 0.04;
-			this.bloomPass.radius = 0.18;
-			this.bloomPass.threshold = 1.0;
-		}
 
 		this.keyLight.color.copy(cfg.sunColor);
 		this.keyLight.intensity = isLight ? 1.45 : 0.82;
@@ -2373,6 +2375,9 @@ export class FiberSpineWorld {
 		this.targetProgress = clamped / STATION_ANCHORS.length;
 		this.targetYawOffset = 0;
 		this.targetPitchOffset = 0;
+		if (this.renderer?.shadowMap?.enabled) {
+			this.renderer.shadowMap.needsUpdate = true;
+		}
 	}
 
 	public selectHotspot(hotspotId: string | null): void {
@@ -2399,7 +2404,17 @@ export class FiberSpineWorld {
 		if (record) this.goToStation(record.stationIndex);
 		this.screenReady = Boolean(hotspotId);
 		this.refreshHotspotHighlights();
-		this.redrawAllCanvases();
+		if (previous) {
+			this.drawHotspotExhibitCanvas(previous.canvas, previous.hotspot);
+			previous.texture.needsUpdate = true;
+		}
+		if (record) {
+			this.drawHotspotExhibitCanvas(record.canvas, record.hotspot);
+			record.texture.needsUpdate = true;
+		}
+		if (this.renderer?.shadowMap?.enabled) {
+			this.renderer.shadowMap.needsUpdate = true;
+		}
 		this.callbacks.onHotspotHover?.(null, null);
 		if (!hotspotId) this.callbacks.onScreenUpdate?.(null);
 		if (this.renderer) this.renderer.domElement.style.cursor = hotspotId ? 'default' : 'grab';
@@ -2500,9 +2515,6 @@ export class FiberSpineWorld {
 		this.camera.aspect = width / height;
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize(width, height);
-		if (this.composer) {
-			this.composer.setSize(width, height);
-		}
 		if (this.motePoints) {
 			this.motePoints.material.uniforms.uViewportHeight.value =
 				height * this.renderer.getPixelRatio();
@@ -2728,10 +2740,13 @@ export class FiberSpineWorld {
 
 		// Kedudukan kamera pada lilitan luar pulau supaya menghadap ke arah Pulau Semasa + Teras Reaktor Pusat (0,0,0) di belakangnya!
 		const orbitAngle = this.currentProgress * Math.PI * 2;
-		const radialOut = new THREE.Vector3(Math.sin(orbitAngle), 0, Math.cos(orbitAngle));
-		const tangentRight = new THREE.Vector3(Math.cos(orbitAngle), 0, -Math.sin(orbitAngle));
+		this.tempRadialOut.set(Math.sin(orbitAngle), 0, Math.cos(orbitAngle));
+		const radialOut = this.tempRadialOut;
+		this.tempTangentRight.set(Math.cos(orbitAngle), 0, -Math.sin(orbitAngle));
+		const tangentRight = this.tempTangentRight;
 
-		const anchorPt = this.orbitalLoopCurve.getPointAt(this.currentProgress);
+		this.orbitalLoopCurve.getPointAt(this.currentProgress, this.tempAnchorPt);
+		const anchorPt = this.tempAnchorPt;
 		const stepBob = this.reducedMotion
 			? 0
 			: Math.sin(elapsed * 6.8) * Math.min(0.05, Math.abs(diff) * 1.5) +
@@ -2740,16 +2755,16 @@ export class FiberSpineWorld {
 		const camRadiusOffset = 9.8;
 		const lateralShift = this.smoothPointer.x * 0.75 + this.userYawOffset * 3.4;
 
-		const camPos = anchorPt
-			.clone()
+		const camPos = this.tempCamPos
+			.copy(anchorPt)
 			.addScaledVector(radialOut, camRadiusOffset)
 			.addScaledVector(tangentRight, lateralShift);
 		camPos.y =
 			anchorPt.y + 3.25 + stepBob + this.smoothPointer.y * 0.3 + this.userPitchOffset * 1.8;
 
 		// Kamera memandang ke tengah Pulau Semasa dan terus ke Teras Reaktor Pusat di tengah lautan
-		const lookTarget = anchorPt
-			.clone()
+		const lookTarget = this.tempLookTarget
+			.copy(anchorPt)
 			.addScaledVector(radialOut, -2.6)
 			.addScaledVector(tangentRight, this.smoothPointer.x * 1.2 - this.userYawOffset * 4.2);
 		lookTarget.y = anchorPt.y + 2.15 - this.userPitchOffset * 1.6;
@@ -2783,14 +2798,14 @@ export class FiberSpineWorld {
 
 			this.targetInspectLookAt
 				.copy(this.tempScreenCenter)
-				.addScaledVector(this.tempTangent, lateralOffset)
-				.add(new THREE.Vector3(0, verticalOffset, 0));
+				.addScaledVector(this.tempTangent, lateralOffset);
+			this.targetInspectLookAt.y += verticalOffset;
 
 			this.targetInspectCamPos
 				.copy(this.tempScreenCenter)
 				.addScaledVector(this.tempNormal, camDistance)
-				.addScaledVector(this.tempTangent, lateralOffset)
-				.add(new THREE.Vector3(0, verticalOffset, 0));
+				.addScaledVector(this.tempTangent, lateralOffset);
+			this.targetInspectCamPos.y += verticalOffset;
 
 			if (enteringInspect) {
 				this.currentInspectCamPos.copy(this.targetInspectCamPos);
@@ -2879,19 +2894,9 @@ export class FiberSpineWorld {
 			if (!this.reducedMotion) {
 				this.pulseOffsets[i] = (this.pulseOffsets[i] + dt * this.pulseSpeeds[i]) % 1;
 			}
-			const pt = this.causewayLoopCurve.getPointAt(this.pulseOffsets[i], this.tempPulsePt);
-			// Bola menyelam di bawah dek pulau apabila menghampiri pusat pulau, jadi ia
-			// tidak lagi menembusi lantai (dahulu laluan y=0.78 + 0.34 melepasi dek y=1.20).
-			let nearestIslandSq = Infinity;
-			for (let islandIdx = 0; islandIdx < STATION_ANCHORS.length; islandIdx++) {
-				const anchor = STATION_ANCHORS[islandIdx];
-				const dx = pt.x - anchor.x;
-				const dz = pt.z - anchor.z;
-				const d2 = dx * dx + dz * dz;
-				if (d2 < nearestIslandSq) nearestIslandSq = d2;
-			}
-			const nearestIsland = Math.sqrt(nearestIslandSq);
-			const dive = Math.min(1, Math.max(0, (PULSE_DIVE_RADIUS - nearestIsland) / PULSE_DIVE_FADE));
+			const sampleIdx = Math.floor(this.pulseOffsets[i] * 360) % 360;
+			const pt = this.causewayLoopSamples[sampleIdx] ?? this.tempPulsePt;
+			const dive = this.causewayLoopDives[sampleIdx] ?? 0;
 			const rideY = PULSE_RIDE_Y - dive * 2.4;
 			this.dummy.position.set(pt.x, rideY, pt.z);
 			const scale = (0.75 + 0.35 * Math.sin(elapsed * 3.6 + i)) * (1 - dive * 0.85);
@@ -2963,20 +2968,30 @@ export class FiberSpineWorld {
 	}
 
 	private startLoop(): void {
-		// Had 60 fps: skrin 120 Hz tidak perlu merender dua kali untuk animasi yang sama,
-		// dan GPU mudah alih kekal sejuk (input kekal responsif).
-		const frameBudget = 1000 / 60;
-		let lastRenderTime = 0;
-		let slowStreak = 0;
-		let fastStreak = 0;
-
-		const tick = (now: number) => {
+		const tick = () => {
 			this.rafId = requestAnimationFrame(tick);
-			if (now - lastRenderTime < frameBudget - 1) return;
-			const rawDelta = now - lastRenderTime;
-			lastRenderTime = now;
-			const dt = Math.min(this.clock.getDelta(), 0.1);
+			const dt = Math.min(this.clock.getDelta?.() ?? 0.016, 0.05);
 			const elapsed = this.clock.getElapsedTime();
+
+			if (!this.isMobile && this.renderer) {
+				if (dt > 0.032) {
+					this.consecutiveSlowFrames++;
+					this.consecutiveFastFrames = 0;
+					if (this.consecutiveSlowFrames > 8 && this.currentPixelRatio > 0.8) {
+						this.currentPixelRatio = Math.max(0.8, this.currentPixelRatio - 0.1);
+						this.renderer.setPixelRatio(this.currentPixelRatio);
+						this.consecutiveSlowFrames = 0;
+					}
+				} else if (dt < 0.018) {
+					this.consecutiveFastFrames++;
+					this.consecutiveSlowFrames = 0;
+					if (this.consecutiveFastFrames > 120 && this.currentPixelRatio < this.basePixelRatio) {
+						this.currentPixelRatio = Math.min(this.basePixelRatio, this.currentPixelRatio + 0.05);
+						this.renderer.setPixelRatio(this.currentPixelRatio);
+						this.consecutiveFastFrames = 0;
+					}
+				}
+			}
 
 			this.animateScene(dt, elapsed);
 			this.updateCamera(dt, elapsed);
@@ -2997,48 +3012,8 @@ export class FiberSpineWorld {
 			if (this.renderer) {
 				this.renderer.render(this.scene, this.camera);
 			}
-
-			// Resolusi adaptif: hanya diturunkan apabila frame benar-benar lewat,
-			// dan dipulihkan perlahan-lahan apabila GPU kembali lapang.
-			if (rawDelta > 0 && rawDelta < 2500) {
-				if (rawDelta > frameBudget * 1.55) {
-					slowStreak += rawDelta > 120 ? 9 : 1;
-					fastStreak = 0;
-				} else if (rawDelta < frameBudget * 1.1) {
-					fastStreak += 1;
-					slowStreak = 0;
-				} else {
-					slowStreak = 0;
-					fastStreak = 0;
-				}
-				if (slowStreak >= 18) {
-					slowStreak = 0;
-					this.stepPixelRatio(-0.15);
-				} else if (fastStreak >= 180) {
-					fastStreak = 0;
-					this.stepPixelRatio(0.1);
-				}
-			}
 		};
 		this.rafId = requestAnimationFrame(tick);
-	}
-
-	/** Ubah pixel ratio dalam had selamat tanpa menyentuh saiz CSS kanvas. */
-	private stepPixelRatio(delta: number): void {
-		if (!this.renderer) return;
-		const base = this.basePixelRatio;
-		const next = Math.min(base, Math.max(0.7, this.currentPixelRatio + delta));
-		if (Math.abs(next - this.currentPixelRatio) < 0.001) return;
-		this.currentPixelRatio = next;
-		this.renderer.setPixelRatio(next);
-		if (this.composer) {
-			this.composer.setPixelRatio(next);
-			this.composer.setSize(this.container.clientWidth || 1, this.container.clientHeight || 1);
-		}
-		if (this.motePoints) {
-			this.motePoints.material.uniforms.uViewportHeight.value =
-				(this.container.clientHeight || 1) * next;
-		}
 	}
 
 	public dispose(): void {
@@ -3091,11 +3066,6 @@ export class FiberSpineWorld {
 				}
 			}
 		});
-
-		if (this.composer) {
-			this.composer.dispose();
-			this.composer = null;
-		}
 		if (this.renderer) {
 			this.renderer.dispose();
 			this.renderer = null;
