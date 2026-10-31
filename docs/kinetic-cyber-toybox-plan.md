@@ -171,15 +171,15 @@ Editorial HTML boleh dibaca semasa JavaScript/WebGL tidak tersedia. Kegagalan im
 
 ## 9. Urutan pelaksanaan pilihan B
 
-| Fasa | Hasil | Syarat keluar |
-| --- | --- | --- |
-| B0 | Persetujuan arah selepas A diuji | Maklum balas A direkod; pengguna memilih B |
-| B1 | Shell konsol dan DOM fallback | Identiti/CV/keyboard/tema berfungsi tanpa modul |
-| B2 | Port modul laser A | Ujian pointer, reset, cooldown, pause dan disposal lulus |
-| B3 | Tuil perusahaan | Range dan 3D segerak; tiada angka prestasi palsu |
-| B4 | Penjejakan vision | Pointer/tap/keyboard setara; label simulasi jelas |
-| B5 | Hubungan satelit | Destinasi disahkan; tiada navigasi tidak sengaja |
-| B6 | Integrasi dan penggilapan | Audit keadaan, regression, peranti sebenar, pengesahan manusia |
+| Fasa | Hasil                            | Syarat keluar                                                  |
+| ---- | -------------------------------- | -------------------------------------------------------------- |
+| B0   | Persetujuan arah selepas A diuji | Maklum balas A direkod; pengguna memilih B                     |
+| B1   | Shell konsol dan DOM fallback    | Identiti/CV/keyboard/tema berfungsi tanpa modul                |
+| B2   | Port modul laser A               | Ujian pointer, reset, cooldown, pause dan disposal lulus       |
+| B3   | Tuil perusahaan                  | Range dan 3D segerak; tiada angka prestasi palsu               |
+| B4   | Penjejakan vision                | Pointer/tap/keyboard setara; label simulasi jelas              |
+| B5   | Hubungan satelit                 | Destinasi disahkan; tiada navigasi tidak sengaja               |
+| B6   | Integrasi dan penggilapan        | Audit keadaan, regression, peranti sebenar, pengesahan manusia |
 
 Anggaran masa tidak ditetapkan sebelum hasil A dan sasaran peranti diketahui. Jangan membina B2 hingga B5 serentak sebelum shell serta kontrak input stabil.
 

@@ -199,7 +199,13 @@ for (const dioramaToken of [
 	);
 }
 const glbSource = fs.readFileSync(path.join(rootDir, 'src/lib/spine/diorama-glb.ts'), 'utf8');
-for (const glbToken of ['GLTFLoader', 'setMeshoptDecoder', 'DioramaGlbLoader', 'EXT_meshopt_compression', 'dispose']) {
+for (const glbToken of [
+	'GLTFLoader',
+	'setMeshoptDecoder',
+	'DioramaGlbLoader',
+	'EXT_meshopt_compression',
+	'dispose'
+]) {
 	assert.ok(glbSource.includes(glbToken), `diorama-glb.ts wajib mengandungi "${glbToken}"`);
 }
 assert.ok(
@@ -230,14 +236,24 @@ assert.ok(
 // Kontrak Sesi 3: Lensa X-Ray Kaca Cair Snell's Law + lapisan gentian bawah pulau + HUD kawalan.
 // Kontrak Sesi 3: Lensa X-Ray Kaca Cair Snell's Law + lapisan gentian bawah pulau + HUD kawalan.
 const xraySource = fs.readFileSync(path.join(rootDir, 'src/lib/spine/xray-lens.ts'), 'utf8');
-for (const xrayToken of ['createXRayLensPass', 'uChromAb', 'uLensCenter', 'uLensRadius', '1.07', 'uAmount']) {
+for (const xrayToken of [
+	'createXRayLensPass',
+	'uChromAb',
+	'uLensCenter',
+	'uLensRadius',
+	'1.07',
+	'uAmount'
+]) {
 	// 'uLensCenter/uLensRadius' diuji pada worldSource di bawah; di sini hanya token xray-lens.
 	if (xrayToken !== 'uLensCenter' && xrayToken !== 'uLensRadius') {
 		assert.ok(xraySource.includes(xrayToken), `xray-lens.ts wajib mengandungi "${xrayToken}"`);
 	}
 }
 for (const xrayShaderToken of ['tFiber', '1.07', 'uChromAb', 'smoothstep']) {
-	assert.ok(xraySource.includes(xrayShaderToken), `shader kanta X-Ray wajib mengandungi "${xrayShaderToken}"`);
+	assert.ok(
+		xraySource.includes(xrayShaderToken),
+		`shader kanta X-Ray wajib mengandungi "${xrayShaderToken}"`
+	);
 }
 for (const worldXrayToken of [
 	'buildXRayFiberLayer',
@@ -248,7 +264,10 @@ for (const worldXrayToken of [
 	'createXRayLensPass',
 	'disposeXRayFiberLayer'
 ]) {
-	assert.ok(worldSource.includes(worldXrayToken), `FiberSpineWorld.ts wajib mengandungi "${worldXrayToken}"`);
+	assert.ok(
+		worldSource.includes(worldXrayToken),
+		`FiberSpineWorld.ts wajib mengandungi "${worldXrayToken}"`
+	);
 }
 for (const hudToken of ['Lensa X-Ray', 'toggleXRay', 'lens-touch-layer', 'xrayActive']) {
 	assert.ok(

@@ -12,6 +12,7 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "svelte-kit sync && node --test scripts/*.test.mjs",
 		"test:contrast": "node scripts/theme-contrast.mjs",
+		"test:calout-contrast": "node scripts/live-calout-contrast.mjs",
 		"test:screen": "node scripts/spine-screen-render.mjs",
 		"lint": "prettier --check .",
 		"format": "prettier --write ."

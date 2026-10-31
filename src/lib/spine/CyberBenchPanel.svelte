@@ -389,6 +389,8 @@
 	.bench-readout {
 		margin-top: 0.7rem;
 		padding: 0.6rem 0.7rem;
+		/* Ruang bawah supaya angka dB tidak terkerat apabila panel bergulir. */
+		margin-bottom: 0.35rem;
 		border-radius: var(--radius-md, 10px);
 		background: rgba(255, 255, 255, 0.06);
 		border: 1px solid rgba(255, 255, 255, 0.1);
@@ -473,9 +475,11 @@
 			top: auto;
 			left: 0.6rem;
 			right: 0.6rem;
-			bottom: calc(max(0.6rem, env(safe-area-inset-bottom)) + 4.6rem);
+			/* Bertindan di atas kalout (36vh) dan dijarakkan kira-kira 34vh
+			   supaya diorama 3D di belakang kekal kelihatan. */
+			bottom: calc(max(0.6rem, env(safe-area-inset-bottom)) + 36vh + 0.6rem);
 			width: auto;
-			max-height: 42vh;
+			max-height: 30vh;
 		}
 	}
 </style>

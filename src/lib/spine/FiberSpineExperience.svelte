@@ -38,6 +38,8 @@
 	let loadingStage = $state('');
 	let sceneReady = $state(false);
 	let showLoadingScreen = $state(true);
+	let showHintToast = $state(false);
+	let hintToastTimer: ReturnType<typeof setTimeout> | null = null;
 
 	let activeStationIndex = $state(0);
 	let spineProgress = $state(0);
@@ -193,7 +195,10 @@
 	}
 
 	function onTindakParse(channel: 'url' | 'phone' | 'payment') {
-		world?.setCyberBenchSignal('ai-tindak', channel === 'url' ? 1 : channel === 'phone' ? 0.7 : 0.5);
+		world?.setCyberBenchSignal(
+			'ai-tindak',
+			channel === 'url' ? 1 : channel === 'phone' ? 0.7 : 0.5
+		);
 	}
 
 	function onSuteraGate(allowed: boolean) {
@@ -272,6 +277,13 @@
 				onReady: () => {
 					loadingProgress = 100;
 					sceneReady = true;
+					// Arahan interaksi bergerak dari tekstur 3D (~10px, tidak terbaca)
+					// ke toast HTML sekali sahaja selepas scene sedia.
+					showHintToast = true;
+					if (hintToastTimer) clearTimeout(hintToastTimer);
+					hintToastTimer = setTimeout(() => {
+						showHintToast = false;
+					}, 6500);
 				}
 			});
 			if (!world.init()) {
@@ -632,7 +644,9 @@
 			onpointercancel={onLensPointerUp}
 		>
 			<div class="lens-touch-handle" aria-hidden="true">
-				<span class="sr-only">{locale === 'ms' ? 'Seret untuk gerakkan lensa' : 'Drag to move lens'}</span>
+				<span class="sr-only"
+					>{locale === 'ms' ? 'Seret untuk gerakkan lensa' : 'Drag to move lens'}</span
+				>
 			</div>
 		</div>
 	{/if}
@@ -683,7 +697,17 @@
 						? `Lensa X-Ray: ${xrayActive ? 'Aktif' : 'Tidak Aktif'}`
 						: `X-Ray Lens: ${xrayActive ? 'Active' : 'Inactive'}`}
 				>
-					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+					<svg
+						width="13"
+						height="13"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
 						<circle cx="11" cy="11" r="7" />
 						<path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
 					</svg>
@@ -809,7 +833,7 @@
 					>
 						<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
 					</svg>
-					<span class="pill-label">Dark</span>
+					<span class="pill-label">{locale === 'ms' ? 'Gelap' : 'Dark'}</span>
 				{:else}
 					<svg
 						width="12"
@@ -832,7 +856,7 @@
 						<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
 						<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
 					</svg>
-					<span class="pill-label">Light</span>
+					<span class="pill-label">{locale === 'ms' ? 'Cerah' : 'Light'}</span>
 				{/if}
 				<span class="sr-only">
 					{theme === 'dark'
@@ -902,6 +926,15 @@
 	</header>
 
 	{#if viewMode === '3d'}
+		<!-- Toast arahan interaksi: sekali selepas scene sedia, kemudian pudar. -->
+		{#if showHintToast && sceneReady && !selectedHotspotId}
+			<div class="interaction-hint" role="status">
+				{locale === 'ms'
+					? 'Klik objek 3D untuk butiran · Seret untuk gerakkan · Skrol untuk orbit'
+					: 'Click a 3D object for details · Drag to move · Scroll to orbit'}
+			</div>
+		{/if}
+
 		<!-- Petunjuk prop dan navigasi pulau apabila kursor menyentuh objek 3D -->
 		{#if hoveredPromptText && !selectedHotspotId}
 			<div class="hover-reticle-badge" role="status">
@@ -934,9 +967,9 @@
 		<CyberBenchPanel
 			tool={activeBenchTool}
 			{locale}
-			onFiberBrightness={onFiberBrightness}
-			onTindakParse={onTindakParse}
-			onSuteraGate={onSuteraGate}
+			{onFiberBrightness}
+			{onTindakParse}
+			{onSuteraGate}
 		/>
 
 		<!-- Kompas Radar Kepulauan Orbital 360° Minimalis Beraksesibiliti -->
@@ -1566,11 +1599,57 @@
 		font-weight: 700;
 	}
 
+	/* Tema cerah: aksen tembaga pekat mengalahkan scene 3D; guna garis luar sahaja
+	   supaya mata kekal pada diorama. */
+	:root[data-theme='light'] .util-pill.mode-switch {
+		background: transparent;
+		color: var(--spatial-accent, var(--accent));
+		border-color: var(--spatial-accent, var(--accent));
+	}
+
 	.util-pill.mode-switch:hover {
 		filter: brightness(1.08);
 	}
 
 	/* Lencana Halus Apabila Kursor Menyentuh Papan Pameran 3D atau Pulau */
+	/* Toast arahan interaksi (Sesi 5): teks 13px dalam HTML, bukan tekstur 3D. */
+	.interaction-hint {
+		position: fixed;
+		top: calc(env(safe-area-inset-top, 0px) + 5.4rem);
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 26;
+		max-width: min(34rem, calc(100% - 2rem));
+		padding: 0.5rem 1.05rem;
+		border-radius: var(--radius-pill, 9999px);
+		background: var(--spatial-hud-bg, var(--surface));
+		border: 1px solid var(--spatial-hud-border, var(--surface-border));
+		color: var(--spatial-hud-ink, var(--ink));
+		font-size: 0.82rem;
+		line-height: 1.35;
+		text-align: center;
+		pointer-events: none;
+		box-shadow: var(--shadow-md, 0 10px 28px rgba(0, 0, 0, 0.35));
+		animation: hint-fade 6.5s ease forwards;
+	}
+
+	@keyframes hint-fade {
+		0%,
+		80% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.interaction-hint {
+			animation: none;
+			opacity: 1;
+		}
+	}
+
 	.hover-reticle-badge {
 		position: fixed;
 		bottom: 6.2rem;
@@ -1618,11 +1697,16 @@
 		height: clamp(150px, 34vh, 260px);
 		transform: translate(-50%, -50%);
 		border-radius: 50%;
-		border: 2px solid rgba(125, 211, 252, 0.55); /* ds-allow-hardcode */
-		background: radial-gradient(circle, rgba(56, 189, 248, 0.08), rgba(56, 189, 248, 0.02) 62%, transparent 72%);
+		border: 2px solid var(--lens-ring);
+		background: radial-gradient(
+			circle,
+			color-mix(in srgb, var(--lens-glow) 67%, transparent),
+			var(--lens-glow-soft) 62%,
+			transparent 72%
+		);
 		box-shadow:
-			inset 0 0 30px rgba(56, 189, 248, 0.12),
-			0 0 40px rgba(56, 189, 248, 0.18);
+			inset 0 0 30px var(--lens-glow),
+			0 0 40px color-mix(in srgb, var(--lens-glow) 150%, transparent);
 		pointer-events: none;
 	}
 	.lens-touch-handle::after {
@@ -1630,7 +1714,7 @@
 		position: absolute;
 		inset: 0;
 		border-radius: 50%;
-		background: conic-gradient(from 0deg, transparent, rgba(125, 211, 252, 0.5), transparent 40%);
+		background: conic-gradient(from 0deg, transparent, var(--lens-ring), transparent 40%);
 		animation: lens-spin 5s linear infinite;
 	}
 	@keyframes lens-spin {
@@ -1774,6 +1858,18 @@
 		align-items: center;
 		justify-content: center;
 		transition: transform var(--duration-fast, 150ms) ease;
+	}
+
+	/* Sasaran ketukan WCAG 2.2 (>=24px) tanpa membesarkan pip visual. */
+	.radar-station-node::after {
+		content: '';
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: max(24px, var(--size-radar-node, 26px));
+		height: max(24px, var(--size-radar-node, 26px));
+		transform: translate(-50%, -50%);
+		border-radius: inherit;
 	}
 
 	.radar-station-node:hover {
@@ -1982,6 +2078,7 @@
 	}
 
 	.editorial-summary {
+		max-width: 68ch;
 		font-size: 0.96rem;
 		line-height: 1.68;
 		color: var(--spatial-hud-muted, var(--ink-secondary));
@@ -2135,6 +2232,9 @@
 	}
 
 	.inline-link {
+		display: inline-flex;
+		align-items: center;
+		min-height: 24px;
 		font-size: 0.82rem;
 		font-weight: 700;
 		color: var(--spatial-accent, var(--accent));
@@ -2254,7 +2354,7 @@
 		.orbital-radar-cluster {
 			width: 50px;
 			height: 50px;
-			--size-radar-node: 18px;
+			--size-radar-node: 24px;
 			--size-dot-sm: 6px;
 			--size-dot-md: 9px;
 		}
@@ -2302,6 +2402,71 @@
 		.editorial-avatar {
 			width: 60px;
 			height: 60px;
+		}
+	}
+
+	/* Telefon sempit: 7 pil utiliti (≈335px) tidak muat sebelah nama. Lipat ke baris
+	   kedua supaya setiap kawalan kelihatan — tiada leret tersembunyi. */
+	@media (max-width: 480px) {
+		.minimal-topbar {
+			flex-wrap: wrap;
+			row-gap: 0.3rem;
+		}
+
+		.utility-actions {
+			width: 100%;
+			justify-content: space-between;
+			flex-shrink: 1;
+			min-width: 0;
+			flex-wrap: nowrap;
+		}
+
+		.util-pill {
+			padding: 0.25rem 0.35rem;
+		}
+
+		/* Telefon sempit: susun semula kompas — dock prop baris atas penuh,
+		   radar + tajuk pulau baris bawah. Elak dock terhimpit & teks tegak. */
+		.bottom-compass {
+			flex-wrap: wrap;
+			gap: 0.45rem;
+			justify-content: center;
+			row-gap: 0.4rem;
+		}
+
+		.prop-dock {
+			order: 1;
+			width: 100%;
+			justify-content: center;
+			flex-wrap: wrap;
+		}
+
+		.orbital-radar-cluster {
+			order: 2;
+		}
+
+		.compass-arrow {
+			order: 4;
+		}
+
+		.compass-info {
+			order: 3;
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+
+		/* Lencana nadi siber terlalu panjang untuk bar 390px; ia kekal di desktop
+		   dan diumumkan melalui aria-label kompas. */
+		.compass-live,
+		.compass-hint,
+		.compass-code {
+			display: none;
+		}
+
+		.compass-title {
+			font-size: 0.72rem;
+			white-space: normal;
+			max-width: none;
 		}
 	}
 

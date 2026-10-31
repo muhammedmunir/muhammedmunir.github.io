@@ -92,7 +92,15 @@ export class DioramaGlbLoader {
 					const mats = Array.isArray(material) ? material : material ? [material] : [];
 					for (const mat of mats) {
 						const std = mat as THREE.MeshStandardMaterial;
-						for (const key of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'alphaMap'] as const) {
+						for (const key of [
+							'map',
+							'normalMap',
+							'roughnessMap',
+							'metalnessMap',
+							'emissiveMap',
+							'aoMap',
+							'alphaMap'
+						] as const) {
 							const tex = std[key] as THREE.Texture | null | undefined;
 							if (tex) textures.add(tex);
 						}

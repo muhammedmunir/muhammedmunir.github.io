@@ -298,10 +298,24 @@
 
 	.calout-summary {
 		margin: 0;
-		font-size: 0.8rem;
-		line-height: 1.5;
+		font-size: 0.9rem;
+		line-height: 1.55;
 		white-space: pre-line;
 		color: var(--spatial-hud-muted, var(--ink-secondary));
+	}
+
+	/* Kalout bergulir: bayang dalam di tepi bawah menandakan kandungan lanjutan
+	   supaya ayat tidak terpotong tanpa petunjuk. */
+	.diegetic-calout {
+		background-image:
+			var(--glass-sheen), linear-gradient(to top, rgb(0 0 0 / 0.28), transparent 2.2rem);
+		background-repeat: no-repeat;
+		background-position:
+			top left,
+			bottom left;
+		background-size:
+			auto,
+			100% 2.2rem;
 	}
 
 	.chip-row {
@@ -432,7 +446,7 @@
 			right: 0.6rem;
 			bottom: max(0.6rem, env(safe-area-inset-bottom));
 			width: auto;
-			max-height: 58vh;
+			max-height: 36vh;
 		}
 	}
 

@@ -11,11 +11,12 @@ import * as THREE from 'three';
  */
 
 /** Peta hotspot -> model GLB ringan CC BY 4.0 (dimuat malas, bukan penyekat). */
-export const DIORAMA_GLB_MAP: Record<string, { path: string; targetHeight: number; spin: number }> = {
-	'core-ring-sys': { path: '/models/astrolabe-lo.glb', targetHeight: 0.56, spin: 0.35 },
-	'net-soc': { path: '/models/drone.glb', targetHeight: 0.6, spin: 0.45 },
-	'net-tnb-fiber': { path: '/models/nautilus.glb', targetHeight: 0.58, spin: 0.28 }
-};
+export const DIORAMA_GLB_MAP: Record<string, { path: string; targetHeight: number; spin: number }> =
+	{
+		'core-ring-sys': { path: '/models/astrolabe-lo.glb', targetHeight: 0.56, spin: 0.35 },
+		'net-soc': { path: '/models/drone.glb', targetHeight: 0.6, spin: 0.45 },
+		'net-tnb-fiber': { path: '/models/nautilus.glb', targetHeight: 0.58, spin: 0.28 }
+	};
 
 export function createBeveledSlabGeometry(
 	width: number,
@@ -309,10 +310,7 @@ export function buildDioramaProp(ctx: DioramaBuildContext): DioramaPropBuild {
 		} else if (id === 'ent-sutera') {
 			// Peti Besi Kaca RLS & Gerbang JWT.
 			kind = 'glass_vault';
-			const vault = new THREE.Mesh(
-				createBeveledSlabGeometry(0.7, 0.6, 0.66, 0.06, 0.03),
-				glassMat
-			);
+			const vault = new THREE.Mesh(createBeveledSlabGeometry(0.7, 0.6, 0.66, 0.06, 0.03), glassMat);
 			vault.position.y = 0.46;
 			silhouette.add(vault);
 			const rlsCore = new THREE.Mesh(new THREE.IcosahedronGeometry(0.2, 0), glowMat);
@@ -444,17 +442,11 @@ export function buildDioramaProp(ctx: DioramaBuildContext): DioramaPropBuild {
 				);
 				tray.position.y = 0.14 + t * 0.24;
 				silhouette.add(tray);
-				const fan = new THREE.Mesh(
-					new THREE.TorusGeometry(0.11, 0.02, 10, 24),
-					glowMat
-				);
+				const fan = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.02, 10, 24), glowMat);
 				fan.position.set(0, 0.18 + t * 0.24, 0.25);
 				silhouette.add(fan);
 			}
-			const fw = new THREE.Mesh(
-				createBeveledSlabGeometry(0.24, 0.18, 0.4, 0.03, 0.015),
-				chromeMat
-			);
+			const fw = new THREE.Mesh(createBeveledSlabGeometry(0.24, 0.18, 0.4, 0.03, 0.015), chromeMat);
 			fw.position.set(0.56, 0.62, 0);
 			silhouette.add(fw);
 			spinAxis = silhouette;
@@ -513,7 +505,10 @@ export function buildDioramaProp(ctx: DioramaBuildContext): DioramaPropBuild {
 				mount.add(sat);
 			}
 			for (let r = 0; r < 2; r++) {
-				const ring = new THREE.Mesh(new THREE.TorusGeometry(0.54, 0.024, 16, 48), r === 0 ? chromeMat : glowMat);
+				const ring = new THREE.Mesh(
+					new THREE.TorusGeometry(0.54, 0.024, 16, 48),
+					r === 0 ? chromeMat : glowMat
+				);
 				ring.rotation.set(r * Math.PI * 0.5, r * 0.7, 0.4);
 				mount.add(ring);
 			}
@@ -535,10 +530,7 @@ export function buildDioramaProp(ctx: DioramaBuildContext): DioramaPropBuild {
 		} else if (id === 'proj-pin-lumina') {
 			// Cermin Pintar LED Kelvin (3000K–6500K).
 			kind = 'kelvin_mirror';
-			const mirrorDisc = new THREE.Mesh(
-				new THREE.CylinderGeometry(0.4, 0.4, 0.08, 36),
-				chromeMat
-			);
+			const mirrorDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.08, 36), chromeMat);
 			mirrorDisc.rotation.x = Math.PI / 2;
 			mount.add(mirrorDisc);
 			const warmRing = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.034, 16, 48), glowMat);

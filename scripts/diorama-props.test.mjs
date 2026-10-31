@@ -15,8 +15,9 @@ const vite = await createServer({
 });
 after(() => vite.close());
 
-const { buildDioramaProp, DIORAMA_GLB_MAP, createBeveledSlabGeometry } =
-	await vite.ssrLoadModule('/src/lib/spine/diorama-props.ts');
+const { buildDioramaProp, DIORAMA_GLB_MAP, createBeveledSlabGeometry } = await vite.ssrLoadModule(
+	'/src/lib/spine/diorama-props.ts'
+);
 const { STATIONS } = await vite.ssrLoadModule('/src/lib/spine/spine-data.ts');
 
 const materials = {
@@ -66,11 +67,7 @@ test('Kesemua 21 hotspot dibina dengan siluet unik (tiada dua prop serupa)', () 
 			});
 			const signature = geometrySignature(root);
 			const prev = signatureById.get(signature);
-			assert.equal(
-				prev,
-				undefined,
-				`Siluet ${hotspot.id} ($signature) sama dengan ${prev}`
-			);
+			assert.equal(prev, undefined, `Siluet ${hotspot.id} ($signature) sama dengan ${prev}`);
 			signatureById.set(signature, hotspot.id);
 		}
 	}

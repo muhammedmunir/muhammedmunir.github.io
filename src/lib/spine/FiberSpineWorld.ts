@@ -1563,8 +1563,8 @@ export class FiberSpineWorld {
 		ctx.fillStyle = palette.text;
 		ctx.font = `700 58px ${palette.fontBody}`;
 		this.wrapCanvasText(ctx, station.title[this.locale], 56, 134, w - 112, 66, 2);
-		ctx.fillStyle = palette.muted;
-		ctx.font = `500 28px ${palette.fontBody}`;
+		ctx.fillStyle = palette.text;
+		ctx.font = `600 34px ${palette.fontBody}`;
 		ctx.fillText(
 			this.locale === 'ms'
 				? 'Klik objek 3D untuk butiran · Seret untuk lantunan'
@@ -1632,8 +1632,7 @@ export class FiberSpineWorld {
 				metal: (color, accent, roughness) =>
 					this.createBrushedMetalMaterial(color, accent, roughness),
 				glass: (tint) => this.createOpticalGlassMaterial(tint),
-				glow: (color, emissive, intensity) =>
-					this.createGlowMaterial(color, emissive, intensity)
+				glow: (color, emissive, intensity) => this.createGlowMaterial(color, emissive, intensity)
 			}
 		};
 		return buildDioramaProp(ctx);
@@ -1991,9 +1990,13 @@ export class FiberSpineWorld {
 		const dpr = this.renderer.getPixelRatio?.() ?? 1;
 		const w = Math.max(this.container.clientWidth, 1);
 		const h = Math.max(this.container.clientHeight, 1);
-		const target = new THREE.WebGLRenderTarget(Math.max(1, Math.floor(w * dpr)), Math.max(1, Math.floor(h * dpr)), {
-			type: THREE.HalfFloatType
-		});
+		const target = new THREE.WebGLRenderTarget(
+			Math.max(1, Math.floor(w * dpr)),
+			Math.max(1, Math.floor(h * dpr)),
+			{
+				type: THREE.HalfFloatType
+			}
+		);
 		target.texture.minFilter = THREE.LinearFilter;
 		target.texture.magFilter = THREE.LinearFilter;
 		target.texture.generateMipmaps = false;
@@ -2010,7 +2013,12 @@ export class FiberSpineWorld {
 		fiberMat.userData.baseEmissive = 1.6;
 		this.glowMaterials.push(fiberMat);
 
-		const pulseMat = new THREE.MeshBasicMaterial({ color: 0x7dd3fc });
+		const pulseMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
+
+		// Adegan gentian terasing hanya menyimpan tiub + denyut; tanpa lampu,
+		// MeshStandardMaterial akan dirender hitam walaupun emissive ditetapkan.
+		const fiberAmbient = new THREE.AmbientLight(0xdff4ff, 2.2);
+		scene.add(fiberAmbient);
 
 		const sampleCount = 80;
 		for (const anchor of STATION_ANCHORS) {
@@ -2028,10 +2036,7 @@ export class FiberSpineWorld {
 				);
 			}
 			const curve = new THREE.CatmullRomCurve3(points, true, 'catmullrom', 0.5);
-			const tube = new THREE.Mesh(
-				new THREE.TubeGeometry(curve, 96, 0.035, 6, true),
-				fiberMat
-			);
+			const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.035, 6, true), fiberMat);
 			tube.frustumCulled = false;
 			tube.userData.isXRayFiber = true;
 			this.xrayFiberMeshes.push(tube);
@@ -2046,7 +2051,7 @@ export class FiberSpineWorld {
 				// kedudukan sebenar ditetapkan setiap bingkai daripada fasa.
 				node.position.set(anchor.x, anchor.y + 0.05, anchor.z);
 				this.xrayPulseNodes.push(node);
-				this.xrayPulsePhases.push((p / nodeCount + anchor.x * 0.02) % 1);
+				this.xrayPulsePhases.push((((p / nodeCount + anchor.x * 0.02) % 1) + 1) % 1);
 				scene.add(node);
 			}
 		}
@@ -2064,7 +2069,7 @@ export class FiberSpineWorld {
 		const u = this.xrayLensPass.uniforms;
 		u.uResolution.value.set(width, height);
 		u.uChromAb.value = this.xrayReduced ? 0 : 1;
-		u.uAmount.value += (this.xrayActive ? 1 : 0 - u.uAmount.value) * Math.min(1, dt * 8);
+		u.uAmount.value += ((this.xrayActive ? 1 : 0) - u.uAmount.value) * Math.min(1, dt * 8);
 		if (this.xrayReduced) u.uAmount.value = this.xrayActive ? 1 : 0;
 
 		// Pusat kanta: ikut kursor pada skrin; statik di tengah pada mudah alih/reduced.
@@ -2072,13 +2077,23 @@ export class FiberSpineWorld {
 		if (this.isMobile || this.xrayReduced) {
 			center.set(width * 0.5, height * 0.5);
 		} else {
-			center.set((this.pointerNdc.x * 0.5 + 0.5) * width, (-this.pointerNdc.y * 0.5 + 0.5) * height);
+			center.set(
+				(this.pointerNdc.x * 0.5 + 0.5) * width,
+				(-this.pointerNdc.y * 0.5 + 0.5) * height
+			);
 		}
 		u.uCenter.value.copy(center);
-		u.uRadius.value = Math.min(width, height) * 0.3;
+		// Kanta ~21vh diameter: cukup untuk membaca potongan rentas tanpa menelan skrin.
+		u.uRadius.value = Math.min(Math.min(width, height) * 0.21, 240);
 
 		// Render adegan gentian berasingan Cuma apabila X-Ray hampir aktif.
-		if (u.uAmount.value > 0.01 && this.xrayFiberScene && this.xrayFiberCamera && this.xrayFiberTarget && this.renderer) {
+		if (
+			u.uAmount.value > 0.01 &&
+			this.xrayFiberScene &&
+			this.xrayFiberCamera &&
+			this.xrayFiberTarget &&
+			this.renderer
+		) {
 			// Sejajarkan kamera ketir dengan kamera utama bagi setiap bingkai.
 			this.xrayFiberCamera.fov = this.camera.fov;
 			this.xrayFiberCamera.aspect = this.camera.aspect;
@@ -2089,7 +2104,7 @@ export class FiberSpineWorld {
 			const baseCurve = this.xrayPulseNodeCurve ?? this.causewayLoopCurve;
 			for (let i = 0; i < this.xrayPulseNodes.length; i++) {
 				const node = this.xrayPulseNodes[i];
-				const phase = ((this.xrayPulsePhases[i] + this.motionTime * 0.05) % 1);
+				const phase = (this.xrayPulsePhases[i] + this.motionTime * 0.05) % 1;
 				baseCurve.getPointAt(phase, this.tempPulsePt);
 				node.position.set(this.tempPulsePt.x, this.tempPulsePt.y + 0.05, this.tempPulsePt.z);
 			}

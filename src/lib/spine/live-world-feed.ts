@@ -365,12 +365,15 @@ export async function fetchCyberPulse(deps: LiveFeedDeps = {}): Promise<CyberPul
 	if (cached) return cached;
 
 	const github = await safeFetchJson(fetchFn, AbortCtor, GITHUB_EVENTS_URL, parseGitHubEvents, now);
-	const cves = await safeFetchJson(fetchFn, AbortCtor, CISA_KEV_URL, parseCisaKev, now);
+	// ponytail: CISA KEV tidak menghantar pengepala CORS, jadi fetch terus dari klien
+	// sentiasa menghasilkan ralat konsol pelayar yang tidak dapat dibendung. Guna
+	// snapshot statik jujur (CVE_FALLBACK) sehingga proksi sisi pelayan tersedia.
+	const cves = CVE_FALLBACK;
 
 	const snapshot: CyberPulseSnapshot = {
 		github: github.length > 0 ? github : [],
-		cves: cves.length > 0 ? cves : CVE_FALLBACK,
-		source: github.length > 0 || cves.length > 0 ? 'live' : 'fallback',
+		cves,
+		source: github.length > 0 ? 'live' : 'fallback',
 		updatedAt: now()
 	};
 	if (snapshot.source === 'live') {
