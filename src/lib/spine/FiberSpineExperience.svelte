@@ -698,12 +698,12 @@
 						: `X-Ray Lens: ${xrayActive ? 'Active' : 'Inactive'}`}
 				>
 					<svg
-						width="13"
-						height="13"
+						width="14"
+						height="14"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
-						stroke-width="2"
+						stroke-width="1.8"
 						stroke-linecap="round"
 						stroke-linejoin="round"
 						aria-hidden="true"
@@ -724,17 +724,18 @@
 						: `Atmosphere: ${getWeatherConditionLabel(currentWeather.id, locale)}`}
 				>
 					<svg
-						width="13"
-						height="13"
+						width="14"
+						height="14"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
-						stroke-width="2"
+						stroke-width="1.8"
 						stroke-linecap="round"
 						stroke-linejoin="round"
 						aria-hidden="true"
 					>
-						<path d="M2 12h20M12 2v20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07" />
+						<circle cx="12" cy="12" r="4" />
+						<path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
 					</svg>
 					<span class="pill-label">
 						{getWeatherConditionLabel(currentWeather.id, locale)}
@@ -775,14 +776,33 @@
 							: 'Pause 3D motion'}
 				>
 					{#if motionPaused}
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-							<polygon points="5 3 19 12 5 21 5 3"></polygon>
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.8"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<polygon points="7 4 19 12 7 20 7 4"></polygon>
 						</svg>
 						<span class="pill-label">{locale === 'ms' ? 'Jeda' : 'Paused'}</span>
 					{:else}
-						<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-							<rect x="6" y="4" width="4" height="16"></rect>
-							<rect x="14" y="4" width="4" height="16"></rect>
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.8"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+						>
+							<path d="M9 5v14M15 5v14"></path>
 						</svg>
 						<span class="pill-label">{locale === 'ms' ? 'Gerakan' : 'Motion'}</span>
 					{/if}
@@ -819,45 +839,31 @@
 			</button>
 
 			<button type="button" class="util-pill" onclick={toggleTheme}>
-				{#if theme === 'dark'}
-					<svg
-						width="12"
-						height="12"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						aria-hidden="true"
-					>
-						<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-					</svg>
-					<span class="pill-label">{locale === 'ms' ? 'Gelap' : 'Dark'}</span>
-				{:else}
-					<svg
-						width="12"
-						height="12"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						aria-hidden="true"
-					>
-						<circle cx="12" cy="12" r="5"></circle>
-						<line x1="12" y1="1" x2="12" y2="3"></line>
-						<line x1="12" y1="21" x2="12" y2="23"></line>
-						<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-						<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-						<line x1="1" y1="12" x2="3" y2="12"></line>
-						<line x1="21" y1="12" x2="23" y2="12"></line>
-						<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-						<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-					</svg>
-					<span class="pill-label">{locale === 'ms' ? 'Cerah' : 'Light'}</span>
-				{/if}
+				<!-- Ikon keseimbangan separuh bulatan: satu-satunya simbol tema yang kekal
+				     terbaca pada 14px dalam kedua-dua keadaan. -->
+				<svg
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.8"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<circle cx="12" cy="12" r="8" />
+					<path d="M12 4a8 8 0 0 1 0 16" fill="currentColor" stroke="none" />
+				</svg>
+				<span class="pill-label"
+					>{theme === 'dark'
+						? locale === 'ms'
+							? 'Gelap'
+							: 'Dark'
+						: locale === 'ms'
+							? 'Cerah'
+							: 'Light'}</span
+				>
 				<span class="sr-only">
 					{theme === 'dark'
 						? locale === 'ms'
@@ -889,12 +895,12 @@
 			>
 				{#if $sfxEnabled}
 					<svg
-						width="12"
-						height="12"
+						width="14"
+						height="14"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
-						stroke-width="2"
+						stroke-width="1.8"
 						stroke-linecap="round"
 						stroke-linejoin="round"
 						aria-hidden="true"
@@ -905,12 +911,12 @@
 					<span class="pill-label">{locale === 'ms' ? 'Audio' : 'Sound'}</span>
 				{:else}
 					<svg
-						width="12"
-						height="12"
+						width="14"
+						height="14"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
-						stroke-width="2"
+						stroke-width="1.8"
 						stroke-linecap="round"
 						stroke-linejoin="round"
 						aria-hidden="true"
@@ -985,7 +991,7 @@
 				role="list"
 				aria-label={locale === 'ms' ? 'Objek pameran pulau ini' : 'Exhibits on this island'}
 			>
-				{#each currentStation.hotspots as hs (hs.id)}
+				{#each currentStation.hotspots as hs, hsIdx (hs.id)}
 					<li>
 						<button
 							type="button"
@@ -993,10 +999,13 @@
 							class:active={hs.id === selectedHotspotId}
 							onclick={() => openExhibit(hs.id, activeStationIndex)}
 							aria-current={hs.id === selectedHotspotId ? 'step' : undefined}
+							aria-label="{hs.code}: {hs.title[locale]}"
 							title="{hs.code} · {hs.title[locale]}"
 						>
+							<!-- Kod penuh sudah diulang di kalout & tajuk kompas; dok hanya
+						     perlu indeks ringkas untuk mengorientasi. -->
 							<span class="prop-dock-pip" aria-hidden="true"></span>
-							<span class="prop-dock-label">{hs.code}</span>
+							<span class="prop-dock-label" aria-hidden="true">{hsIdx + 1}</span>
 						</button>
 					</li>
 				{/each}
@@ -1076,7 +1085,13 @@
 
 			<div class="compass-info">
 				<span class="compass-code">{currentStation.code}</span>
-				<strong class="compass-title">{currentStation.title[locale]}</strong>
+				<!-- Nama pemilik sudah muncul di topbar & papan tanda 3D; stesen 01 memaparkan
+				     peranan, bukan nama yang diulang kali ketiga. -->
+				<strong class="compass-title">
+					{activeStationIndex === 0
+						? currentStation.subtitle[locale]
+						: currentStation.title[locale]}
+				</strong>
 				<span class="compass-hint">
 					{locale === 'ms'
 						? 'Skrol / W·S untuk Orbit 360° · Klik atau Seret Objek 3D'
@@ -1187,7 +1202,7 @@
 					? 'Kemahiran Teknikal (5 Kategori Rasmi CV)'
 					: 'Technical Skills (5 Official CV Categories)'}
 			</h2>
-			<div class="editorial-grid">
+			<div class="editorial-grid skills-grid">
 				{#each TECHNICAL_SKILLS as group (group.id)}
 					<article class="editorial-card">
 						<h3>{group.category[locale]}</h3>
@@ -2149,6 +2164,21 @@
 		gap: 1rem;
 	}
 
+	/* Hierarki: kategori pertama ialah kepakaran utama CV, jadi ia mendapat
+	   rel aksen & tajuk lebih besar sebagai titik fokus. Skop: hanya seksyen kemahiran. */
+	.skills-grid > .editorial-card:first-child {
+		border-left: 3px solid var(--spatial-accent, var(--accent));
+	}
+
+	.skills-grid > .editorial-card:first-child h3 {
+		font-size: 1.22rem;
+		color: var(--spatial-accent, var(--accent));
+	}
+
+	.skills-grid > .editorial-card:first-child .chip {
+		border-color: color-mix(in srgb, var(--spatial-accent, #38bdf8) 45%, transparent);
+	}
+
 	.editorial-stack {
 		display: flex;
 		flex-direction: column;
@@ -2344,6 +2374,41 @@
 			padding: 0.35rem 0.55rem;
 			gap: 0.45rem;
 			border-radius: var(--radius-xl, 20px);
+			/* Tablet 768: dok prop + radar + info + 2 anak panah tidak muat sebaris.
+			   Bungkus ke dua baris supaya teks tidak runtuh huruf demi huruf. */
+			flex-wrap: wrap;
+			justify-content: center;
+			row-gap: 0.4rem;
+		}
+
+		.prop-dock {
+			order: 1;
+			width: 100%;
+			justify-content: center;
+			flex-wrap: wrap;
+		}
+
+		.orbital-radar-cluster {
+			order: 2;
+		}
+
+		.compass-info {
+			order: 3;
+		}
+
+		.compass-arrow {
+			order: 4;
+		}
+
+		/* Lencana nadi siber tidak muat di bawah 768px dan runtuh menegak;
+		   ia disembunyikan secara visual sahaja supaya pembaca skrin tetap mendengarnya. */
+		.compass-live {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
 		}
 
 		.compass-arrow {

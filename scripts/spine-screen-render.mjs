@@ -41,12 +41,15 @@ try {
 	});
 	await page.goto(url);
 	await page.waitForFunction(
-		() => window.__screenWorld?.hotspots.length > 0 && document.querySelector('.webgl-stage canvas')
+		() =>
+			(window.__screenWorld || window.__SPINE_WORLD__)?.stationHeaders?.length > 0 &&
+			document.querySelector('.webgl-stage canvas')
 	);
 	await page.evaluate(async () => {
 		await document.fonts.ready;
-		window.__screenWorld.setActive(false);
-		window.__screenWorld.setReducedMotion(true);
+		const world = window.__screenWorld || window.__SPINE_WORLD__;
+		world.setActive(false);
+		world.setReducedMotion(true);
 	});
 
 	for (const theme of ['light', 'dark']) {
@@ -60,7 +63,7 @@ try {
 			await page.setViewportSize({ width, height });
 			const measurements = await page.evaluate(
 				({ theme, width, height }) => {
-					const world = window.__screenWorld;
+					const world = window.__screenWorld || window.__SPINE_WORLD__;
 					world.setActive(false);
 					world.setReducedMotion(true);
 					world.onResize();
@@ -76,7 +79,16 @@ try {
 					const contrast = (a, b) =>
 						(Math.max(luminance(a), luminance(b)) + 0.05) /
 						(Math.min(luminance(a), luminance(b)) + 0.05);
-					for (const record of world.hotspots) {
+					const records = (world.stationHeaders || []).map((sh, idx) => ({
+						id: sh.station.id,
+						stationIndex: idx,
+						canvas: sh.canvas,
+						texture: sh.texture,
+						screenMesh: sh.screenMesh,
+						screenWidth: sh.screenWidth,
+						screenMat: sh.screenMat
+					}));
+					for (const record of records) {
 						world.selectHotspot(record.id);
 						world.currentProgress = record.stationIndex / 6;
 						world.targetProgress = world.currentProgress;
@@ -96,12 +108,14 @@ try {
 							'hover',
 							'onAccent'
 						];
+						const spanRatio = 0.8;
+						const startRatio = (1 - spanRatio) / 2;
 						ctx.fillStyle = palette.background;
 						ctx.fillRect(0, 0, canvas.width, canvas.height);
-						const cell = canvas.width / colors.length;
+						const cell = (canvas.width * spanRatio) / colors.length;
 						colors.forEach((name, index) => {
 							ctx.fillStyle = palette[name];
-							ctx.fillRect(index * cell, 0, cell, canvas.height);
+							ctx.fillRect(canvas.width * startRatio + index * cell, 0, cell, canvas.height);
 						});
 						record.texture.needsUpdate = true;
 						if (world.composer) world.composer.render();
@@ -115,14 +129,13 @@ try {
 							gl.UNSIGNED_BYTE,
 							pixels
 						);
+						const localStart = -record.screenWidth / 2 + record.screenWidth * startRatio;
+						const localSpan = record.screenWidth * spanRatio;
 						const samples = colors.map((_, index) => {
+							const localX = localStart + ((index + 0.5) / colors.length) * localSpan;
 							const point = record.screenMesh.position
 								.clone()
-								.set(
-									((index + 0.5) / colors.length) * record.screenWidth - record.screenWidth / 2,
-									0,
-									0
-								);
+								.set(localX, 0, 0);
 							record.screenMesh.localToWorld(point);
 							point.project(world.camera);
 							const px = Math.floor((point.x * 0.5 + 0.5) * gl.drawingBufferWidth);
@@ -149,7 +162,7 @@ try {
 						});
 						world.redrawSelectedScreen();
 					}
-					world.selectHotspot(world.hotspots[0].id);
+					world.selectHotspot(null);
 					world.currentProgress = 0;
 					world.targetProgress = 0;
 					world.updateCamera(1, 0);

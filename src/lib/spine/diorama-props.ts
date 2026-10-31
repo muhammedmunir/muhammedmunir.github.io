@@ -160,10 +160,11 @@ function buildCommonBase(
 	plinthCollar.position.y = 0.26;
 	propGroup.add(plinthCollar);
 
-	const baseRing = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.036, 16, 48), haloMat);
-	baseRing.rotation.x = Math.PI / 2;
-	baseRing.position.y = 0.26;
-	propGroup.add(baseRing);
+	// Alur pengapit rata (bukan cincin terapung) supaya tapak terbaca sebagai mesin
+	// kejuruteraan, bukan pelampung tiub mainan.
+	const clampRing = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.028, 32), haloMat);
+	clampRing.position.y = 0.265;
+	propGroup.add(clampRing);
 }
 
 /** Papan tanda kod tidak-mengganggu di hadapan tapak; merangkumi fallback tanpa teks. */
@@ -407,14 +408,20 @@ export function buildDioramaProp(ctx: DioramaBuildContext): DioramaPropBuild {
 			mast.position.y = 0.26;
 			silhouette.add(mast);
 
+			// Kolar pengapit kabel modular heksagon (bukan tiga tiub pelampung).
 			for (let r = 0; r < 3; r++) {
-				const cableRing = new THREE.Mesh(
-					new THREE.TorusGeometry(0.4, 0.13, 14, 40),
+				const clamp = new THREE.Mesh(
+					new THREE.CylinderGeometry(0.3 - r * 0.035, 0.34 - r * 0.035, 0.075, 6),
 					r === 1 ? glowMat : chromeMat
 				);
-				cableRing.rotation.x = Math.PI / 2;
-				cableRing.position.y = 0.18 + r * 0.24;
-				silhouette.add(cableRing);
+				clamp.rotation.y = r * 0.52;
+				clamp.position.y = 0.2 + r * 0.15;
+				silhouette.add(clamp);
+
+				const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.36, 8), chromeMat);
+				bolt.rotation.z = Math.PI / 2;
+				bolt.position.y = 0.2 + r * 0.15;
+				silhouette.add(bolt);
 			}
 
 			const core = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.74, 14), glowMat);
@@ -660,5 +667,9 @@ export function buildDioramaProp(ctx: DioramaBuildContext): DioramaPropBuild {
 		dishMesh.add(waveHalo);
 	}
 
-	return { root: propGroup, spinAxis, kind, haloMat };
+	const res = { root: propGroup, spinAxis, kind, haloMat };
+	silhouette.traverse((child) => {
+		if (child !== silhouette) child.userData.isSilhouettePart = true;
+	});
+	return res;
 }

@@ -74,3 +74,20 @@ test('suapan CVE tidak membuat fetch rentas origin yang gagal CORS', () => {
 		'CVE mesti datang dari snapshot fallback sehingga proksi pelayan wujud'
 	);
 });
+
+test('scheduleGlbSwap menyingkirkan simpang isSilhouettePart daripada kumpulan lapisan sebelum menambah GLB', () => {
+	const dioramaSource = fs.readFileSync(
+		path.join(rootDir, 'src/lib/spine/diorama-props.ts'),
+		'utf8'
+	);
+	assert.match(
+		dioramaSource,
+		/isSilhouettePart\s*=\s*true/,
+		'diorama-props.ts wajib menandakan anak diorama-silhouette dengan isSilhouettePart'
+	);
+	assert.match(
+		worldSource,
+		/child\.userData\.isSilhouettePart/,
+		'scheduleGlbSwap wajib menapis keluar isSilhouettePart daripada kumpulan lapisan'
+	);
+});

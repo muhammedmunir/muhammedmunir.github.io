@@ -99,6 +99,7 @@ export interface ToyRecord {
 declare global {
 	interface Window {
 		__SPINE_WORLD__?: FiberSpineWorld;
+		__screenWorld?: FiberSpineWorld;
 		__fps?: number;
 	}
 }
@@ -107,6 +108,9 @@ interface StationHeaderRecord {
 	station: SpineStation;
 	canvas: HTMLCanvasElement;
 	texture: THREE.CanvasTexture;
+	screenMesh: THREE.Mesh;
+	screenWidth: number;
+	screenMat: THREE.Material;
 }
 
 interface PBRSurfaceMaps {
@@ -490,7 +494,7 @@ export class FiberSpineWorld {
 	public readonly camera: THREE.PerspectiveCamera;
 	public renderer: THREE.WebGLRenderer | null = null;
 	// ponytail: guna postprocessing rasmi three/examples/jsm (HalfFloat EffectComposer + GTAOPass half-res + UnrealBloomPass + SMAAPass + OutputPass AgX); tukar ke pmndrs/postprocessing + n8ao jika perlu pas gabungan shader tunggal.
-	private composer: EffectComposer | null = null;
+	public composer: EffectComposer | null = null;
 	private renderPass: RenderPass | null = null;
 	private gtaoPass: GTAOPass | null = null;
 	private bloomPass: UnrealBloomPass | null = null;
@@ -511,8 +515,8 @@ export class FiberSpineWorld {
 	private causewayLoopCurve: THREE.CatmullRomCurve3;
 	private causewayLoopSamples: THREE.Vector3[] = [];
 
-	private targetProgress = 0;
-	private currentProgress = 0;
+	public targetProgress = 0;
+	public currentProgress = 0;
 	private activeStationIndex = 0;
 	private selectedToyId: string | null = null;
 	private hoveredToyId: string | null = null;
@@ -569,7 +573,7 @@ export class FiberSpineWorld {
 	private inputEnabled = true;
 	private interactionRoots: THREE.Object3D[] = [];
 	private disposed = false;
-	private screenPalette: ExhibitPalette | null = null;
+	public screenPalette: ExhibitPalette | null = null;
 	private profileImage: HTMLImageElement | null = null;
 	private pointerId: number | null = null;
 	private pointerDownToyId: string | null = null;
@@ -783,6 +787,7 @@ export class FiberSpineWorld {
 		this.emitToyStatus();
 		if (typeof window !== 'undefined') {
 			window.__SPINE_WORLD__ = this;
+			window.__screenWorld = this;
 		}
 
 		return true;
@@ -795,12 +800,12 @@ export class FiberSpineWorld {
 		this.screenPalette = {
 			background: token('--screen-bg') || token('--bg'),
 			surface: token('--screen-surface') || token('--surface'),
-			text: token('--ink'),
-			muted: token('--ink-secondary'),
-			accent: token('--badge-ink'),
-			border: token('--surface-border-hover'),
+			text: token('--screen-text') || token('--ink'),
+			muted: token('--screen-muted') || token('--ink-secondary'),
+			accent: token('--screen-accent') || token('--badge-ink'),
+			border: token('--screen-border') || token('--surface-border-hover'),
 			hover: token('--screen-surface-hover') || token('--surface-hover'),
-			onAccent: token('--on-accent'),
+			onAccent: token('--screen-on-accent') || token('--on-accent'),
 			online: token('--screen-online'),
 			halo: token('--screen-halo'),
 			fontBody: token('--font-body'),
@@ -1691,7 +1696,14 @@ export class FiberSpineWorld {
 		signFace.position.set(0, 4.38, 0.09);
 		archGroup.add(signFace);
 
-		this.stationHeaders.push({ station, canvas, texture });
+		this.stationHeaders.push({
+			station,
+			canvas,
+			texture,
+			screenMesh: signFace,
+			screenWidth: 8.0,
+			screenMat: signMat
+		});
 		group.add(archGroup);
 	}
 
@@ -1759,10 +1771,26 @@ export class FiberSpineWorld {
 			stationIndex: toy.stationIndex,
 			onReady: (obj) => {
 				if (this.disposed) return;
-				// Terapkan ke dalam kumpulan akar prop supaya lapisan exploded / raycast
-				// terus membidik objek induk yang sama seperti sebelum ini.
-				const silhouette = toy.mesh.getObjectByName('diorama-silhouette');
-				if (silhouette) toy.mesh.remove(silhouette);
+				// Leraikan kumpulan lapisan lama terlebih dahulu dan singkirkan semua
+				// simpang siluet prosedural (isSilhouettePart) supaya model GLB menggantikannya
+				// sepenuhnya tanpa pertindihan geometri.
+				if (toy.layers) {
+					for (const layer of toy.layers) {
+						for (const child of [...layer.root.children]) {
+							if (child.name === 'diorama-silhouette' || child.userData.isSilhouettePart) {
+								layer.root.remove(child);
+							} else {
+								toy.mesh.add(child);
+							}
+						}
+						toy.mesh.remove(layer.root);
+					}
+				}
+				for (const child of [...toy.mesh.children]) {
+					if (child.name === 'diorama-silhouette' || child.userData.isSilhouettePart) {
+						toy.mesh.remove(child);
+					}
+				}
 				// Selaras tapak GLB dengan aras siluet prosedural (0.34 m di atas akar prop).
 				obj.position.y = 0.34;
 				toy.mesh.add(obj);
@@ -2306,9 +2334,9 @@ export class FiberSpineWorld {
 			this.renderer.toneMappingExposure = isLight ? 1.18 : 0.74;
 		}
 		if (this.bloomPass) {
-			this.bloomPass.strength = isLight ? 0.22 : 0.46;
-			this.bloomPass.radius = 0.62;
-			this.bloomPass.threshold = isLight ? 0.88 : 0.78;
+			this.bloomPass.strength = isLight ? 0.20 : 0.36;
+			this.bloomPass.radius = 0.48;
+			this.bloomPass.threshold = isLight ? 0.98 : 0.99;
 		}
 		this.scene.environmentIntensity = isLight ? 0.78 : 0.48;
 
@@ -2413,6 +2441,13 @@ export class FiberSpineWorld {
 		}
 		if (this.renderer?.shadowMap?.enabled) {
 			this.renderer.shadowMap.needsUpdate = true;
+		}
+	}
+
+	public redrawSelectedScreen(): void {
+		for (const sh of this.stationHeaders) {
+			this.drawStationHeaderCanvas(sh.canvas, sh.station);
+			sh.texture.needsUpdate = true;
 		}
 	}
 
@@ -2798,9 +2833,9 @@ export class FiberSpineWorld {
 
 		const bloomPass = new UnrealBloomPass(
 			new THREE.Vector2(Math.max(1, width), Math.max(1, height)),
-			this.theme === 'light' ? 0.22 : 0.46,
-			0.62,
-			this.theme === 'light' ? 0.88 : 0.78
+			this.theme === 'light' ? 0.20 : 0.36,
+			0.48,
+			this.theme === 'light' ? 0.98 : 0.99
 		);
 		composer.addPass(bloomPass);
 		this.bloomPass = bloomPass;
@@ -2842,7 +2877,7 @@ export class FiberSpineWorld {
 		}
 	}
 
-	private onResize(): void {
+	public onResize(): void {
 		if (!this.renderer) return;
 		const width = Math.max(this.container.clientWidth, 1);
 		const height = Math.max(this.container.clientHeight, 1);
@@ -3040,7 +3075,7 @@ export class FiberSpineWorld {
 		}
 	};
 
-	private updateCamera(dt: number, elapsed: number): void {
+	public updateCamera(dt: number, elapsed = 0): void {
 		let walkDir = 0;
 		if (this.heldKeys.has('w') || this.heldKeys.has('arrowup')) walkDir += 1;
 		if (this.heldKeys.has('s') || this.heldKeys.has('arrowdown')) walkDir -= 1;
@@ -3117,7 +3152,9 @@ export class FiberSpineWorld {
 			const focusAngle = (focusToy.stationIndex / STATION_ANCHORS.length) * Math.PI * 2;
 			const arcDirX = Math.sin(focusAngle);
 			const arcDirZ = Math.cos(focusAngle);
-			const focusRadius = 2.35;
+			const aspect = this.camera.aspect;
+			const macroAspectMul = aspect < 1.0 ? Math.min(1.5, 0.95 / aspect) : 1.0;
+			const focusRadius = 2.35 * macroAspectMul;
 			const focusLensY = 0.34;
 			const focusArc = 0.22;
 
@@ -3131,11 +3168,12 @@ export class FiberSpineWorld {
 			macroCam.y = this.tempFocusTarget.y + focusLensY;
 
 			// Orbit sedia ada (pra-dive) bagi lengkok hibrid permulaan.
+			const orbitAspectMul = aspect < 1.0 ? Math.min(2.1, 0.88 / aspect) : 1.0;
 			const orbitCam = this.tempOrbitCam
 				.copy(anchorPt)
-				.addScaledVector(radialOut, 9.8)
+				.addScaledVector(radialOut, 9.8 * orbitAspectMul)
 				.addScaledVector(tangentRight, this.userYawOffset * 3.4);
-			orbitCam.y = anchorPt.y + 3.25;
+			orbitCam.y = anchorPt.y + 3.25 * Math.sqrt(orbitAspectMul);
 
 			camPos = this.tempCamPos.copy(orbitCam).lerp(macroCam, k);
 			lookTarget = this.tempLookTarget
@@ -3148,21 +3186,29 @@ export class FiberSpineWorld {
 			}
 			targetFov = 46 + (38 - 46) * k;
 		} else {
-			// Orbit panorama asal.
+			// Orbit panorama asal: Pembingkaian adaptif mengikut nisbah aspek.
+			// Pada telefon/tablet potret (aspect < 1.0), kamera berundur secara harmoni
+			// agar pulau dan 21 siluet prop dibingkai tepat di tengah tanpa sebarang pemotongan.
 			this.focusSettle = 0;
-			const camRadiusOffset = 9.8;
+			const aspect = this.camera.aspect;
+			const aspectMultiplier = aspect < 1.0 ? Math.min(2.1, 0.88 / aspect) : 1.0;
+			const camRadiusOffset = 9.8 * aspectMultiplier;
 			const lateralShift = this.smoothPointer.x * 0.75 + this.userYawOffset * 3.4;
 			camPos = this.tempCamPos
 				.copy(anchorPt)
 				.addScaledVector(radialOut, camRadiusOffset)
 				.addScaledVector(tangentRight, lateralShift);
 			camPos.y =
-				anchorPt.y + 3.25 + stepBob + this.smoothPointer.y * 0.3 + this.userPitchOffset * 1.8;
+				anchorPt.y +
+				2.9 * Math.sqrt(aspectMultiplier) +
+				stepBob +
+				this.smoothPointer.y * 0.3 +
+				this.userPitchOffset * 1.8;
 			lookTarget = this.tempLookTarget
 				.copy(anchorPt)
 				.addScaledVector(radialOut, -2.6)
 				.addScaledVector(tangentRight, this.smoothPointer.x * 1.2 - this.userYawOffset * 4.2);
-			lookTarget.y = anchorPt.y + 2.15 - this.userPitchOffset * 1.6;
+			lookTarget.y = anchorPt.y + 1.85 - this.userPitchOffset * 1.6;
 		}
 
 		// Interpolasi FOV memperhalus perubahan lensa.
@@ -3496,8 +3542,13 @@ export class FiberSpineWorld {
 
 	public dispose(): void {
 		this.disposed = true;
-		if (typeof window !== 'undefined' && window.__SPINE_WORLD__ === this) {
-			delete window.__SPINE_WORLD__;
+		if (typeof window !== 'undefined') {
+			if (window.__SPINE_WORLD__ === this) {
+				delete window.__SPINE_WORLD__;
+			}
+			if (window.__screenWorld === this) {
+				delete window.__screenWorld;
+			}
 		}
 		this.glbLoader.dispose();
 		this.clearLaserEffect();

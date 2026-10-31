@@ -226,17 +226,19 @@
 	.leader-line {
 		fill: none;
 		stroke: var(--spatial-accent, var(--accent));
-		stroke-width: 0.14;
+		stroke-width: 0.2;
 		stroke-linecap: round;
 		stroke-linejoin: round;
-		opacity: 0.75;
+		opacity: 0.88;
 		vector-effect: non-scaling-stroke;
+		filter: drop-shadow(0 0 2px var(--spatial-accent, var(--accent)));
 	}
 
 	.leader-dot {
 		fill: var(--spatial-accent, var(--accent));
-		opacity: 0.9;
+		opacity: 0.95;
 		vector-effect: non-scaling-stroke;
+		filter: drop-shadow(0 0 3px var(--spatial-accent, var(--accent)));
 	}
 
 	.diegetic-calout {
@@ -253,10 +255,31 @@
 		background-color: var(--spatial-hud-bg, var(--surface));
 		background-image: var(--glass-sheen);
 		color: var(--spatial-hud-ink, var(--ink));
-		border: 1px solid var(--spatial-hud-border, var(--surface-border));
-		-webkit-backdrop-filter: var(--glass-filter);
-		backdrop-filter: var(--glass-filter);
-		box-shadow: var(--shadow-glass);
+		border: 1px solid var(--glass-border-hover, var(--spatial-hud-border));
+		-webkit-backdrop-filter: blur(28px) saturate(180%);
+		backdrop-filter: blur(28px) saturate(180%);
+		box-shadow:
+			inset 0 1px 0.5px rgba(255, 255, 255, 0.28),
+			inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.2),
+			var(--shadow-glass);
+		animation: caloutFloatIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+	}
+
+	@keyframes caloutFloatIn {
+		from {
+			opacity: 0;
+			transform: translateY(12px) scale(0.97);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.diegetic-calout {
+			animation: none;
+		}
 	}
 
 	.calout-bar {

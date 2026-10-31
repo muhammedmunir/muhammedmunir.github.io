@@ -35,9 +35,13 @@
 	--shadow-glass: 0 12px 32px 0 rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 	--shadow-glass-modal: var(--shadow-glass), 0 24px 64px -12px rgba(0, 0, 0, 0.4);
 	--focus: var(--badge-ink);
-	--screen-bg: var(--bg);
-	--screen-surface: var(--surface);
-	--screen-surface-hover: var(--surface-hover);
+	--screen-bg: #0b0c0e;
+	--screen-surface: #15181d;
+	--screen-surface-hover: #1c2027;
+	--screen-text: #f8fafc;
+	--screen-muted: #e2e8f0;
+	--screen-accent: #ffedd5;
+	--screen-on-accent: #0b0c0e;
 	--screen-online: #34d399;
 	--screen-halo: #4bdcff;
 
@@ -110,8 +114,12 @@
 		inset 0 1px 0 rgba(255, 255, 255, 1), 0 24px 64px -12px rgba(18, 25, 38, 0.24);
 	--focus: var(--accent);
 	--screen-bg: #f3efe9;
-	--screen-surface: #ede7df;
-	--screen-surface-hover: #e8e1d7;
+	--screen-surface: #ebe4da;
+	--screen-surface-hover: #e2d9cc;
+	--screen-text: #0f172a;
+	--screen-muted: #1e293b;
+	--screen-accent: #5a1e05;
+	--screen-on-accent: #ffffff;
 	--screen-online: #08794e;
 	--screen-halo: #007d9c;
 
