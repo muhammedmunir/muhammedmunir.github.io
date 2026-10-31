@@ -31,6 +31,7 @@ import {
 	type DioramaBuildContext
 } from './diorama-props';
 import { DioramaGlbLoader } from './diorama-glb';
+import { createXRayLensPass, type XRayLensBindings } from './xray-lens';
 
 export type { QualityTier } from './studio-env';
 export type ThemeMode = 'dark' | 'light';
@@ -542,6 +543,18 @@ export class FiberSpineWorld {
 	private focusFov = 0;
 	private focusSpotIntensity = 0;
 
+	// Lensa Kaca Cair X-Ray (Sesi 3): kanta bulat pembiasan Snell's Law + lapisan gentian.
+	private xrayActive = false;
+	private xrayAmount = 0;
+	private xrayReduced = false;
+	private xrayLensPass: XRayLensBindings | null = null;
+	private xrayFiberScene: THREE.Scene | null = null;
+	private xrayFiberCamera: THREE.PerspectiveCamera | null = null;
+	private xrayFiberTarget: THREE.WebGLRenderTarget | null = null;
+	private xrayFiberMeshes: THREE.Mesh<THREE.TubeGeometry, THREE.MeshStandardMaterial>[] = [];
+	private xrayPulseNodes: THREE.Mesh<THREE.SphereGeometry, THREE.MeshBasicMaterial>[] = [];
+	private xrayPulsePhases: number[] = [];
+
 	private raycaster = new THREE.Raycaster();
 	public toys: ToyRecord[] = [];
 	private stationHeaders: StationHeaderRecord[] = [];
@@ -753,6 +766,7 @@ export class FiberSpineWorld {
 				: 'Assembling 6 Archipelago Stations & Systems...'
 		);
 		this.buildArchipelagoStations();
+		this.buildXRayFiberLayer();
 		this.setupPostProcessing(
 			Math.max(this.container.clientWidth, 1),
 			Math.max(this.container.clientHeight, 1)
@@ -1957,6 +1971,180 @@ export class FiberSpineWorld {
 		}
 	}
 
+	/**
+	 * LAPISAN GENTIAN X-RAY BAWAH PULAU (Sesi 3, Tunggak C.1): saluran optik
+	 * bercahaya + nod aliran paket yang disimpan dalam adegan berasingan dan
+	 * dihantar ke pas kanta melalui `tFiber` (tidak menambah kos lautan GLSL).
+	 */
+	private buildXRayFiberLayer(): void {
+		if (!this.renderer) return;
+		const scene = new THREE.Scene();
+		// Guna semula pandangan kamera utama supaya gentian sejajar tepat dengan
+		// dunia (tidak menjejaskan kos: adegan ini hampir kosong).
+		const camera = new THREE.PerspectiveCamera(
+			this.camera.fov,
+			this.camera.aspect,
+			this.camera.near,
+			this.camera.far
+		);
+		const dpr = this.renderer.getPixelRatio?.() ?? 1;
+		const w = Math.max(this.container.clientWidth, 1);
+		const h = Math.max(this.container.clientHeight, 1);
+		const target = new THREE.WebGLRenderTarget(Math.max(1, Math.floor(w * dpr)), Math.max(1, Math.floor(h * dpr)), {
+			type: THREE.HalfFloatType
+		});
+		target.texture.minFilter = THREE.LinearFilter;
+		target.texture.magFilter = THREE.LinearFilter;
+		target.texture.generateMipmaps = false;
+
+		const fiberMat = new THREE.MeshStandardMaterial({
+			color: 0x22d3ee,
+			emissive: 0x38bdf8,
+			emissiveIntensity: 1.6,
+			metalness: 0.15,
+			roughness: 0.5,
+			depthTest: true,
+			depthWrite: false
+		});
+		fiberMat.userData.baseEmissive = 1.6;
+		this.glowMaterials.push(fiberMat);
+
+		const pulseMat = new THREE.MeshBasicMaterial({ color: 0x7dd3fc });
+
+		const sampleCount = 80;
+		for (const anchor of STATION_ANCHORS) {
+			const points: THREE.Vector3[] = [];
+			for (let s = 0; s < sampleCount; s++) {
+				const n = s / sampleCount;
+				const r = 2.0 + n * 4.6;
+				const phi = n * Math.PI * 14 + anchor.x * 0.37;
+				points.push(
+					new THREE.Vector3(
+						anchor.x + Math.cos(phi) * r,
+						anchor.y + 0.05 + Math.sin(phi * 1.3) * 0.07,
+						anchor.z + Math.sin(phi) * r
+					)
+				);
+			}
+			const curve = new THREE.CatmullRomCurve3(points, true, 'catmullrom', 0.5);
+			const tube = new THREE.Mesh(
+				new THREE.TubeGeometry(curve, 96, 0.035, 6, true),
+				fiberMat
+			);
+			tube.frustumCulled = false;
+			tube.userData.isXRayFiber = true;
+			this.xrayFiberMeshes.push(tube);
+			scene.add(tube);
+
+			// Nod aliran paket mengelilingi saluran; jiwa hanya berdenyut dalam X-Ray.
+			const nodeCount = 6;
+			for (let p = 0; p < nodeCount; p++) {
+				const node = new THREE.Mesh(new THREE.SphereGeometry(0.05, 10, 10), pulseMat);
+				node.frustumCulled = false;
+				node.userData.isXRayFiber = true;
+				// kedudukan sebenar ditetapkan setiap bingkai daripada fasa.
+				node.position.set(anchor.x, anchor.y + 0.05, anchor.z);
+				this.xrayPulseNodes.push(node);
+				this.xrayPulsePhases.push((p / nodeCount + anchor.x * 0.02) % 1);
+				scene.add(node);
+			}
+		}
+
+		this.xrayPulseNodeCurve = this.causewayLoopCurve;
+		this.xrayFiberScene = scene;
+		this.xrayFiberCamera = camera;
+		this.xrayFiberTarget = target;
+	}
+
+	private xrayPulseNodeCurve: THREE.CatmullRomCurve3 | null = null;
+
+	private updateXRayLens(dt: number, width: number, height: number): void {
+		if (!this.xrayLensPass) return;
+		const u = this.xrayLensPass.uniforms;
+		u.uResolution.value.set(width, height);
+		u.uChromAb.value = this.xrayReduced ? 0 : 1;
+		u.uAmount.value += (this.xrayActive ? 1 : 0 - u.uAmount.value) * Math.min(1, dt * 8);
+		if (this.xrayReduced) u.uAmount.value = this.xrayActive ? 1 : 0;
+
+		// Pusat kanta: ikut kursor pada skrin; statik di tengah pada mudah alih/reduced.
+		const center = this.tempLensCenter;
+		if (this.isMobile || this.xrayReduced) {
+			center.set(width * 0.5, height * 0.5);
+		} else {
+			center.set((this.pointerNdc.x * 0.5 + 0.5) * width, (-this.pointerNdc.y * 0.5 + 0.5) * height);
+		}
+		u.uCenter.value.copy(center);
+		u.uRadius.value = Math.min(width, height) * 0.3;
+
+		// Render adegan gentian berasingan Cuma apabila X-Ray hampir aktif.
+		if (u.uAmount.value > 0.01 && this.xrayFiberScene && this.xrayFiberCamera && this.xrayFiberTarget && this.renderer) {
+			// Sejajarkan kamera ketir dengan kamera utama bagi setiap bingkai.
+			this.xrayFiberCamera.fov = this.camera.fov;
+			this.xrayFiberCamera.aspect = this.camera.aspect;
+			this.xrayFiberCamera.updateProjectionMatrix();
+			this.xrayFiberCamera.position.copy(this.camera.position);
+			this.xrayFiberCamera.quaternion.copy(this.camera.quaternion);
+			// Alirkan nod paket sepanjang laluan (Sesi 3.1).
+			const baseCurve = this.xrayPulseNodeCurve ?? this.causewayLoopCurve;
+			for (let i = 0; i < this.xrayPulseNodes.length; i++) {
+				const node = this.xrayPulseNodes[i];
+				const phase = ((this.xrayPulsePhases[i] + this.motionTime * 0.05) % 1);
+				baseCurve.getPointAt(phase, this.tempPulsePt);
+				node.position.set(this.tempPulsePt.x, this.tempPulsePt.y + 0.05, this.tempPulsePt.z);
+			}
+			const prevAutoClear = this.renderer.autoClear;
+			this.renderer.autoClear = true;
+			this.renderer.setRenderTarget(this.xrayFiberTarget);
+			this.renderer.clear(true, true, false);
+			this.renderer.render(this.xrayFiberScene, this.xrayFiberCamera);
+			this.renderer.setRenderTarget(null);
+			this.renderer.autoClear = prevAutoClear;
+			u.tFiber.value = this.xrayFiberTarget.texture;
+		} else if (u.tFiber.value) {
+			u.tFiber.value = null;
+		}
+	}
+
+	private tempLensCenter = new THREE.Vector2(0, 0);
+
+	public setXRayActive(active: boolean): void {
+		this.xrayActive = active;
+	}
+
+	public isXRayActive(): boolean {
+		return this.xrayActive;
+	}
+
+	public setLensPointer(clientX: number, clientY: number): void {
+		if (!this.renderer) return;
+		const rect = this.renderer.domElement.getBoundingClientRect();
+		if (rect.width <= 0 || rect.height <= 0) return;
+		this.pointerNdc.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+		this.pointerNdc.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+	}
+
+	private disposeXRayFiberLayer(): void {
+		const disposedGeos = new Set<THREE.BufferGeometry>();
+		for (const mesh of this.xrayFiberMeshes) {
+			mesh.geometry.dispose();
+			disposedGeos.add(mesh.geometry);
+			mesh.material.dispose();
+		}
+		this.xrayFiberMeshes = [];
+		for (const node of this.xrayPulseNodes) {
+			if (!disposedGeos.has(node.geometry)) node.geometry.dispose();
+			node.material.dispose();
+		}
+		this.xrayPulseNodes = [];
+		this.xrayPulsePhases = [];
+		if (this.xrayFiberTarget) {
+			this.xrayFiberTarget.dispose();
+			this.xrayFiberTarget = null;
+		}
+		this.xrayFiberScene = null;
+		this.xrayFiberCamera = null;
+	}
+
 	private getWeatherConfig(): WeatherConfig {
 		const isLight = this.theme === 'light';
 
@@ -2148,6 +2336,7 @@ export class FiberSpineWorld {
 
 	public setReducedMotion(reduced: boolean): void {
 		this.reducedMotion = reduced;
+		this.xrayReduced = reduced;
 		this.applyWeatherAndTheme();
 	}
 
@@ -2573,6 +2762,11 @@ export class FiberSpineWorld {
 			this.smaaPass = smaaPass;
 		}
 
+		// Lensa X-Ray Kaca Cair (Sesi 3): pas komposit bulat selepas SMAA, sebelum OutputPass.
+		const xray = createXRayLensPass(new THREE.Vector2(effW, effH));
+		composer.addPass(xray.pass);
+		this.xrayLensPass = xray;
+
 		const outputPass = new OutputPass();
 		composer.addPass(outputPass);
 		this.outputPass = outputPass;
@@ -2581,6 +2775,8 @@ export class FiberSpineWorld {
 	}
 
 	private disposePostProcessing(): void {
+		this.xrayLensPass?.pass.dispose();
+		this.xrayLensPass = null;
 		this.gtaoPass?.dispose();
 		this.gtaoPass = null;
 		this.bloomPass?.dispose();
@@ -2611,6 +2807,13 @@ export class FiberSpineWorld {
 		}
 		if (this.motePoints) {
 			this.motePoints.material.uniforms.uViewportHeight.value = height * dpr;
+		}
+		// Skala-saiz semula lapisan gentian X-Ray agar sepadan viewport sebenar.
+		if (this.xrayFiberTarget && this.renderer) {
+			this.xrayFiberTarget.setSize(
+				Math.max(1, Math.floor(width * dpr)),
+				Math.max(1, Math.floor(height * dpr))
+			);
 		}
 	}
 
@@ -3207,6 +3410,13 @@ export class FiberSpineWorld {
 			this.animateScene(dt, elapsed);
 			this.updateCamera(dt, elapsed);
 			this.updateProjectedMarkers();
+			if (this.xrayLensPass) {
+				this.updateXRayLens(
+					dt,
+					Math.max(this.container.clientWidth, 1),
+					Math.max(this.container.clientHeight, 1)
+				);
+			}
 
 			if (!this.firstFrameNotified) {
 				this.firstFrameNotified = true;
@@ -3237,6 +3447,7 @@ export class FiberSpineWorld {
 		}
 		this.glbLoader.dispose();
 		this.clearLaserEffect();
+		this.disposeXRayFiberLayer();
 		if (this.rafId !== null) {
 			cancelAnimationFrame(this.rafId);
 			this.rafId = null;

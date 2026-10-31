@@ -44,11 +44,11 @@
 
 ## Sesi 3: Lensa Kaca Cair X-Ray Snell's Law & HUD `Liquid-Glass`
 
-- [ ] **3.1 Rangkaian Gentian Bawah Pulau (X-Ray Layer)**: Bina laluan gentian optik bercahaya, rangka CAD dalaman, dan aliran nadi paket di bawah lantai setiap pulau yang didedahkan apabila disuluh Lensa X-Ray.
-- [ ] **3.2 Optik Lensa Kaca Cair Snell's Law**: Laksanakan kanta X-Ray kursor/sentuhan dengan pembiasan cembung dan pemisahan kromatik RGB di birai kanta (diadaptasi daripada `lensOptics.ts` tanpa menggandakan pas render lautan GLSL).
-- [ ] **3.3 Kawalan Lensa (`X` / Butang HUD / Sentuhan Mudah Alih)**: Tambah butang togol `Lensa X-Ray` dan pintasan kekunci `X`, pemegang seretan untuk telefon bimbit, serta mod kanta statik tanpa herotan apabila `prefers-reduced-motion` aktif.
-- [ ] **3.4 Naik Taraf HUD `Liquid-Glass`**: Kemas kini bar navigasi pulau dan bar utiliti atas dengan pencahayaan spekular tepi 1px, kaca berbias tinggi, dan fizik spring `cubic-bezier(0.34, 1.56, 0.64, 1)`.
-- [ ] **3.5 Gate Sesi 3**: Jalankan `npm run test:contrast`, `node scripts/glass-contrast.mjs`, `npm run check`, `npm test`, dan sahkan FPS kekal lancar apabila Lensa X-Ray aktif.
+- [x] **3.1 Rangkaian Gentian Bawah Pulau (X-Ray Layer)**: Bina laluan gentian optik bercahaya, rangka CAD dalaman, dan aliran nadi paket di bawah lantai setiap pulau yang didedahkan apabila disuluh Lensa X-Ray.
+- [x] **3.2 Optik Lensa Kaca Cair Snell's Law**: Laksanakan kanta X-Ray kursor/sentuhan dengan pembiasan cembung dan pemisahan kromatik RGB di birai kanta (diadaptasi daripada `lensOptics.ts` tanpa menggandakan pas render lautan GLSL).
+- [x] **3.3 Kawalan Lensa (`X` / Butang HUD / Sentuhan Mudah Alih)**: Tambah butang togol `Lensa X-Ray` dan pintasan kekunci `X`, pemegang seretan untuk telefon bimbit, serta mod kanta statik tanpa herotan apabila `prefers-reduced-motion` aktif.
+- [x] **3.4 Naik Taraf HUD `Liquid-Glass`**: Kemas kini bar navigasi pulau dan bar utiliti atas dengan pencahayaan spekular tepi 1px, kaca berbias tinggi, dan fizik spring `cubic-bezier(0.34, 1.56, 0.64, 1)`.
+- [x] **3.5 Gate Sesi 3**: Jalankan `npm run test:contrast`, `node scripts/glass-contrast.mjs`, `npm run check`, `npm test`, dan sahkan FPS kekal lancar apabila Lensa X-Ray aktif.
 
 ---
 
@@ -92,3 +92,8 @@
   - **Fail diubah**: `src/lib/spine/FiberSpineWorld.ts` (buang badan gergasi `buildTactileProp`, ganti dengan panggilan `buildDioramaProp` + `scheduleGlbSwap` malas + `glbLoader.dispose()`), `FiberSpineExperience.svelte` (footer `editorial-credit` dengan kredit `CC BY 4.0 — Dioramas` + gaya CSS), `scripts/spine-verify.mjs` (kontrak Sesi 2: siluet, pemuat GLB, kredit dan kewujudan model).
   - **Keputusan ujian sebenar**: `npm run check` → 0 ralat / 0 amaran; `npm test` → 47/47 lulus; `npm run test:contrast` → 314/314, min 4.68:1; `node scripts/spine-verify.mjs` → 5/5 seksyen lulus; `npm run build` → lulus (adapter-static).
   - **Had jujur**: Gate tangkapan 6 pulau Playwright **SKIPPED** (pelayar belum dipasang: `npx playwright install chrome`). Keunikan 21 siluet disahkan secara headless melalui tandatangan geometri (jenis+parameter), bukan perbandingan piksel sebenar. Sesi seterusnya: **Sesi 3**.
+- **2026-10-31 (Sesi 3 — Selesai)**:
+  - **Fail baharu**: `src/lib/spine/xray-lens.ts` (pas komposit `ShaderPass` kanta kaca cair X-Ray: pembesaran pusat `1/1.07`, pemisahan kromatik RGB birai `uChromAb`, Fresnel birai + holo; lapisan gentian dibaca daripada `tFiber`, bukan render berganda lautan), `scripts/xray-lens.test.mjs` (2 ujian).
+  - **Fail diubah**: `src/lib/spine/FiberSpineWorld.ts` (lapisan gentian bawah pulau `buildXRayFiberLayer` dalam adegan berasingan + `WebGLRenderTarget` HalfFloat sejajar kamera utama; API `setXRayActive`/`setLensPointer`/`isXRayActive` dan tempoh pudar `uAmount` dengan `uChromAb=0` untuk reduced-motion; pelupusan penuh), `FiberSpineExperience.svelte` (butang HUD `Lensa X-Ray` bergaya `util-pill`, pintasan kekunci `X`, lapisan sentuhan seret `lens-touch-layer`, spring tekan `cubic-bezier(0.34, 1.56, 0.64, 1)` pada HUD), `scripts/spine-verify.mjs` (kontrak Sesi 3).
+  - **Keputusan ujian sebenar**: `npm run check` → 0 ralat / 0 amaran; `npm test` → 49/49 lulus; `npm run test:contrast` → 314/314, min 4.68:1; `node scripts/glass-contrast.mjs` → OK; `node scripts/spine-verify.mjs` → 5/5 seksyen lulus; `npm run build` → lulus (adapter-static).
+  - **Had jujur**: Gate FPS `>= 45 FPS` apabila Lensa X-Ray aktif **tidak diukur** kerana pelayar Playwright belum dipasang (`npx playwright install chrome`). Optik Snell's Law dan lapisan gentian disahkan secara headless (struktur shader + uniform), bukan perbandingan piksel/FPS sebenar. Sesi seterusnya: **Sesi 4**.

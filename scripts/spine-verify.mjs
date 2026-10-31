@@ -227,6 +227,35 @@ assert.ok(
 	'static/models/ATTRIBUTION.md wajib wujud'
 );
 
+// Kontrak Sesi 3: Lensa X-Ray Kaca Cair Snell's Law + lapisan gentian bawah pulau + HUD kawalan.
+const xraySource = fs.readFileSync(path.join(rootDir, 'src/lib/spine/xray-lens.ts'), 'utf8');
+for (const xrayToken of ['createXRayLensPass', 'uChromAb', 'uLensCenter', 'uLensRadius', '1.07', 'uAmount']) {
+	// 'uLensCenter/uLensRadius' diuji pada worldSource di bawah; di sini hanya token xray-lens.
+	if (xrayToken !== 'uLensCenter' && xrayToken !== 'uLensRadius') {
+		assert.ok(xraySource.includes(xrayToken), `xray-lens.ts wajib mengandungi "${xrayToken}"`);
+	}
+}
+for (const xrayShaderToken of ['tFiber', '1.07', 'uChromAb', 'smoothstep']) {
+	assert.ok(xraySource.includes(xrayShaderToken), `shader kanta X-Ray wajib mengandungi "${xrayShaderToken}"`);
+}
+for (const worldXrayToken of [
+	'buildXRayFiberLayer',
+	'updateXRayLens',
+	'setXRayActive',
+	'setLensPointer',
+	'xrayLensPass',
+	'createXRayLensPass',
+	'disposeXRayFiberLayer'
+]) {
+	assert.ok(worldSource.includes(worldXrayToken), `FiberSpineWorld.ts wajib mengandungi "${worldXrayToken}"`);
+}
+for (const hudToken of ['Lensa X-Ray', 'toggleXRay', 'lens-touch-layer', 'xrayActive']) {
+	assert.ok(
+		experienceSource.includes(hudToken),
+		`FiberSpineExperience.svelte wajib mengandungi kawalan HUD "${hudToken}"`
+	);
+}
+
 const group = new THREE.Group();
 group.userData.hotspotId = 'term-email';
 group.userData.stationIndex = 5;

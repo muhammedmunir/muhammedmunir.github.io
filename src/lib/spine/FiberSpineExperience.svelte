@@ -48,6 +48,8 @@
 	let layerMarkers = $state<LayerMarker[]>([]);
 	let exhibitView = $state<ExhibitView | null>(null);
 	let exhibitCanBack = $state(false);
+	let xrayActive = $state(false);
+	let lensDragging = false;
 
 	let canvasContainer: HTMLDivElement | undefined = $state();
 	let world: FiberSpineWorld | null = null;
@@ -265,6 +267,27 @@
 		world?.setReducedMotion(motionPaused);
 	}
 
+	function toggleXRay() {
+		xrayActive = !xrayActive;
+		playScan();
+		world?.setXRayActive(xrayActive);
+	}
+
+	function onLensPointerDown(e: PointerEvent) {
+		if (!e.isPrimary) return;
+		lensDragging = true;
+		(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+	}
+
+	function onLensPointerMove(e: PointerEvent) {
+		if (!lensDragging || !world) return;
+		world.setLensPointer(e.clientX, e.clientY);
+	}
+
+	function onLensPointerUp(e: PointerEvent) {
+		lensDragging = false;
+	}
+
 	function openExhibit(id: string, stationIdx: number) {
 		if (!id) {
 			closeExhibit();
@@ -424,6 +447,12 @@
 			return;
 		}
 
+		if (e.key === 'x' || e.key === 'X') {
+			e.preventDefault();
+			toggleXRay();
+			return;
+		}
+
 		if (e.key === 'ArrowRight') {
 			e.preventDefault();
 			jumpToStation(activeStationIndex + 1);
@@ -519,6 +548,23 @@
 		aria-hidden="true"
 	></div>
 
+	<!-- Lapisan Sentuhan Lensa X-Ray (Sesi 3): pemegang seret mudah alih -->
+	{#if viewMode === '3d' && xrayActive}
+		<div
+			class="lens-touch-layer"
+			class:static={motionPaused}
+			role="presentation"
+			onpointerdown={onLensPointerDown}
+			onpointermove={onLensPointerMove}
+			onpointerup={onLensPointerUp}
+			onpointercancel={onLensPointerUp}
+		>
+			<div class="lens-touch-handle" aria-hidden="true">
+				<span class="sr-only">{locale === 'ms' ? 'Seret untuk gerakkan lensa' : 'Drag to move lens'}</span>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Skrin Memuatkan Futuristik (Living Fiber Spine Loading Screen) -->
 	{#if showLoadingScreen && viewMode === '3d'}
 		<SpineLoadingScreen
@@ -554,6 +600,24 @@
 
 		<div class="utility-actions">
 			{#if viewMode === '3d'}
+				<button
+					type="button"
+					class="util-pill"
+					class:active={xrayActive}
+					aria-pressed={xrayActive}
+					onclick={toggleXRay}
+					title={locale === 'ms' ? 'Lensa X-Ray (X)' : 'X-Ray Lens (X)'}
+					aria-label={locale === 'ms'
+						? `Lensa X-Ray: ${xrayActive ? 'Aktif' : 'Tidak Aktif'}`
+						: `X-Ray Lens: ${xrayActive ? 'Active' : 'Inactive'}`}
+				>
+					<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<circle cx="11" cy="11" r="7" />
+						<path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
+					</svg>
+					<span class="pill-label">{locale === 'ms' ? 'Lensa X-Ray' : 'X-Ray Lens'}</span>
+				</button>
+
 				<button
 					type="button"
 					class="util-pill"
@@ -1365,7 +1429,12 @@
 	.compass-arrow:active,
 	.primary-cta:active,
 	.secondary-cta:active {
-		transform: translateY(var(--space-pressed-y)) scale(0.98);
+		transform: translateY(var(--space-pressed-y)) scale(0.97);
+		/* Fizik tekan spring kaca cair (Sesi 3.4): lantunan overshoot bila dilepas. */
+		transition:
+			transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+			background-color var(--duration-fast, 150ms) ease,
+			border-color var(--duration-fast, 150ms) ease;
 	}
 
 	.util-pill.active {
@@ -1416,6 +1485,51 @@
 		border-radius: var(--radius-pill, 9999px);
 		background: var(--spatial-accent, var(--accent));
 		box-shadow: 0 0 8px var(--spatial-accent, var(--accent)); /* ds-allow-hardcode */
+	}
+
+	/* Lapisan Sentuhan Lensa X-Ray (Sesi 3.3) */
+	.lens-touch-layer {
+		position: fixed;
+		inset: 0;
+		z-index: 28;
+		touch-action: none;
+		cursor: grab;
+	}
+	.lens-touch-layer.static {
+		pointer-events: none;
+	}
+	.lens-touch-handle {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: clamp(150px, 34vh, 260px);
+		height: clamp(150px, 34vh, 260px);
+		transform: translate(-50%, -50%);
+		border-radius: 50%;
+		border: 2px solid rgba(125, 211, 252, 0.55); /* ds-allow-hardcode */
+		background: radial-gradient(circle, rgba(56, 189, 248, 0.08), rgba(56, 189, 248, 0.02) 62%, transparent 72%);
+		box-shadow:
+			inset 0 0 30px rgba(56, 189, 248, 0.12),
+			0 0 40px rgba(56, 189, 248, 0.18);
+		pointer-events: none;
+	}
+	.lens-touch-handle::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 50%;
+		background: conic-gradient(from 0deg, transparent, rgba(125, 211, 252, 0.5), transparent 40%);
+		animation: lens-spin 5s linear infinite;
+	}
+	@keyframes lens-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.lens-touch-handle::after {
+			animation: none;
+		}
 	}
 
 	/* Kompas Radar Kepulauan Orbital 360° */
