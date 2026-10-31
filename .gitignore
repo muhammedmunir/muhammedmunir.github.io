@@ -31,4 +31,5 @@ vite.config.ts.timestamp-*
 !.crew/artifacts/.gitkeep
 !.crew/graphs/.gitkeep
 .claude/
+.taste-skill/
 motion-01-hero-desktop.png

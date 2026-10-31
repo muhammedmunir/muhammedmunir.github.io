@@ -86,8 +86,11 @@ for (const requiredToken of [
 	'MeshPhysicalMaterial',
 	'createBeveledSlabGeometry',
 	'generatePBRSurfaceMaps',
-	'drawHotspotExhibitCanvas',
+	'buildTactileProp',
 	'updateProjectedMarkers',
+	'bounceProp',
+	'fireSecurityLaser',
+	'onToyStatus',
 	'ORBIT_RADIUS',
 	'buildCentralSovereignReactor',
 	'buildOrbitalRingCauseway',
@@ -96,6 +99,68 @@ for (const requiredToken of [
 	assert.ok(
 		worldSource.includes(requiredToken),
 		`FiberSpineWorld.ts wajib mengandungi komponen PBR/Open-Water/360° Orbital "${requiredToken}"`
+	);
+}
+
+// Pipeline HDR Sesi 0: EffectComposer HalfFloat + AgX + GTAO + Bloom + SMAA + studio PMREM
+for (const hdrToken of [
+	'EffectComposer',
+	'AgXToneMapping',
+	'GTAOPass',
+	'UnrealBloomPass',
+	'SMAAPass',
+	'OutputPass',
+	'createStudioEnvironment',
+	'setupPostProcessing',
+	'disposePostProcessing',
+	'recordQualityGovernorFrame',
+	'getQualityTier'
+]) {
+	assert.ok(
+		worldSource.includes(hdrToken),
+		`FiberSpineWorld.ts wajib mengandungi pipeline HDR Sesi 0 "${hdrToken}"`
+	);
+}
+
+// Kontrak Sesi 1: Kamera Dive Makro, Exploded 3-Lapisan & Diegetic Leader Overlay.
+for (const session1Token of [
+	'focusToyId',
+	'focusSettle',
+	'focusFov',
+	'focusSpotIntensity',
+	'assembleToyLayers',
+	'ToyLayer',
+	'LayerMarker',
+	'layers',
+	'exploded'
+]) {
+	assert.ok(
+		worldSource.includes(session1Token),
+		`FiberSpineWorld.ts wajib mengandungi kontrak Sesi 1 "${session1Token}"`
+	);
+}
+const diegeticSource = fs.readFileSync(
+	path.join(rootDir, 'src/lib/spine/DiegeticLeaderOverlay.svelte'),
+	'utf8'
+);
+for (const diegeticToken of ['leader-svg', 'leader-line', 'diegetic-calout', 'leader-dot']) {
+	assert.ok(
+		diegeticSource.includes(diegeticToken),
+		`DiegeticLeaderOverlay.svelte wajib mengandungi "${diegeticToken}"`
+	);
+}
+const studioEnvSource = fs.readFileSync(path.join(rootDir, 'src/lib/spine/studio-env.ts'), 'utf8');
+for (const studioToken of [
+	'QUALITY_SAMPLE_FRAMES',
+	'evaluateQualityTierFromFps',
+	'createQualityGovernorState',
+	'recordQualityGovernorFrame',
+	'createStudioEnvironment',
+	'PMREMGenerator'
+]) {
+	assert.ok(
+		studioEnvSource.includes(studioToken),
+		`studio-env.ts wajib mengandungi kontrak QualityTier/PMREM "${studioToken}"`
 	);
 }
 
@@ -134,7 +199,8 @@ for (const bannedClutter of [
 	'hud-left-dock',
 	'weather-bar',
 	'spatial-pins-layer',
-	'bottom-scrubber'
+	'bottom-scrubber',
+	'hotspot-inspect-card'
 ]) {
 	assert.ok(
 		!svelteSource.includes(bannedClutter),

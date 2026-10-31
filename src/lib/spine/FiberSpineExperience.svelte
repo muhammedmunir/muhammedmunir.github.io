@@ -11,9 +11,17 @@
 		PROJECT_ARCHIVE,
 		type Locale
 	} from './spine-data';
-	import type { FiberSpineWorld, ThemeMode } from './FiberSpineWorld';
+	import type { FiberSpineWorld, ThemeMode, LayerMarker } from './FiberSpineWorld';
 	import SpineLoadingScreen from './SpineLoadingScreen.svelte';
-	import { getHotspotLocation } from './exhibit-navigation';
+	import DiegeticLeaderOverlay from './DiegeticLeaderOverlay.svelte';
+	import {
+		getHotspotLocation,
+		getChipAction,
+		resolveExhibitView,
+		type ExhibitAction,
+		type ExhibitRoute,
+		type ExhibitView
+	} from './exhibit-navigation';
 	import { playBlip, playConfirm, playScan, playWarp, sfxEnabled, toggleSfx } from '$lib/sound';
 
 	let locale = $state<Locale>('ms');
@@ -32,9 +40,14 @@
 	let activeStationIndex = $state(0);
 	let spineProgress = $state(0);
 	let selectedHotspotId = $state<string | null>(null);
+	let laserHits = $state(0);
+	let laserReady = $state(false);
 	let hoveredHotspotId = $state<string | null>(null);
 	let hoveredIslandLabel = $state<string | null>(null);
 	let oceanWeatherIndex = $state(0);
+	let layerMarkers = $state<LayerMarker[]>([]);
+	let exhibitView = $state<ExhibitView | null>(null);
+	let exhibitCanBack = $state(false);
 
 	let canvasContainer: HTMLDivElement | undefined = $state();
 	let world: FiberSpineWorld | null = null;
@@ -43,6 +56,17 @@
 	let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const currentStation = $derived(STATIONS[activeStationIndex] ?? STATIONS[0]);
+	const selectedLocation = $derived(
+		selectedHotspotId ? getHotspotLocation(selectedHotspotId) : null
+	);
+	const selectedSiblingIndex = $derived.by(() => {
+		if (!selectedLocation) return -1;
+		const list = STATIONS[selectedLocation.stationIndex]?.hotspots ?? [];
+		return list.findIndex((item) => item.id === selectedLocation.hotspot.id);
+	});
+	const selectedSiblingCount = $derived(
+		selectedLocation ? (STATIONS[selectedLocation.stationIndex]?.hotspots.length ?? 0) : 0
+	);
 	const currentWeather = $derived(
 		OCEAN_WEATHER_PRESETS[oceanWeatherIndex] ?? OCEAN_WEATHER_PRESETS[0]
 	);
@@ -63,8 +87,8 @@
 				const found = st.hotspots.find((h) => h.id === hoveredHotspotId);
 				if (found) {
 					return locale === 'ms'
-						? `Klik Terminal 3D: ${found.code} · ${found.title[locale]}`
-						: `Click 3D Terminal: ${found.code} · ${found.title[locale]}`;
+						? `Klik untuk butiran · Seret untuk gerakkan: ${found.code} · ${found.title[locale]}`
+						: `Click for details · Drag to move: ${found.code} · ${found.title[locale]}`;
 				}
 			}
 		}
@@ -160,6 +184,15 @@
 					hoveredIslandLabel = islandLabel ?? null;
 				},
 				onHotspotSelect: (id, stationIdx) => openExhibit(id, stationIdx),
+				onMarkersUpdate: (markers) => {
+					const focused = markers.find((m) => m.layers && m.id === selectedHotspotId);
+					layerMarkers = focused?.layers ?? [];
+				},
+				onToyStatus: ({ hits, ready }) => {
+					if (hits > laserHits) playScan();
+					laserHits = hits;
+					laserReady = ready;
+				},
 				onOpenEditorial: () => void setViewMode('editorial'),
 				onProgress: (p, stageMsg) => {
 					loadingProgress = p;
@@ -237,19 +270,93 @@
 			closeExhibit();
 			return;
 		}
-		if (!getHotspotLocation(id)) return;
+		const location = getHotspotLocation(id);
+		if (!location) return;
 		playConfirm();
 		hoveredHotspotId = null;
 		hoveredIslandLabel = null;
-		if (stationIdx !== activeStationIndex) jumpToStation(stationIdx);
+		const targetStation = typeof stationIdx === 'number' ? stationIdx : location.stationIndex;
+		if (targetStation !== activeStationIndex) syncStationSelection(targetStation);
 		selectedHotspotId = id;
+		exhibitView = resolveExhibitView({ kind: 'hotspot', id });
+		exhibitCanBack = false;
 		world?.selectHotspot(id);
 		syncWorldActivity();
+	}
+
+	function applyExhibitAction(action: ExhibitAction) {
+		if (action.kind === 'link' && action.url) {
+			window.open(action.url, '_blank', 'noopener,noreferrer');
+			return;
+		}
+		if (action.kind === 'editorial') {
+			closeExhibit();
+			void setViewMode('editorial');
+			return;
+		}
+		if (action.kind === 'navigate') {
+			const view = resolveExhibitView(action.route);
+			if (view) {
+				// Teknologi boleh merujuk hotspot: selari kamera & prop apabila relevan.
+				if (action.route.kind === 'hotspot') {
+					selectedHotspotId = action.route.id;
+					world?.selectHotspot(action.route.id);
+				}
+				exhibitView = view;
+				exhibitCanBack = true;
+			}
+			return;
+		}
+		if (action.kind === 'back') {
+			if (selectedHotspotId) {
+				exhibitView = resolveExhibitView({ kind: 'hotspot', id: selectedHotspotId });
+				exhibitCanBack = false;
+			}
+			return;
+		}
+		if (action.kind === 'previous') {
+			stepExhibit(-1);
+			return;
+		}
+		if (action.kind === 'next') {
+			stepExhibit(1);
+			return;
+		}
+		if (action.kind === 'close') {
+			closeExhibit();
+		}
+	}
+
+	function handleExhibitChip(chip: string) {
+		if (!exhibitView) return;
+		const action = getChipAction(exhibitView, chip);
+		if (action) applyExhibitAction(action);
+	}
+
+	function stepExhibit(delta: number) {
+		const station = selectedLocation ? STATIONS[selectedLocation.stationIndex] : currentStation;
+		const list = station?.hotspots ?? [];
+		if (list.length === 0) return;
+		const currentIdx = selectedLocation
+			? list.findIndex((item) => item.id === selectedLocation.hotspot.id)
+			: 0;
+		const nextIdx = (((currentIdx + delta) % list.length) + list.length) % list.length;
+		const nextHotspot = list[nextIdx];
+		if (!nextHotspot) return;
+		if (world && sceneReady) {
+			// Lantunan taktil mencetus onHotspotSelect -> openExhibit (dive + calout).
+			world.bounceProp(nextHotspot.id);
+		} else {
+			openExhibit(nextHotspot.id, station.index);
+		}
 	}
 
 	function closeExhibit() {
 		playBlip(440);
 		selectedHotspotId = null;
+		exhibitView = null;
+		exhibitCanBack = false;
+		layerMarkers = [];
 		hoveredHotspotId = null;
 		hoveredIslandLabel = null;
 		world?.selectHotspot(null);
@@ -260,7 +367,7 @@
 		if (viewMode !== '3d' || selectedHotspotId) return;
 		if (
 			e.target instanceof HTMLElement &&
-			e.target.closest('header, footer, button, select, a, input, label')
+			e.target.closest('header, footer, aside, button, select, a, input, label')
 		)
 			return;
 		e.preventDefault();
@@ -274,10 +381,12 @@
 		if (viewMode !== '3d') return;
 		if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
 
-		if (selectedHotspotId) {
-			if (e.key === 'Escape') {
+		if (e.key === 'Escape') {
+			if (selectedHotspotId) {
 				e.preventDefault();
 				closeExhibit();
+			} else {
+				world?.resetToys();
 			}
 			return;
 		}
@@ -290,6 +399,29 @@
 			if (tag === 'BUTTON' || tag === 'A') {
 				if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') return;
 			}
+		}
+
+		if (selectedHotspotId) {
+			if (e.key === 'ArrowRight') {
+				e.preventDefault();
+				stepExhibit(1);
+				return;
+			}
+			if (e.key === 'ArrowLeft') {
+				e.preventDefault();
+				stepExhibit(-1);
+				return;
+			}
+		}
+
+		if (e.key === 'Enter' && !selectedHotspotId) {
+			const first = currentStation.hotspots[0];
+			if (first) {
+				e.preventDefault();
+				if (world && sceneReady) world.bounceProp(first.id);
+				else openExhibit(first.id, activeStationIndex);
+			}
+			return;
 		}
 
 		if (e.key === 'ArrowRight') {
@@ -400,13 +532,8 @@
 		/>
 	{/if}
 
-	<!-- Pengepala Kaca Minimalis (HUD Terpelihara; Sembunyi semasa mod periksa aktif) -->
-	<header
-		class="minimal-topbar"
-		class:ui-idle={uiIdle && viewMode === '3d' && !selectedHotspotId}
-		class:hidden-on-inspect={selectedHotspotId}
-		inert={Boolean(selectedHotspotId)}
-	>
+	<!-- Pengepala Kaca Minimalis (HUD Terpelihara) -->
+	<header class="minimal-topbar" class:ui-idle={uiIdle && viewMode === '3d' && !selectedHotspotId}>
 		<div class="brand-cluster">
 			<img
 				src={PROFILE.profilePhoto}
@@ -625,13 +752,33 @@
 	</header>
 
 	{#if viewMode === '3d'}
-		<!-- Petunjuk Halus Apabila Kursor Menyentuh Terminal 3D atau Pulau di Seberang Laut -->
+		<!-- Petunjuk prop dan navigasi pulau apabila kursor menyentuh objek 3D -->
 		{#if hoveredPromptText && !selectedHotspotId}
 			<div class="hover-reticle-badge" role="status">
 				<span class="reticle-pulse"></span>
 				<span>{hoveredPromptText}</span>
 			</div>
 		{/if}
+
+		<!-- Kalout Diegetik + Garisan Penunjuk 3D (Sesi 1): gantikan popup 2D rata -->
+		<DiegeticLeaderOverlay
+			view={exhibitView}
+			{locale}
+			markers={layerMarkers}
+			siblingIndex={selectedSiblingIndex}
+			siblingCount={selectedSiblingCount}
+			stationIndex={selectedLocation?.stationIndex ?? -1}
+			{laserHits}
+			{laserReady}
+			{sceneReady}
+			canBack={exhibitCanBack}
+			onclose={closeExhibit}
+			onstep={(delta) => stepExhibit(delta)}
+			onchip={(chip) => handleExhibitChip(chip)}
+			onaction={(action) => applyExhibitAction(action)}
+			onfire={() => world?.fireSecurityLaser()}
+			onback={() => applyExhibitAction({ kind: 'back' })}
+		/>
 
 		<!-- Kompas Radar Kepulauan Orbital 360° Minimalis Beraksesibiliti -->
 		<footer
@@ -640,6 +787,29 @@
 			class:hidden-on-inspect={selectedHotspotId}
 			inert={Boolean(selectedHotspotId)}
 		>
+			<!-- Dok Pemilih Prop Pulau (butang DOM asli; keyboard Tab/Enter/Arrow) -->
+			<ul
+				class="prop-dock"
+				role="list"
+				aria-label={locale === 'ms' ? 'Objek pameran pulau ini' : 'Exhibits on this island'}
+			>
+				{#each currentStation.hotspots as hs (hs.id)}
+					<li>
+						<button
+							type="button"
+							class="prop-dock-btn"
+							class:active={hs.id === selectedHotspotId}
+							onclick={() => openExhibit(hs.id, activeStationIndex)}
+							aria-current={hs.id === selectedHotspotId ? 'step' : undefined}
+							title="{hs.code} · {hs.title[locale]}"
+						>
+							<span class="prop-dock-pip" aria-hidden="true"></span>
+							<span class="prop-dock-label">{hs.code}</span>
+						</button>
+					</li>
+				{/each}
+			</ul>
+
 			<button
 				type="button"
 				class="compass-arrow"
@@ -717,8 +887,8 @@
 				<strong class="compass-title">{currentStation.title[locale]}</strong>
 				<span class="compass-hint">
 					{locale === 'ms'
-						? 'Skrol / W·S untuk Orbit 360° · Klik Pulau atau Papan 3D'
-						: 'Scroll / W·S for 360° Orbit · Click Any Island or 3D Board'}
+						? 'Skrol / W·S untuk Orbit 360° · Klik atau Seret Objek 3D'
+						: 'Scroll / W·S for 360° Orbit · Click or Drag Any 3D Object'}
 				</span>
 			</div>
 
@@ -956,33 +1126,6 @@
 			</div>
 		</section>
 	</main>
-
-	{#if selectedHotspotId && viewMode === '3d'}
-		<div class="inspect-exit-floating">
-			<button
-				type="button"
-				class="util-pill inspect-exit-btn"
-				onclick={closeExhibit}
-				aria-label={locale === 'ms' ? 'Kembali ke Panorama Orbit' : 'Return to Orbit Panorama'}
-			>
-				<svg
-					width="14"
-					height="14"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2.5"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					aria-hidden="true"
-				>
-					<line x1="19" y1="12" x2="5" y2="12"></line>
-					<polyline points="12 19 5 12 12 5"></polyline>
-				</svg>
-				<span>{locale === 'ms' ? 'Kembali ke Orbit' : 'Return to Orbit'}</span>
-			</button>
-		</div>
-	{/if}
 </div>
 
 <style>
@@ -1109,12 +1252,6 @@
 	.minimal-topbar:focus-within {
 		opacity: 1;
 		transform: translateY(0);
-	}
-
-	.minimal-topbar.hidden-on-inspect {
-		opacity: 0;
-		pointer-events: none;
-		transform: translateY(calc(-1 * var(--space-inspect-y)));
 	}
 
 	.brand-cluster {
@@ -1334,41 +1471,6 @@
 		background: var(--spatial-pill-hover-bg, var(--surface-hover));
 	}
 
-	.inspect-exit-floating {
-		position: fixed;
-		bottom: max(1.5rem, env(safe-area-inset-bottom));
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 40;
-		animation: inspectFadeIn var(--duration-normal, 300ms) ease;
-	}
-
-	.inspect-exit-btn {
-		background: var(--spatial-accent, var(--accent));
-		color: var(--on-accent);
-		font-weight: 700;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-		border: 1px solid rgba(255, 255, 255, 0.25);
-		padding: 0.55rem 1.15rem;
-		min-height: 44px;
-	}
-
-	.inspect-exit-btn:hover {
-		filter: brightness(1.1);
-		transform: translateY(-1px);
-	}
-
-	@keyframes inspectFadeIn {
-		from {
-			opacity: 0;
-			transform: translateX(-50%) translateY(12px);
-		}
-		to {
-			opacity: 1;
-			transform: translateX(-50%) translateY(0);
-		}
-	}
-
 	/* Radar Cluster & Native Button Nodes */
 	.orbital-radar-cluster {
 		position: relative;
@@ -1465,6 +1567,57 @@
 		align-items: center;
 		text-align: center;
 		min-width: var(--size-compass-min, 230px);
+	}
+
+	/* Dok Pemilih Prop Pulau (Sesi 1.5): butang DOM asli boleh Tab */
+	.prop-dock {
+		display: flex;
+		align-items: center;
+		gap: 0.42rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.prop-dock-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.36rem;
+		min-height: var(--size-touch, 44px);
+		min-width: var(--size-touch, 44px);
+		padding: 0.25rem 0.65rem;
+		border-radius: var(--radius-pill, 9999px);
+		border: 1px solid var(--spatial-pill-border, var(--surface-border));
+		background: var(--spatial-pill-bg, var(--surface-hover));
+		color: var(--spatial-hud-ink, var(--ink));
+		cursor: pointer;
+		font-family: var(--font-mono, monospace);
+		font-size: 0.7rem;
+		transition:
+			border-color var(--duration-fast, 150ms) ease,
+			background var(--duration-fast, 150ms) ease;
+	}
+
+	.prop-dock-btn:hover {
+		border-color: var(--spatial-accent, var(--accent));
+		background: var(--spatial-pill-hover-bg, var(--surface-hover));
+	}
+
+	.prop-dock-btn.active {
+		border-color: var(--spatial-accent, var(--accent));
+		background: rgba(229, 144, 87, 0.18);
+	}
+
+	.prop-dock-pip {
+		width: 8px;
+		height: 8px;
+		border-radius: var(--radius-pill, 9999px);
+		background: var(--spatial-radar-node, #676d78);
+	}
+
+	.prop-dock-btn.active .prop-dock-pip {
+		background: var(--spatial-radar-node-active, var(--accent));
+		box-shadow: 0 0 6px var(--spatial-radar-node-active, var(--accent));
 	}
 
 	.compass-code {

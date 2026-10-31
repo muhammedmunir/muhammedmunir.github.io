@@ -3,7 +3,8 @@ import { after, test } from 'node:test';
 import * as THREE from 'three';
 import { createServer } from 'vite';
 
-// Uji logik dunia dan raycasting sebenar tanpa WebGL atau pelayar.
+// Kontrak mainan taktil: prop besar per stesen, spring drag, klik bounce,
+// laser network dengan status sedia/cooldown, reduced motion statik.
 const vite = await createServer({
 	configFile: false,
 	server: { middlewareMode: true, hmr: false, ws: false, watch: null },
@@ -13,7 +14,6 @@ const vite = await createServer({
 after(() => vite.close());
 const { FiberSpineWorld } = await vite.ssrLoadModule('/src/lib/spine/FiberSpineWorld.ts');
 const { STATIONS } = await vite.ssrLoadModule('/src/lib/spine/spine-data.ts');
-const { getInspectDistance } = await vite.ssrLoadModule('/src/lib/spine/exhibit-screen.ts');
 
 const palette = {
 	background: '#101010',
@@ -62,15 +62,15 @@ function canvas(width = 900, height = 575) {
 
 function fixture(width = 1280, height = 800) {
 	const selections = [];
-	const snapshots = [];
+	const statuses = [];
 	const world = new FiberSpineWorld(
 		{ clientWidth: width, clientHeight: height },
 		{
 			onHotspotSelect: (id, stationIndex) => selections.push({ id, stationIndex }),
-			onScreenUpdate: (snapshot) => snapshots.push(snapshot)
+			onToyStatus: (status) => statuses.push({ ...status })
 		}
 	);
-	world.clock = { getElapsedTime: () => 10 };
+	world.clock = { getElapsedTime: () => 10, getDelta: () => 0.016 };
 	world.screenPalette = palette;
 	world.renderer = {
 		domElement: { style: {}, getBoundingClientRect: () => ({ left: 24, top: 36, width, height }) },
@@ -81,381 +81,256 @@ function fixture(width = 1280, height = 800) {
 	world.rimLight = new THREE.PointLight();
 	world.camera.aspect = width / height;
 	world.camera.updateProjectionMatrix();
+	world.pulseInstanced = new THREE.InstancedMesh(
+		new THREE.SphereGeometry(0.1, 4, 2),
+		new THREE.MeshBasicMaterial(),
+		72
+	);
+	world.pulseOffsets = new Float32Array(72);
+	world.pulseSpeeds = new Float32Array(72).fill(0.02);
+	world.causewayLoopSamples = Array.from(
+		{ length: 360 },
+		(_, i) =>
+			new THREE.Vector3(
+				Math.sin((i / 360) * Math.PI * 2) * 38,
+				0,
+				Math.cos((i / 360) * Math.PI * 2) * 38
+			)
+	);
+	world.causewayLoopDives = new Float32Array(360);
+	world.dummy = new THREE.Object3D();
+	world.scene.add(world.pulseInstanced);
 	for (const station of STATIONS) {
 		for (const hotspot of station.hotspots) {
-			const mesh = new THREE.Group();
-			mesh.position.set(station.index * 8 + world.hotspots.length * 3, 0.3, -station.index * 5);
-			mesh.rotation.y = (station.index * Math.PI) / 3;
-			const screenMat = new THREE.MeshStandardMaterial();
-			const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(2.66, 1.7), screenMat);
-			screenMesh.position.set(0, 1.52, 0.095);
-			mesh.add(screenMesh);
-			world.scene.add(mesh);
-			world.hotspots.push({
+			const root = new THREE.Group();
+			root.position.set(station.index * 8 + world.toys.length * 3, 0.42, -station.index * 5);
+			for (let k = 0; k < 3; k++) {
+				const slab = new THREE.Mesh(
+					new THREE.BoxGeometry(1.5, 0.4, 1.5),
+					new THREE.MeshBasicMaterial()
+				);
+				slab.position.y = 0.3 + k * 0.5;
+				root.add(slab);
+			}
+			root.traverse((child) => {
+				child.userData.hotspotId = hotspot.id;
+				child.userData.stationIndex = station.index;
+			});
+			world.scene.add(root);
+			world.interactableMeshes.push(root);
+			world.interactionRoots.push(root);
+			world.toys.push({
 				id: hotspot.id,
 				stationIndex: station.index,
 				hotspot,
-				mesh,
-				screenMesh,
-				screenMat,
-				canvas: canvas(),
-				texture: new THREE.Texture(),
-				regions: [],
-				accentMat: new THREE.MeshStandardMaterial(),
-				screenWidth: 2.66,
-				screenHeight: 1.7
+				mesh: root,
+				baseY: 0.42,
+				spring: {
+					position: root.position,
+					home: root.position.clone(),
+					velocity: new THREE.Vector3(),
+					limit: new THREE.Vector3(0.75, 0.85, 0.6)
+				},
+				spinAxis: root,
+				spinSpeed: 0,
+				kind: station.index === 2 ? 'laser_turret' : 'default',
+				exploded: 0
 			});
+			const toy = world.toys[world.toys.length - 1];
+			toy.layers = world.assembleToyLayers(toy);
 		}
 	}
-	return { world, selections, snapshots };
+	return { world, selections, statuses };
 }
 
-function settle(world) {
-	for (let frame = 0; frame < 300; frame++) world.updateCamera(1 / 60, 0);
+test('Satu prop taktil per hotspot; tiada monitor teks dalam senario', () => {
+	const { world } = fixture();
+	assert.ok(world.toys.length > 0);
+	assert.equal(world.hotspots, undefined);
+	for (const toy of world.toys) {
+		assert.ok(toy.mesh);
+		assert.ok(toy.spring);
+		assert.ok(toy.spinAxis);
+		assert.ok(toy.layers);
+	}
+});
+
+test('bounceProp memberikan impuls spring, scale bounce dan mengembalikan boolean', () => {
+	const { world } = fixture();
+	const toy = world.toys[0];
+	const before = toy.spring.velocity.clone();
+	assert.equal(world.bounceProp(toy.id), true);
+	assert.ok(before.distanceTo(toy.spring.velocity) > 0);
+	assert.ok(toy.mesh.scale.y > 1.15, 'Scale Y mesti melantun melebihi 1.15');
+	assert.ok(toy.mesh.scale.x > 1.1, 'Scale X mesti melantun melebihi 1.10');
+	assert.equal(world.toyReady, false);
+	// Cooldown finite: after 2.5s, ready kembali & skala pulih ke (1,1,1)
+	for (let i = 0; i < 200; i++) world.animateScene(0.02, 10 + i * 0.02);
+	assert.equal(world.toyReady, true);
+	assert.ok(toy.mesh.scale.distanceTo(new THREE.Vector3(1, 1, 1)) < 1e-3);
+	// Id tidak wujud -> false
+	assert.equal(world.bounceProp('tidak-wujud'), false);
+});
+
+test('resetToys memulihkan semua kedudukan dan status sedia', () => {
+	const { world } = fixture();
+	world.bounceProp(world.toys[0].id);
+	world.fireSecurityLaser();
+	world.resetToys();
+	for (const toy of world.toys) {
+		assert.ok(toy.spring.position.distanceToSquared(toy.spring.home) < 1e-9);
+	}
+	assert.equal(world.toyReady, true);
+	assert.equal(world.laserReady, true);
+});
+
+test('fireSecurityLaser menembak laser, hits dan cooldown', () => {
+	const { world, statuses } = fixture();
+	const turret = world.toys.find((toy) => toy.stationIndex === 2);
+	assert.ok(turret);
+	assert.equal(world.fireSecurityLaser(), true);
+	assert.equal(world.laserHits, 1);
+	assert.equal(world.laserReady, false);
+	assert.equal(statuses.at(-1).hits, 1);
+	assert.equal(statuses.at(-1).ready, false);
+	assert.ok(world.laserMesh);
+	assert.ok(world.laserTargetGlow);
+	// Cooldown berakhir selepas LASER_DURATION
+	for (let i = 0; i < 120; i++) world.animateScene(0.02, 20 + i * 0.02);
+	assert.equal(world.laserReady, true);
+	assert.equal(world.laserMesh, null);
+	assert.equal(world.laserTargetGlow, null);
+	// Tiada turret -> false
+	const worldNoTurret = fixture();
+	worldNoTurret.world.toys = worldNoTurret.world.toys.filter((toy) => toy.stationIndex !== 2);
+	assert.equal(worldNoTurret.world.fireSecurityLaser(), false);
+});
+
+test('onToyStatus dipanggil awal selepas init dan selepas cooldown', () => {
+	const { world, statuses } = fixture();
+	world.emitToyStatus();
+	assert.ok(statuses.length >= 1);
+	assert.equal(statuses.at(-1).ready, true);
+	assert.equal(statuses.at(-1).hits, 0);
+});
+
+function projectToyToClient(world, toy) {
 	world.camera.updateMatrixWorld();
-}
-
-function selected(world) {
-	return world.hotspots.find((record) => record.id === world.selectedHotspotId);
-}
-
-function eventAt(world, record, x, y, overrides = {}) {
-	record.screenMesh.updateWorldMatrix(true, false);
-	const point = new THREE.Vector3(
-		(x / record.canvas.width - 0.5) * 2.66,
-		(0.5 - y / record.canvas.height) * 1.7,
-		0
-	)
-		.applyMatrix4(record.screenMesh.matrixWorld)
-		.project(world.camera);
+	toy.mesh.updateWorldMatrix(true, false);
+	const v = new THREE.Vector3(0, 0, 0).applyMatrix4(toy.mesh.matrixWorld).project(world.camera);
 	const rect = world.renderer.domElement.getBoundingClientRect();
 	return {
-		clientX: rect.left + ((point.x + 1) * rect.width) / 2,
-		clientY: rect.top + ((1 - point.y) * rect.height) / 2,
-		pointerId: 1,
-		button: 0,
-		isPrimary: true,
-		...overrides
+		clientX: rect.left + ((v.x + 1) * rect.width) / 2,
+		clientY: rect.top + ((1 - v.y) * rect.height) / 2
 	};
 }
 
-function regionEvent(world, id, overrides) {
-	const record = selected(world);
-	const region = record.regions.find((item) => item.id === id);
-	assert.ok(region, `Kawasan ${id} mesti wujud`);
-	return eventAt(
-		world,
-		record,
-		region.x + region.width / 2,
-		region.y + region.height / 2,
-		overrides
-	);
-}
+test('Drag prop pada plane stabil mengikuti pointer dan spring mengembalikan ke home', () => {
+	const { world } = fixture();
+	const toy = world.toys[0];
+	world.camera.position.set(0, 1.5, 7);
+	world.camera.lookAt(0, 0.42, 0);
+	world.camera.updateMatrixWorld();
+	world.selectHotspot(toy.id);
+	const start = toy.spring.position.clone();
+	const pivot = projectToyToClient(world, toy);
+	const down = { pointerId: 1, isPrimary: true, button: 0, ...pivot };
+	world.onPointerDown(down);
+	world.onPointerMove({ ...down, clientX: pivot.clientX + 160, clientY: pivot.clientY });
+	assert.ok(toy.spring.position.distanceTo(start) > 0.01, 'Drag mesti menggerakkan prop');
+	world.onPointerUp({ ...down, clientX: pivot.clientX + 160, clientY: pivot.clientY });
+	// Step spring kembali ke home
+	for (let i = 0; i < 300; i++) world.animateScene(0.03, 10 + i * 0.03);
+	assert.ok(toy.spring.position.distanceToSquared(toy.spring.home) < 0.01);
+});
 
-function click(world, event) {
-	world.onPointerDown(event);
-	world.onPointerUp(event);
-}
+test('Reduced motion memberi maklum balas statik tanpa spring berayun', () => {
+	const { world } = fixture();
+	world.reducedMotion = true;
+	const toy = world.toys[0];
+	world.bounceProp(toy.id);
+	assert.equal(toy.spring.velocity.lengthSq(), 0);
+	assert.ok(toy.spring.position.y > toy.spring.home.y);
+	world.animateScene(0.02, 10);
+	assert.ok(Math.abs(toy.spring.position.y - toy.spring.home.y) < 0.36);
+});
 
-function withDocument(run) {
-	const original = Object.getOwnPropertyDescriptor(globalThis, 'document');
-	Object.defineProperty(globalThis, 'document', {
-		configurable: true,
-		value: { createElement: () => canvas() }
-	});
-	try {
-		run();
-	} finally {
-		if (original) Object.defineProperty(globalThis, 'document', original);
-		else delete globalThis.document;
-	}
-}
+test('Klik prop memilih; klik kosong luar prop menutup', () => {
+	const { world, selections } = fixture();
+	world.camera.position.set(0, 1.5, 7);
+	world.camera.lookAt(0, 0.42, 0);
+	world.camera.updateMatrixWorld();
+	const toy = world.toys[0];
+	const pivot = projectToyToClient(world, toy);
+	const click = { pointerId: 1, isPrimary: true, button: 0, ...pivot };
+	world.onPointerDown(click);
+	world.onPointerUp(click);
+	assert.equal(world.selectedToyId, toy.id);
+	assert.equal(selections.at(-1).id, toy.id);
+	assert.ok(toy.mesh.scale.y > 1.15, 'Klik prop di kanvas mesti mencetuskan scale bounce');
+	// Klik jauh dari sebarang prop -> tutup
+	const miss = { pointerId: 1, isPrimary: true, button: 0, clientX: 26, clientY: 38 };
+	world.onPointerDown(miss);
+	world.onPointerUp(miss);
+	assert.equal(world.selectedToyId, null);
+	assert.equal(selections.at(-1).id, '');
+});
 
-test('Pemilihan melukis kawalan, mengekalkan input dan memulihkan pratonton apabila ditutup', () => {
-	const { world, snapshots } = fixture();
-	for (const record of world.hotspots) {
-		world.selectHotspot(record.id);
-		assert.equal(world.screenReady, true);
-		assert.equal(world.inputEnabled, true);
-		assert.equal(snapshots.at(-1).view.key, `hotspot:${record.id}`);
-		assert.ok(record.regions.some((region) => region.id === 'close'));
+test('Kamera Dive Makro: selectHotspot menetapkan focusToyId dan exploded membuka 3 lapisan', () => {
+	const { world } = fixture();
+	const toy = world.toys[0];
+	assert.equal(world.focusToyId, null);
+	world.selectHotspot(toy.id);
+	assert.equal(world.focusToyId, toy.id);
+	assert.equal(world.selectedToyId, toy.id);
+	// Animasikan beberapa frame: lapisan mesti terangkat dari home dan exploded menghala ke 1.
+	world.animateScene(0.03, 10);
+	world.animateScene(0.03, 10.03);
+	world.animateScene(0.03, 10.06);
+	assert.ok(toy.exploded > 0, 'Prop terfokus mesti membuka lapisan exploded');
+	for (const layer of toy.layers) {
 		assert.ok(
-			world.hotspots.filter((other) => other !== record).every((other) => !other.regions.length)
+			layer.root.position.lengthSq() > 0,
+			`Lapisan ${layer.id} mesti terangkat daripada tempat asal`
 		);
 	}
+	// Tutup: exploded kembali ke 0 (decay dalam satu frame untuk reduced motion).
+	world.reducedMotion = true;
 	world.selectHotspot(null);
-	assert.equal(world.screenReady, false);
-	assert.equal(world.screenRoute, null);
-	assert.equal(snapshots.at(-1), null);
-	assert.ok(world.hotspots.every((record) => !record.regions.length));
+	world.animateScene(0.03, 20);
+	assert.equal(world.focusToyId, null);
+	assert.ok(toy.exploded < 0.01, 'Lapisan mesti bercantum semula selepas tutup');
 });
 
-test('Kamera menghadap pusat monitor tanpa parallax pada semua terminal dan nisbah aspek', () => {
-	for (const [width, height] of [
-		[1280, 800],
-		[390, 844],
-		[844, 390]
-	]) {
-		const { world } = fixture(width, height);
-		for (const record of world.hotspots) {
-			world.selectHotspot(record.id);
-			settle(world);
-			const center = record.screenMesh.getWorldPosition(new THREE.Vector3());
-			const normal = new THREE.Vector3(0, 0, 1).applyQuaternion(record.mesh.quaternion);
-			const offset = world.camera.position.clone().sub(center);
-			assert.ok(offset.clone().normalize().distanceTo(normal) < 1e-6);
-			const projected = center.clone().project(world.camera);
-			assert.ok(Math.abs(projected.x) < 1e-6 && Math.abs(projected.y) < 1e-6);
-			const distance = getInspectDistance(2.66, 1.7, width / height, world.camera.fov, 0.88);
-			assert.ok(Math.abs(offset.length() - distance) < 1e-6);
-			const before = world.camera.position.clone();
-			world.pointerNdc.set(-0.9, 0.8);
-			settle(world);
-			assert.ok(world.camera.position.distanceTo(before) < 1e-6);
-		}
+test('updateProjectedMarkers memancarkan 3 lapisan prop terfokus sebagai skrin %', () => {
+	const { world } = fixture();
+	const markers = [];
+	world.callbacks.onMarkersUpdate = (list) => markers.push(list);
+	world.camera.position.set(0, 1.5, 4);
+	world.camera.lookAt(0, 0.42, 0);
+	world.camera.updateMatrixWorld();
+	const toy = world.toys[0];
+	world.activeStationIndex = toy.stationIndex;
+	// Sediakan group stesen untuk prop terfokus sahaja, tanpa menutup objek lain.
+	if (!world.stationGroups[toy.stationIndex]) {
+		const g = new THREE.Group();
+		g.position.set(0, 0.42, 0);
+		world.scene.add(g);
+		world.stationGroups[toy.stationIndex] = g;
 	}
-});
-
-test('Frame inspect pertama menyasarkan monitor, bukan titik asal dunia', () => {
-	const { world } = fixture();
-	world.selectHotspot(STATIONS[4].hotspots[0].id);
-	world.updateCamera(1 / 60, 0);
-	assert.ok(world.currentInspectCamPos.distanceTo(world.targetInspectCamPos) < 1e-9);
-	world.reducedMotion = true;
-	world.updateCamera(1 / 60, 0);
-	assert.ok(world.camera.position.distanceTo(world.targetInspectCamPos) < 1e-9);
-});
-
-test('Raycasting UV memberi hover dan press; klik Tutup memulihkan orbit', () => {
-	const { world, selections } = fixture();
-	world.selectHotspot(STATIONS[0].hotspots[0].id);
-	settle(world);
-	const event = regionEvent(world, 'close');
-	world.onPointerMove(event);
-	assert.equal(world.hoveredRegionId, 'close');
-	assert.equal(world.renderer.domElement.style.cursor, 'pointer');
-	world.onPointerDown(event);
-	assert.equal(world.pressedRegionId, 'close');
-	world.onPointerUp(event);
-	assert.equal(world.selectedHotspotId, null);
-	assert.equal(selections.at(-1).id, '');
-	settle(world);
-	assert.equal(world.inspectBlend, 0);
-});
-
-test('Klik isi kosong atau butang disabled tidak menutup; klik luar monitor menutup', () => {
-	const { world } = fixture();
-	world.selectHotspot(STATIONS[0].hotspots[0].id);
-	settle(world);
-	const id = world.selectedHotspotId;
-	click(world, eventAt(world, selected(world), 4, 4));
-	assert.equal(world.selectedHotspotId, id);
-	click(world, regionEvent(world, 'back'));
-	assert.equal(world.selectedHotspotId, id);
-	click(world, { clientX: 26, clientY: 38, pointerId: 1, button: 0, isPrimary: true });
-	assert.equal(world.selectedHotspotId, null);
-});
-
-test('Seretan, klik kanan, pointer lain dan pembatalan tidak mengaktifkan kawalan', () => {
-	const { world } = fixture();
-	world.selectHotspot(STATIONS[0].hotspots[0].id);
-	settle(world);
-	const id = world.selectedHotspotId;
-	const event = regionEvent(world, 'close');
-	click(world, { ...event, button: 2 });
-	assert.equal(world.selectedHotspotId, id);
-	world.onPointerDown(event);
-	world.onPointerUp({ ...event, pointerId: 2 });
-	assert.equal(world.selectedHotspotId, id);
-	world.onPointerMove({ ...event, clientX: event.clientX + 20 });
-	world.onPointerUp(event);
-	assert.equal(world.selectedHotspotId, id);
-	assert.equal(world.targetYawOffset, 0);
-	assert.equal(world.targetPitchOffset, 0);
-	world.onPointerDown(event);
-	world.onPointerCancel(event);
-	world.onPointerUp(event);
-	assert.equal(world.selectedHotspotId, id);
-	assert.equal(world.pressedRegionId, null);
-	world.onPointerDown(event);
-	world.setInputEnabled(false);
-	world.onPointerUp(event);
-	assert.equal(world.selectedHotspotId, id);
-	assert.equal(world.pointerId, null);
-});
-
-test('Navigasi cip, Kembali dan pemilihan berulang mengekalkan laluan serta sejarah', () => {
-	withDocument(() => {
-		const { world } = fixture();
-		world.selectHotspot('ent-sutera');
-		world.performScreenAction({
-			kind: 'navigate',
-			route: { kind: 'project', id: 'proj-loan-iwa001' }
-		});
-		world.selectHotspot('ent-sutera');
-		assert.equal(world.screenRoute.kind, 'project');
-		assert.equal(world.screenHistory.length, 1);
-		world.updateScreenTransition(1);
-		world.performScreenAction({ kind: 'back' });
-		assert.deepEqual(world.screenRoute, { kind: 'hotspot', id: 'ent-sutera' });
-		assert.equal(world.screenHistory.length, 0);
-		world.updateScreenTransition(1);
-		// Callback UI memanggil selectHotspot sekali lagi semasa pertukaran terminal.
-		world.callbacks.onHotspotSelect = (id) => world.selectHotspot(id || null);
-		world.performScreenAction({ kind: 'navigate', route: { kind: 'hotspot', id: 'ent-emesys' } });
-		assert.equal(world.selectedHotspotId, 'ent-emesys');
-		assert.equal(world.screenHistory.length, 1);
-		world.performScreenAction({ kind: 'back' });
-		assert.equal(world.selectedHotspotId, 'ent-sutera');
-		assert.equal(world.screenHistory.length, 0);
-	});
-});
-
-test('Klik cip projek dan Kembali melalui UV memulihkan halaman asal', () => {
-	withDocument(() => {
-		const { world } = fixture();
-		world.selectHotspot('ent-sutera');
-		const record = selected(world);
-		let chip;
-		for (let page = 0; page < world.screenPageCount; page++) {
-			chip = record.regions.find(
-				(region) =>
-					region.action.kind === 'navigate' &&
-					region.action.route.kind === 'project' &&
-					region.action.route.id === 'proj-loan-iwa001'
-			);
-			if (chip) break;
-			world.performScreenAction({ kind: 'page', delta: 1 });
-			world.updateScreenTransition(1);
-		}
-		assert.ok(chip);
-		const page = world.screenPage;
-		settle(world);
-		click(world, regionEvent(world, chip.id));
-		assert.deepEqual(world.screenRoute, { kind: 'project', id: 'proj-loan-iwa001' });
-		world.updateScreenTransition(1);
-		click(world, regionEvent(world, 'back'));
-		assert.deepEqual(world.screenRoute, { kind: 'hotspot', id: 'ent-sutera' });
-		assert.equal(world.screenPage, page);
-	});
-});
-
-test('Klik halaman menamatkan peralihan; skrin lama dilupus dan kawalan kembali aktif', () => {
-	withDocument(() => {
-		const { world } = fixture();
-		world.selectHotspot('ent-emesys');
-		const record = selected(world);
-		record.canvas.width = 400;
-		record.canvas.height = 256;
-		world.redrawSelectedScreen();
-		assert.ok(world.screenPageCount > 1);
-		settle(world);
-		click(world, regionEvent(world, 'page-next'));
-		assert.equal(world.screenPage, 1);
-		assert.equal(world.screenReady, false);
-		const previous = world.previousScreen;
-		assert.ok(previous);
-		let disposed = 0;
-		for (const resource of [previous.geometry, previous.material, previous.material.map]) {
-			resource.addEventListener('dispose', () => disposed++);
-		}
-		world.updateScreenTransition(world.screenChangeDuration / 2);
-		assert.ok(Math.abs(previous.material.opacity - 0.5) < 1e-6);
-		world.updateScreenTransition(world.screenChangeDuration);
-		assert.equal(world.previousScreen, null);
-		assert.equal(previous.parent, null);
-		assert.equal(disposed, 3);
-		assert.equal(world.screenReady, true);
-		click(world, regionEvent(world, 'page-previous'));
-		assert.equal(world.screenPage, 0);
-		world.selectHotspot('ent-sutera');
-		assert.equal(world.previousScreen, null);
-		assert.equal(world.screenPage, 0);
-		assert.equal(world.screenReady, true);
-	});
-});
-
-test('Mod reduced-motion melangkau peralihan dan butang editorial memanggil callback', () => {
-	const { world } = fixture();
-	world.reducedMotion = true;
-	world.selectHotspot('ent-emesys');
-	world.performScreenAction({
-		kind: 'navigate',
-		route: { kind: 'project', id: 'proj-loan-iwa001' }
-	});
-	assert.equal(world.previousScreen, null);
-	assert.equal(world.screenReady, true);
-	let opened = false;
-	world.callbacks.onOpenEditorial = () => {
-		opened = true;
-	};
-	world.performScreenAction({ kind: 'editorial' });
-	assert.equal(opened, true);
-});
-
-test('Resize mengekalkan nisbah monitor, menggantikan tekstur dan membatalkan peralihan lama', () => {
-	withDocument(() => {
-		const { world } = fixture();
-		world.selectHotspot('ent-emesys');
-		const record = selected(world);
-		const texture = record.texture;
-		let disposed = false;
-		texture.addEventListener('dispose', () => {
-			disposed = true;
-		});
-		world.performScreenAction({
-			kind: 'navigate',
-			route: { kind: 'project', id: 'proj-loan-iwa001' }
-		});
-		world.container.clientWidth = 320;
-		world.container.clientHeight = 568;
-		world.onResize();
-		assert.equal(disposed, true);
-		assert.notEqual(record.texture, texture);
-		assert.equal(record.screenMat.map, record.texture);
-		assert.equal(record.screenMat.emissiveMap, record.texture);
-		assert.ok(record.canvas.width >= 320 && record.canvas.height >= 240);
-		assert.ok(Math.abs(record.canvas.width / record.canvas.height - 2.66 / 1.7) < 0.01);
-		assert.equal(record.screenMesh.scale.y, 1);
-		assert.equal(world.previousScreen, null);
-		assert.equal(world.screenReady, true);
-		settle(world);
-		const center = record.screenMesh.getWorldPosition(new THREE.Vector3()).project(world.camera);
-		assert.ok(Math.abs(center.x) < 1e-6 && Math.abs(center.y) < 1e-6);
-		world.selectHotspot(null);
-		assert.equal(record.canvas.width, 1440);
-		assert.equal(record.canvas.height, 920);
-	});
-});
-
-test('Navigasi papan menggunakan stesen terminal terpilih, bukan stesen kamera yang sedang bergerak', () => {
-	const { world } = fixture();
-	const station = STATIONS[3];
-	world.selectHotspot(station.hotspots[0].id);
-	assert.notEqual(world.activeStationIndex, station.index);
-	world.performScreenAction({ kind: 'next' });
-	assert.equal(world.selectedHotspotId, station.hotspots[1].id);
-	world.performScreenAction({ kind: 'previous' });
-	assert.equal(world.selectedHotspotId, station.hotspots[0].id);
-});
-
-test('W/S tidak mengorbit semasa inspect; Escape menutup dan menghalang pengendalian berganda', () => {
-	const { world, selections } = fixture();
-	world.heldKeys.add('w');
-	world.selectHotspot('ent-emesys');
-	assert.equal(world.heldKeys.size, 0);
-	const progress = world.targetProgress;
-	world.onKeyDown({ key: 'w' });
-	world.updateCamera(1 / 60, 0);
-	assert.equal(world.targetProgress, progress);
-	let prevented = false;
-	world.onKeyDown({
-		key: 'Escape',
-		preventDefault() {
-			prevented = true;
-		}
-	});
-	assert.equal(prevented, true);
-	assert.equal(world.selectedHotspotId, null);
-	assert.equal(selections.at(-1).id, '');
+	world.stationGroups.forEach((g) => g && g.updateWorldMatrix(true));
+	world.toys.forEach((t) => t.mesh.updateWorldMatrix(true, false));
+	world.selectHotspot(toy.id);
+	world.updateProjectedMarkers();
+	assert.ok(markers.length >= 1, 'Mesti ada marker bagi stesen aktif');
+	const focused = markers.at(-1).find((m) => m.id === toy.id);
+	assert.ok(focused, 'Prop terfokus mesti diunjur');
+	assert.ok(Array.isArray(focused.layers), 'Marker terfokus mesti membawa lapisan');
+	assert.equal(focused.layers.length, 3, 'Mesti ada 3 titik sauh lapisan (top/mid/base)');
+	const keys = focused.layers.map((l) => l.layer).sort();
+	assert.deepEqual(keys, ['base', 'mid', 'top']);
+	for (const l of focused.layers) {
+		assert.ok(Number.isFinite(l.x) && Number.isFinite(l.y));
+		assert.equal(typeof l.visible, 'boolean');
+	}
 });
