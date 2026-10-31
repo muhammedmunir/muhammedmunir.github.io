@@ -23,6 +23,14 @@ import {
 	type QualityGovernorState,
 	type StudioEnvironmentHandle
 } from './studio-env';
+import {
+	createBeveledSlabGeometry,
+	createSolidDishGeometry,
+	DIORAMA_GLB_MAP,
+	buildDioramaProp,
+	type DioramaBuildContext
+} from './diorama-props';
+import { DioramaGlbLoader } from './diorama-glb';
 
 export type { QualityTier } from './studio-env';
 export type ThemeMode = 'dark' | 'light';
@@ -452,69 +460,6 @@ const SKY_FRAGMENT_SHADER = /* glsl */ `
 	}
 `;
 
-function createBeveledSlabGeometry(
-	width: number,
-	height: number,
-	depth: number,
-	radius = 0.05,
-	bevel = 0.025
-): THREE.BufferGeometry {
-	const rw = Math.max(0.02, width - bevel * 2);
-	const rh = Math.max(0.02, height - bevel * 2);
-	const r = Math.min(radius, rw * 0.45, rh * 0.45);
-	const hw = rw * 0.5;
-	const hh = rh * 0.5;
-
-	const shape = new THREE.Shape();
-	shape.moveTo(-hw + r, -hh);
-	shape.lineTo(hw - r, -hh);
-	shape.absarc(hw - r, -hh + r, r, -Math.PI / 2, 0, false);
-	shape.lineTo(hw, hh - r);
-	shape.absarc(hw - r, hh - r, r, 0, Math.PI / 2, false);
-	shape.lineTo(-hw + r, hh);
-	shape.absarc(-hw + r, hh - r, r, Math.PI / 2, Math.PI, false);
-	shape.lineTo(-hw, -hh + r);
-	shape.absarc(-hw + r, -hh + r, r, Math.PI, Math.PI * 1.5, false);
-
-	const extrudeDepth = Math.max(0.01, depth - bevel * 2);
-	const geo = new THREE.ExtrudeGeometry(shape, {
-		depth: extrudeDepth,
-		bevelEnabled: true,
-		bevelSegments: 4,
-		steps: 1,
-		bevelSize: bevel,
-		bevelThickness: bevel,
-		curveSegments: 8
-	});
-	geo.center();
-	return geo;
-}
-
-/**
- * Mangkuk parabola 3D dwi-permukaan tertutup penuh (watertight solid manifold)
- * supaya piring radar/satelit kekal pepejal dari semua sudut pusingan 360°.
- */
-function createSolidDishGeometry(
-	radius: number,
-	depth: number,
-	thickness = 0.036,
-	segments = 36
-): THREE.LatheGeometry {
-	const pts: THREE.Vector2[] = [];
-	const steps = 16;
-	for (let i = 0; i <= steps; i++) {
-		const t = i / steps;
-		pts.push(new THREE.Vector2(t * radius, t * t * depth + thickness));
-	}
-	for (let i = steps; i >= 0; i--) {
-		const t = i / steps;
-		pts.push(new THREE.Vector2(t * radius, t * t * depth));
-	}
-	const geo = new THREE.LatheGeometry(pts, segments);
-	geo.computeVertexNormals();
-	return geo;
-}
-
 class WorldTimer {
 	private lastTime = 0;
 	private startTime = 0;
@@ -627,6 +572,8 @@ export class FiberSpineWorld {
 	private laserBeamMat: THREE.MeshBasicMaterial | null = null;
 	private laserGlowMat: THREE.MeshBasicMaterial | null = null;
 	private springElapsed = 0;
+
+	private glbLoader = new DioramaGlbLoader();
 
 	private ambientLight!: THREE.AmbientLight;
 	private hemiLight!: THREE.HemisphereLight;
@@ -1658,373 +1605,23 @@ export class FiberSpineWorld {
 		kind: string;
 		haloMat: THREE.MeshStandardMaterial;
 	} {
-		const propGroup = new THREE.Group();
-		const titaniumMat = this.createBrushedMetalMaterial(0x1e293b, accentHex, 0.2);
-		const chromeMat = this.createBrushedMetalMaterial(0xe2e8f0, undefined, 0.12);
-		chromeMat.side = THREE.DoubleSide;
-		const glassMat = this.createOpticalGlassMaterial(accentHex);
-		const glowMat = this.createGlowMaterial(accentHex, accentHex, 0.58);
-		const haloMat = this.createGlowMaterial(accentHex, accentHex, 0.55);
-
-		// Tapak pedestal berbevel dengan kolar silinder & gelang halo responsif
-		const basePlinth = new THREE.Mesh(
-			createBeveledSlabGeometry(1.32, 0.24, 1.32, 0.08, 0.03),
-			titaniumMat
-		);
-		basePlinth.position.y = 0.12;
-		basePlinth.castShadow = true;
-		basePlinth.receiveShadow = true;
-		propGroup.add(basePlinth);
-
-		const plinthCollar = new THREE.Mesh(
-			new THREE.CylinderGeometry(0.4, 0.5, 0.14, 28),
-			titaniumMat
-		);
-		plinthCollar.position.y = 0.26;
-		propGroup.add(plinthCollar);
-
-		const baseRing = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.036, 16, 48), haloMat);
-		baseRing.rotation.x = Math.PI / 2;
-		baseRing.position.y = 0.26;
-		propGroup.add(baseRing);
-
-		let spinAxis: THREE.Object3D = propGroup;
-		let kind = 'default';
-		const id = hotspot.id;
-
-		if (stationIndex === 0) {
-			// Stesen 01: Giroskop Reaktor Multi-Gimbal (3 variasi mengikut hotspot.id)
-			kind = 'gyro';
-			const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, 0.42, 18), titaniumMat);
-			stem.position.y = 0.48;
-			propGroup.add(stem);
-
-			const gyroMount = new THREE.Group();
-			gyroMount.position.y = 1.24;
-			propGroup.add(gyroMount);
-			spinAxis = gyroMount;
-
-			const coreGeo =
-				id === 'core-ring-sys'
-					? new THREE.IcosahedronGeometry(0.4, 1)
-					: id === 'core-ring-net'
-						? new THREE.OctahedronGeometry(0.42, 0)
-						: new THREE.OctahedronGeometry(0.44, 2);
-			const coreCrystal = new THREE.Mesh(coreGeo, glassMat);
-			coreCrystal.castShadow = true;
-			gyroMount.add(coreCrystal);
-
-			const innerPulse = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), glowMat);
-			gyroMount.add(innerPulse);
-
-			for (let r = 0; r < 3; r++) {
-				const gimbal = new THREE.Mesh(
-					new THREE.TorusGeometry(0.58 + r * 0.13, 0.03, 16, 56),
-					r === 1 ? chromeMat : r === 2 ? glowMat : titaniumMat
-				);
-				gimbal.rotation.set(r * 0.8 + 0.3, r * 1.05, r * 0.45);
-				gyroMount.add(gimbal);
-				this.rotatingBeacons.push(gimbal);
+		// Sesi 2: hantar semua pembinaan siluet unik ke `diorama-props.ts`.
+		// Kontrak pembekal bahan menjadikan material PBR dikongsi dan masih
+		// didaftar ke `glowMaterials` untuk kawalan kecerahan siang/malam.
+		const ctx: DioramaBuildContext = {
+			id: hotspot.id,
+			code: hotspot.code,
+			stationIndex,
+			accentHex,
+			materials: {
+				metal: (color, accent, roughness) =>
+					this.createBrushedMetalMaterial(color, accent, roughness),
+				glass: (tint) => this.createOpticalGlassMaterial(tint),
+				glow: (color, emissive, intensity) =>
+					this.createGlowMaterial(color, emissive, intensity)
 			}
-		} else if (stationIndex === 1) {
-			// Stesen 02: Kluster Pelayan Blade Tetap + Mahkota Rotor Berputar di Puncak
-			kind = 'enterprise_rack';
-			const rackChassis = new THREE.Group();
-			rackChassis.position.y = 0.32;
-			propGroup.add(rackChassis);
-
-			for (let b = 0; b < 3; b++) {
-				const blade = new THREE.Mesh(
-					createBeveledSlabGeometry(1.04, 0.19, 0.82, 0.04, 0.02),
-					titaniumMat
-				);
-				blade.position.y = 0.14 + b * 0.27;
-				blade.castShadow = true;
-				rackChassis.add(blade);
-
-				const ledStrip = new THREE.Mesh(
-					createBeveledSlabGeometry(0.76, 0.035, 0.85, 0.01, 0.005),
-					b === 1 ? chromeMat : glowMat
-				);
-				ledStrip.position.y = 0.14 + b * 0.27;
-				rackChassis.add(ledStrip);
-			}
-
-			const coreSpine = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.92, 18), glowMat);
-			coreSpine.position.y = 0.48;
-			rackChassis.add(coreSpine);
-
-			const crownRotor = new THREE.Group();
-			crownRotor.position.y = 1.54;
-			propGroup.add(crownRotor);
-			spinAxis = crownRotor;
-
-			const crownGem = new THREE.Mesh(
-				id === 'ent-sutera'
-					? new THREE.IcosahedronGeometry(0.26, 0)
-					: new THREE.OctahedronGeometry(0.28, 0),
-				glassMat
-			);
-			crownRotor.add(crownGem);
-
-			const crownRing = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.028, 16, 48), chromeMat);
-			crownRing.rotation.x = Math.PI * 0.34;
-			crownRotor.add(crownRing);
-
-			for (let n = 0; n < 3; n++) {
-				const a = (n / 3) * Math.PI * 2;
-				const node = new THREE.Mesh(new THREE.SphereGeometry(0.065, 14, 14), glowMat);
-				node.position.set(Math.cos(a) * 0.42, 0, Math.sin(a) * 0.42);
-				crownRing.add(node);
-			}
-		} else if (stationIndex === 2) {
-			if (id === 'net-tnb-fiber') {
-				// Radar Parabola Topologi Gentian Optik (Dwi-permukaan pepejal tertutup 360°)
-				kind = 'radar_dish';
-				const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.28, 0.68, 22), titaniumMat);
-				mast.position.y = 0.6;
-				propGroup.add(mast);
-
-				const dishRotor = new THREE.Group();
-				dishRotor.position.y = 1.15;
-				propGroup.add(dishRotor);
-				spinAxis = dishRotor;
-
-				const dish = new THREE.Mesh(createSolidDishGeometry(0.54, 0.24, 0.038, 36), chromeMat);
-				dish.rotation.x = Math.PI * 0.26;
-				dish.castShadow = true;
-				dishRotor.add(dish);
-
-				const horn = new THREE.Mesh(
-					new THREE.CylinderGeometry(0.025, 0.042, 0.34, 16),
-					titaniumMat
-				);
-				horn.position.y = 0.18;
-				dish.add(horn);
-
-				const tip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 18, 18), glowMat);
-				tip.position.y = 0.36;
-				dish.add(tip);
-			} else {
-				// Pemancar Pertahanan Siber SOC Dwi-Laras (menghala ke sasaran dron tengah pulau!)
-				kind = 'laser_turret';
-				const pedestal = new THREE.Mesh(
-					new THREE.CylinderGeometry(0.36, 0.48, 0.56, 24),
-					titaniumMat
-				);
-				pedestal.position.y = 0.54;
-				propGroup.add(pedestal);
-
-				const turretHead = new THREE.Group();
-				turretHead.position.y = 1.04;
-				propGroup.add(turretHead);
-				spinAxis = turretHead;
-
-				const housing = new THREE.Mesh(
-					createBeveledSlabGeometry(0.84, 0.46, 0.86, 0.06, 0.025),
-					chromeMat
-				);
-				housing.castShadow = true;
-				turretHead.add(housing);
-
-				const dome = new THREE.Mesh(new THREE.SphereGeometry(0.24, 24, 16), glassMat);
-				dome.position.y = 0.24;
-				turretHead.add(dome);
-
-				// Laras dwi-laser menghala ke arah sasaran ancaman (-Z tempatan pulau) & penderia hadapan (+Z)
-				for (const bx of [-0.21, 0.21]) {
-					const barrel = new THREE.Mesh(
-						new THREE.CylinderGeometry(0.05, 0.068, 0.78, 16),
-						titaniumMat
-					);
-					barrel.rotation.x = Math.PI / 2;
-					barrel.position.set(bx, 0.04, -0.48);
-					turretHead.add(barrel);
-
-					const muzzle = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.018, 12, 24), glowMat);
-					muzzle.position.set(bx, 0.04, -0.88);
-					turretHead.add(muzzle);
-				}
-
-				const frontVisor = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.026, 14, 32), glowMat);
-				frontVisor.position.set(0, 0.02, 0.44);
-				turretHead.add(frontVisor);
-			}
-		} else if (stationIndex === 3) {
-			// Stesen 04: 5 Projek Unggulan — setiap satu arca 3D tertutup penuh (sifar RingGeometry 2D!)
-			const column = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.3, 0.54, 22), titaniumMat);
-			column.position.y = 0.52;
-			propGroup.add(column);
-
-			const mount = new THREE.Group();
-			mount.position.y = 1.2;
-			propGroup.add(mount);
-			spinAxis = mount;
-
-			if (id === 'ai-cv-rag') {
-				// Instrumen Lensa Visi Komputer Dwi-Muka Pepejal 3D
-				kind = 'ai_lens';
-				const outerGimbal = new THREE.Mesh(new THREE.TorusGeometry(0.54, 0.04, 16, 48), chromeMat);
-				mount.add(outerGimbal);
-
-				const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.34, 32), titaniumMat);
-				barrel.rotation.x = Math.PI / 2;
-				mount.add(barrel);
-
-				const lensGlass = new THREE.Mesh(new THREE.SphereGeometry(0.36, 28, 28), glassMat);
-				lensGlass.scale.set(1, 1, 0.62);
-				mount.add(lensGlass);
-
-				for (const zSide of [-0.18, 0.18]) {
-					const irisRing = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.032, 16, 36), glowMat);
-					irisRing.position.z = zSide;
-					mount.add(irisRing);
-				}
-			} else if (id === 'ai-9router') {
-				// Hab Penghalaan 9-Nod AI
-				kind = 'router_hub';
-				const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 0), glowMat);
-				mount.add(core);
-				for (let r = 0; r < 2; r++) {
-					const ring = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.028, 16, 48), chromeMat);
-					ring.rotation.set(r * Math.PI * 0.5, r * 0.7, 0.4);
-					mount.add(ring);
-				}
-				for (let n = 0; n < 4; n++) {
-					const a = (n / 4) * Math.PI * 2;
-					const sat = new THREE.Mesh(new THREE.SphereGeometry(0.08, 14, 14), titaniumMat);
-					sat.position.set(Math.cos(a) * 0.52, Math.sin(a) * 0.22, Math.sin(a) * 0.52);
-					mount.add(sat);
-				}
-			} else if (id === 'proj-pin-bik') {
-				// Kapsul Biometrik Denyut Nadi
-				kind = 'bio_pulse';
-				const bioSphere = new THREE.Mesh(new THREE.SphereGeometry(0.36, 28, 28), glassMat);
-				mount.add(bioSphere);
-				const heartCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), glowMat);
-				mount.add(heartCore);
-				for (const tilt of [-0.55, 0.55]) {
-					const waveRing = new THREE.Mesh(
-						new THREE.TorusGeometry(0.52, 0.026, 16, 48),
-						tilt > 0 ? glowMat : chromeMat
-					);
-					waveRing.rotation.x = Math.PI * 0.5 + tilt;
-					mount.add(waveRing);
-				}
-			} else if (id === 'proj-pin-lumina') {
-				// Permata Prisma Studio Lumina
-				kind = 'prism_spire';
-				const diamond = new THREE.Mesh(new THREE.OctahedronGeometry(0.38, 0), glassMat);
-				diamond.scale.set(0.88, 1.32, 0.88);
-				mount.add(diamond);
-				const halo = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.03, 16, 48), chromeMat);
-				halo.rotation.x = Math.PI * 0.36;
-				mount.add(halo);
-			} else {
-				// TINDAK: Prisma Komuniti Bercincin
-				kind = 'crystal_orb';
-				const prism = new THREE.Mesh(new THREE.OctahedronGeometry(0.4, 1), glassMat);
-				mount.add(prism);
-				const orbitA = new THREE.Mesh(new THREE.TorusGeometry(0.54, 0.03, 16, 48), chromeMat);
-				orbitA.rotation.x = 0.65;
-				mount.add(orbitA);
-				const orbitB = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.024, 16, 48), glowMat);
-				orbitB.rotation.y = 0.85;
-				mount.add(orbitB);
-			}
-		} else if (stationIndex === 4) {
-			// Stesen 05: 3 Matriks Kemahiran Teknikal — Arca 3D khusus bagi setiap kategori
-			kind = 'skill_matrix';
-			const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.24, 0.44, 20), titaniumMat);
-			stem.position.y = 0.48;
-			propGroup.add(stem);
-
-			const matrixRotor = new THREE.Group();
-			matrixRotor.position.y = 1.18;
-			propGroup.add(matrixRotor);
-			spinAxis = matrixRotor;
-
-			if (id === 'mob-onboardx') {
-				// Databases, Cloud, DevOps & Security: Silinder Storan Bertingkat + Gelang Perisai
-				for (let d = 0; d < 3; d++) {
-					const disc = new THREE.Mesh(
-						new THREE.CylinderGeometry(0.38, 0.38, 0.16, 28),
-						titaniumMat
-					);
-					disc.position.y = -0.26 + d * 0.26;
-					matrixRotor.add(disc);
-
-					const ring = new THREE.Mesh(new THREE.TorusGeometry(0.39, 0.02, 12, 36), glowMat);
-					ring.rotation.x = Math.PI / 2;
-					ring.position.y = -0.18 + d * 0.26;
-					matrixRotor.add(ring);
-				}
-				const shieldLoop = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.028, 16, 48), chromeMat);
-				matrixRotor.add(shieldLoop);
-			} else if (id === 'mob-bik-lumina') {
-				// AI, MCP, OpenCV & Server Tools: Sangkar Neural Ikosahedron + Satelit Sinaps
-				const brain = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 1), glassMat);
-				matrixRotor.add(brain);
-				const innerSpark = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), glowMat);
-				matrixRotor.add(innerSpark);
-				for (let s = 0; s < 3; s++) {
-					const loop = new THREE.Mesh(
-						new THREE.TorusGeometry(0.52, 0.024, 14, 44),
-						s === 0 ? glowMat : chromeMat
-					);
-					loop.rotation.set(s * 1.05, s * 0.75, 0.3);
-					matrixRotor.add(loop);
-				}
-			} else {
-				// Frontend, Mobile & Backend APIs: 3 Lapisan Modul Kaca/Logam + Gelang API
-				for (let l = 0; l < 3; l++) {
-					const layer = new THREE.Mesh(
-						createBeveledSlabGeometry(0.72 - l * 0.08, 0.13, 0.72 - l * 0.08, 0.04, 0.02),
-						l === 1 ? glassMat : titaniumMat
-					);
-					layer.position.y = -0.24 + l * 0.24;
-					layer.rotation.y = l * 0.52;
-					matrixRotor.add(layer);
-				}
-				const apiRing = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.03, 16, 48), glowMat);
-				apiRing.rotation.x = Math.PI * 0.32;
-				matrixRotor.add(apiRing);
-			}
-		} else {
-			// Stesen 06: Komunikasi Satelit & Pendidikan UTM (Mangkuk Parabola Dwi-Permukaan Pepejal 360°!)
-			kind = 'satellite';
-			const mastMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.3, 0.74, 22), titaniumMat);
-			mastMesh.position.y = 0.62;
-			propGroup.add(mastMesh);
-
-			const satRotor = new THREE.Group();
-			satRotor.position.y = 1.2;
-			propGroup.add(satRotor);
-			spinAxis = satRotor;
-
-			const dishMesh = new THREE.Mesh(createSolidDishGeometry(0.54, 0.24, 0.038, 36), chromeMat);
-			dishMesh.rotation.x = Math.PI * 0.25;
-			dishMesh.castShadow = true;
-			satRotor.add(dishMesh);
-
-			const feedStem = new THREE.Mesh(
-				new THREE.CylinderGeometry(0.026, 0.044, 0.36, 16),
-				titaniumMat
-			);
-			feedStem.position.y = 0.19;
-			dishMesh.add(feedStem);
-
-			const pulseCore = new THREE.Mesh(new THREE.SphereGeometry(0.1, 18, 18), glowMat);
-			pulseCore.position.y = 0.38;
-			dishMesh.add(pulseCore);
-
-			const waveHalo = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.018, 12, 32), glowMat);
-			waveHalo.rotation.x = Math.PI / 2;
-			waveHalo.position.y = 0.38;
-			dishMesh.add(waveHalo);
-		}
-
-		return { root: propGroup, spinAxis, kind, haloMat };
+		};
+		return buildDioramaProp(ctx);
 	}
 
 	private createStationHeaderArch(group: THREE.Group, station: SpineStation): void {
@@ -2129,6 +1726,42 @@ export class FiberSpineWorld {
 		});
 		const toy = this.toys[this.toys.length - 1];
 		toy.layers = this.assembleToyLayers(toy);
+		this.scheduleGlbSwap(toy);
+	}
+
+	/**
+	 * Sesi 2: Jadualkan pemuatan GLB CC BY 4.0 sebagai pengganti siluet prosedural.
+	 * Dunia kekal interaktif — GLB ditukar masuk hanya selepas model selesai dimuatkan
+	 * dan dinormalisasi. Ralat rangkaian tidak mematahkan apa-apa (proksi kekal).
+	 */
+	private scheduleGlbSwap(toy: ToyRecord): void {
+		const spec = DIORAMA_GLB_MAP[toy.id];
+		if (!spec) return;
+
+		this.glbLoader.load({
+			path: spec.path,
+			targetHeight: spec.targetHeight,
+			hotspotId: toy.id,
+			stationIndex: toy.stationIndex,
+			onReady: (obj) => {
+				if (this.disposed) return;
+				// Terapkan ke dalam kumpulan akar prop supaya lapisan exploded / raycast
+				// terus membidik objek induk yang sama seperti sebelum ini.
+				const silhouette = toy.mesh.getObjectByName('diorama-silhouette');
+				if (silhouette) toy.mesh.remove(silhouette);
+				// Selaras tapak GLB dengan aras siluet prosedural (0.34 m di atas akar prop).
+				obj.position.y = 0.34;
+				toy.mesh.add(obj);
+				toy.mesh.userData.glbLoaded = true;
+				// Arahkan paksi putar untuk meneruskan putaran pada model GLB.
+				toy.spinAxis = obj;
+				// Segarkan lapisan exploded kepada geometri baharu.
+				toy.layers = this.assembleToyLayers(toy);
+			},
+			onError: () => {
+				/* proksi prosedural kekal — tiada tindakan */
+			}
+		});
 	}
 
 	/**
@@ -3602,6 +3235,7 @@ export class FiberSpineWorld {
 		if (typeof window !== 'undefined' && window.__SPINE_WORLD__ === this) {
 			delete window.__SPINE_WORLD__;
 		}
+		this.glbLoader.dispose();
 		this.clearLaserEffect();
 		if (this.rafId !== null) {
 			cancelAnimationFrame(this.rafId);

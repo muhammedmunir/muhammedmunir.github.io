@@ -1125,6 +1125,22 @@
 				{/each}
 			</div>
 		</section>
+
+		<footer class="editorial-credit">
+			<p>
+				{locale === 'ms'
+					? 'Aset 3D terpilih (Astrolab, Dron, Nautilus) — Dioramas (github.com/blendi-remade/dioramas), lesen CC BY 4.0.'
+					: 'Selected 3D assets (Astrolabe, Drone, Nautilus) — Dioramas (github.com/blendi-remade/dioramas), CC BY 4.0 license.'}
+			</p>
+			<a
+				href="https://github.com/blendi-remade/dioramas"
+				target="_blank"
+				rel="noopener noreferrer"
+				class="inline-link"
+			>
+				{locale === 'ms' ? 'Sumber Dioramas ↗' : 'Dioramas Source ↗'}
+			</a>
+		</footer>
 	</main>
 </div>
 
@@ -1875,6 +1891,22 @@
 
 	.inline-link:hover {
 		text-decoration: underline;
+	}
+
+	.editorial-credit {
+		margin-top: 2.5rem;
+		padding: 1rem 0 0;
+		border-top: 1px solid var(--spatial-card-border, var(--border));
+		font-size: 0.78rem;
+		color: var(--ink-muted, var(--spatial-hud-muted));
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1rem;
+		align-items: center;
+	}
+
+	.editorial-credit p {
+		margin: 0;
 	}
 
 	.cert-editorial-grid {

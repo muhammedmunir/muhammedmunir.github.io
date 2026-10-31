@@ -164,6 +164,69 @@ for (const studioToken of [
 	);
 }
 
+// Kontrak Sesi 2: modulus diorama-props + pemuat GLB malas + kredit CC BY 4.0.
+const dioramaPropsSource = fs.readFileSync(
+	path.join(rootDir, 'src/lib/spine/diorama-props.ts'),
+	'utf8'
+);
+for (const dioramaToken of [
+	'DIORAMA_GLB_MAP',
+	'buildDioramaProp',
+	'createBeveledSlabGeometry',
+	'createSolidDishGeometry',
+	'diorama-silhouette',
+	'createNameplateTexture',
+	'lighthouse',
+	'astrolabe_gear',
+	'geodesic_dome',
+	'blade_cluster',
+	'glass_vault',
+	'mobile_dock',
+	'laser_turret',
+	'fiber_landing',
+	'homelab',
+	'ai_lens',
+	'mcp_table',
+	'bio_capsule',
+	'kelvin_mirror',
+	'intent_prism',
+	'skill_monolith',
+	'satellite'
+]) {
+	assert.ok(
+		dioramaPropsSource.includes(dioramaToken),
+		`diorama-props.ts wajib mengandungi siluet Sesi 2 "${dioramaToken}"`
+	);
+}
+const glbSource = fs.readFileSync(path.join(rootDir, 'src/lib/spine/diorama-glb.ts'), 'utf8');
+for (const glbToken of ['GLTFLoader', 'setMeshoptDecoder', 'DioramaGlbLoader', 'EXT_meshopt_compression', 'dispose']) {
+	assert.ok(glbSource.includes(glbToken), `diorama-glb.ts wajib mengandungi "${glbToken}"`);
+}
+assert.ok(
+	worldSource.includes('scheduleGlbSwap') && worldSource.includes('DioramaGlbLoader'),
+	'FiberSpineWorld.ts wajib menjadualkan pertukaran GLB malas'
+);
+// Kredit CC BY 4.0 wajib wujud di footer Editorial.
+const experienceSource = fs.readFileSync(
+	path.join(rootDir, 'src/lib/spine/FiberSpineExperience.svelte'),
+	'utf8'
+);
+assert.ok(
+	experienceSource.includes('editorial-credit') && experienceSource.includes('CC BY 4.0'),
+	'Footer Editorial wajib membawa kredit CC BY 4.0 Dioramas'
+);
+// Model GLB mesti wujud secara fizikal dalam static/models.
+for (const model of ['astrolabe-lo.glb', 'drone.glb', 'nautilus.glb']) {
+	assert.ok(
+		fs.existsSync(path.join(rootDir, 'static', 'models', model)),
+		`static/models/${model} wajib wujud`
+	);
+}
+assert.ok(
+	fs.existsSync(path.join(rootDir, 'static', 'models', 'ATTRIBUTION.md')),
+	'static/models/ATTRIBUTION.md wajib wujud'
+);
+
 const group = new THREE.Group();
 group.userData.hotspotId = 'term-email';
 group.userData.stationIndex = 5;
