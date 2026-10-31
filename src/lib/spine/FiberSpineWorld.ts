@@ -585,6 +585,7 @@ export class FiberSpineWorld {
 	private laserBeamMat: THREE.MeshBasicMaterial | null = null;
 	private laserGlowMat: THREE.MeshBasicMaterial | null = null;
 	private springElapsed = 0;
+	private cyberPulseLevel = 0;
 
 	private glbLoader = new DioramaGlbLoader();
 
@@ -2426,6 +2427,39 @@ export class FiberSpineWorld {
 		this.applyWeatherAndTheme();
 	}
 
+	/**
+	 * Sesi 4: Pacu keamatan bahan glow sesuatu prop Cyber-Bench (0–1).
+	 * Untuk `fiber`, ini mengubah kecerahan teras optik; untuk `tindak`,
+	 * laluan prisma perhati; untuk `sutera`, cincin gerbang RLS.
+	 */
+	public setCyberBenchSignal(toolId: string, value: number): void {
+		const toy = this.toys.find((item) => item.id === toolId);
+		if (!toy) return;
+		const amount = Math.max(0, Math.min(1, value));
+		toy.mesh.traverse((child) => {
+			const mesh = child as THREE.Mesh;
+			const mat = mesh.material as THREE.MeshStandardMaterial | null;
+			const base = mat?.userData?.baseEmissive as number | undefined;
+			if (mat && base !== undefined) {
+				mat.emissiveIntensity = base * (0.28 + amount * 2.4);
+			}
+		});
+	}
+
+	/** Sesi 4: Alat RLS Gate — halau gelang IWA001 hijau (lulus) / merah (tangkis). */
+	public setCyberBenchGate(allowed: boolean): void {
+		const toy = this.toys.find((item) => item.id === 'ent-sutera');
+		if (!toy?.haloMat) return;
+		const hex = allowed ? 0x22c55e : 0xef4444;
+		toy.haloMat.emissive.setHex(hex);
+		toy.haloMat.color.setHex(hex);
+	}
+
+	/** Sesi 4: Pacu laju radar SOC & denyutan nod ancaman daripada nadi CVE/GitHub. */
+	public setCyberPulseLevel(level: number): void {
+		this.cyberPulseLevel = Math.max(0, Math.min(1, level));
+	}
+
 	private triggerPropBounce(toy: ToyRecord): void {
 		if (this.reducedMotion) {
 			// Maklum balas statik: satu denyutan kedudukan & skala segera tanpa spring berayun.
@@ -3343,10 +3377,15 @@ export class FiberSpineWorld {
 		}
 
 		if (!this.reducedMotion) {
-			if (this.radarRotor) this.radarRotor.rotation.y = elapsed * 0.35;
+			const radarSpeed = 0.35 + this.cyberPulseLevel * 1.5;
+			if (this.radarRotor) this.radarRotor.rotation.y = elapsed * radarSpeed;
 			for (let i = 0; i < this.rotatingBeacons.length; i++) {
 				const b = this.rotatingBeacons[i];
-				b.rotation.z = elapsed * (0.55 + (i % 3) * 0.2);
+				b.rotation.z = elapsed * ((0.55 + (i % 3) * 0.2) * (1 + this.cyberPulseLevel));
+				if (i % 3 === 0) {
+					const pulse = 1 + Math.sin(elapsed * 6 * (1 + this.cyberPulseLevel)) * 0.06;
+					b.scale.setScalar(pulse);
+				}
 			}
 		}
 	}

@@ -228,6 +228,7 @@ assert.ok(
 );
 
 // Kontrak Sesi 3: Lensa X-Ray Kaca Cair Snell's Law + lapisan gentian bawah pulau + HUD kawalan.
+// Kontrak Sesi 3: Lensa X-Ray Kaca Cair Snell's Law + lapisan gentian bawah pulau + HUD kawalan.
 const xraySource = fs.readFileSync(path.join(rootDir, 'src/lib/spine/xray-lens.ts'), 'utf8');
 for (const xrayToken of ['createXRayLensPass', 'uChromAb', 'uLensCenter', 'uLensRadius', '1.07', 'uAmount']) {
 	// 'uLensCenter/uLensRadius' diuji pada worldSource di bawah; di sini hanya token xray-lens.
@@ -253,6 +254,72 @@ for (const hudToken of ['Lensa X-Ray', 'toggleXRay', 'lens-touch-layer', 'xrayAc
 	assert.ok(
 		experienceSource.includes(hudToken),
 		`FiberSpineExperience.svelte wajib mengandungi kawalan HUD "${hudToken}"`
+	);
+}
+
+// Kontrak Sesi 4: Chrono-Weather Malaysia, Live GitHub/CVE Pulse & Tactile Cyber-Bench.
+const liveFeedSource = fs.readFileSync(
+	path.join(rootDir, 'src/lib/spine/live-world-feed.ts'),
+	'utf8'
+);
+for (const liveToken of [
+	'kualaLumpurClock',
+	'weatherCodeToPreset',
+	'parseOpenMeteoResponse',
+	'fetchLiveWeather',
+	'parseGitHubEvents',
+	'parseCisaKev',
+	'fetchCyberPulse',
+	'buildWeatherFallback',
+	'FEED_TIMEOUT_MS',
+	'api.open-meteo.com',
+	'cisa.gov',
+	'api.github.com/users/muhammedmunir/events/public'
+]) {
+	assert.ok(
+		liveFeedSource.includes(liveToken),
+		`live-world-feed.ts wajib mengandungi kemampuan Sesi 4 "${liveToken}"`
+	);
+}
+const cyberBenchSource = fs.readFileSync(
+	path.join(rootDir, 'src/lib/spine/cyber-bench.ts'),
+	'utf8'
+);
+for (const benchToken of [
+	'parseIntentText',
+	'fiberAttenuation',
+	'evaluateRlsGate',
+	'IntentExtraction',
+	'FiberAttenuationResult',
+	'RlsRole',
+	'1310',
+	'1550',
+	'RLS_ROLES'
+]) {
+	assert.ok(
+		cyberBenchSource.includes(benchToken),
+		`cyber-bench.ts wajib mengandungi alat Sesi 4 "${benchToken}"`
+	);
+}
+const cyberPanelSource = fs.readFileSync(
+	path.join(rootDir, 'src/lib/spine/CyberBenchPanel.svelte'),
+	'utf8'
+);
+assert.ok(
+	cyberPanelSource.includes('CyberBench') || cyberPanelSource.includes('bench-code'),
+	'CyberBenchPanel.svelte wajib wujud dan membawa kod workbench diegetik'
+);
+for (const wiringToken of [
+	'fetchLiveWeather',
+	'fetchCyberPulse',
+	'CyberBenchPanel',
+	'setCyberBenchSignal',
+	'setCyberBenchGate',
+	'setCyberPulseLevel'
+]) {
+	assert.ok(
+		experienceSource.includes(wiringToken) || worldSource.includes(wiringToken),
+		`Sesi 4 wajib mendawai "${wiringToken}" ke experience/world`
 	);
 }
 

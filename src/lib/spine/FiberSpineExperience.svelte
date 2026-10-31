@@ -23,6 +23,8 @@
 		type ExhibitView
 	} from './exhibit-navigation';
 	import { playBlip, playConfirm, playScan, playWarp, sfxEnabled, toggleSfx } from '$lib/sound';
+	import { fetchLiveWeather, fetchCyberPulse, type CyberPulseSnapshot } from './live-world-feed';
+	import CyberBenchPanel, { type BenchTool } from './CyberBenchPanel.svelte';
 
 	let locale = $state<Locale>('ms');
 	let theme = $state<ThemeMode>('dark');
@@ -50,6 +52,12 @@
 	let exhibitCanBack = $state(false);
 	let xrayActive = $state(false);
 	let lensDragging = false;
+
+	// Sesi 4: Suapan langsung (Chrono-Weather + Cyber Pulse) & Tactile Cyber-Bench.
+	let weatherSource = $state<'live' | 'fallback'>('fallback');
+	let weatherUpdatedAt = $state<number | null>(null);
+	let cyberPulse = $state<CyberPulseSnapshot | null>(null);
+	let activeBenchTool = $state<BenchTool | null>(null);
 
 	let canvasContainer: HTMLDivElement | undefined = $state();
 	let world: FiberSpineWorld | null = null;
@@ -138,6 +146,67 @@
 		if (nextPreset) {
 			world?.setSimulationMode(activeStationIndex, nextPreset.id);
 		}
+	}
+
+	/** Sesi 4: Terapkan preset cuaca langsung Puchong ke suasana lautan (override manual kekal). */
+	function applyLiveWeatherPreset(presetId: string) {
+		const idx = OCEAN_WEATHER_PRESETS.findIndex((p) => p.id === presetId);
+		if (idx < 0) return;
+		oceanWeatherIndex = idx;
+		world?.setSimulationMode(activeStationIndex, presetId);
+	}
+
+	/** Sesi 4: segerak suapan dunia langsung secara senyap (tanpa mengganggu overlay UI). */
+	async function startLiveFeeds() {
+		let storage: Storage | null = null;
+		try {
+			storage = window.sessionStorage;
+		} catch {
+			storage = null;
+		}
+
+		void fetchLiveWeather().then((snapshot) => {
+			if (disposed) return;
+			weatherSource = snapshot.source;
+			weatherUpdatedAt = snapshot.updatedAt;
+			applyLiveWeatherPreset(snapshot.presetId);
+		});
+
+		void fetchCyberPulse({ storage }).then((pulse) => {
+			if (disposed) return;
+			cyberPulse = pulse;
+			const level = Math.min(1, (pulse.github.length + pulse.cves.length) / 14);
+			world?.setCyberPulseLevel(level);
+		});
+	}
+
+	// Peta hotspot -> alat cyber-bench Sesi 4.
+	function resolveBenchTool(hotspotId: string): BenchTool | null {
+		if (hotspotId === 'ai-tindak') return 'tindak';
+		if (hotspotId === 'net-tnb-fiber') return 'fiber';
+		if (hotspotId === 'ent-sutera') return 'sutera';
+		return null;
+	}
+
+	function onFiberBrightness(value: number) {
+		world?.setCyberBenchSignal('net-tnb-fiber', value);
+	}
+
+	function onTindakParse(channel: 'url' | 'phone' | 'payment') {
+		world?.setCyberBenchSignal('ai-tindak', channel === 'url' ? 1 : channel === 'phone' ? 0.7 : 0.5);
+	}
+
+	function onSuteraGate(allowed: boolean) {
+		world?.setCyberBenchGate(allowed);
+		playScan();
+	}
+
+	function pulseCommitCount(): number {
+		return cyberPulse?.github.length ?? 0;
+	}
+
+	function pulseCveCount(): number {
+		return cyberPulse?.cves.length ?? 0;
 	}
 
 	function toggleTheme() {
@@ -303,6 +372,7 @@
 		selectedHotspotId = id;
 		exhibitView = resolveExhibitView({ kind: 'hotspot', id });
 		exhibitCanBack = false;
+		activeBenchTool = resolveBenchTool(id);
 		world?.selectHotspot(id);
 		syncWorldActivity();
 	}
@@ -379,6 +449,7 @@
 		selectedHotspotId = null;
 		exhibitView = null;
 		exhibitCanBack = false;
+		activeBenchTool = null;
 		layerMarkers = [];
 		hoveredHotspotId = null;
 		hoveredIslandLabel = null;
@@ -510,6 +581,7 @@
 
 		syncWorldActivity();
 		resetIdleTimer();
+		startLiveFeeds();
 
 		return () => {
 			disposed = true;
@@ -640,7 +712,21 @@
 					>
 						<path d="M2 12h20M12 2v20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07" />
 					</svg>
-					<span class="pill-label">{getWeatherConditionLabel(currentWeather.id, locale)}</span>
+					<span class="pill-label">
+						{getWeatherConditionLabel(currentWeather.id, locale)}
+						{#if weatherSource === 'live'}
+							<span class="live-dot" aria-hidden="true"></span>
+						{/if}
+					</span>
+					<span class="sr-only">
+						{weatherSource === 'live'
+							? locale === 'ms'
+								? '— cuaca langsung Puchong'
+								: '— live Puchong weather'
+							: locale === 'ms'
+								? '— pratetap manual'
+								: '— manual preset'}
+					</span>
 				</button>
 
 				<button
@@ -844,6 +930,15 @@
 			onback={() => applyExhibitAction({ kind: 'back' })}
 		/>
 
+		<!-- Meja Uji Tactile Cyber-Bench (Sesi 4): 3 alat kejuruteraan diegetik -->
+		<CyberBenchPanel
+			tool={activeBenchTool}
+			{locale}
+			onFiberBrightness={onFiberBrightness}
+			onTindakParse={onTindakParse}
+			onSuteraGate={onSuteraGate}
+		/>
+
 		<!-- Kompas Radar Kepulauan Orbital 360° Minimalis Beraksesibiliti -->
 		<footer
 			class="bottom-compass"
@@ -954,6 +1049,23 @@
 						? 'Skrol / W·S untuk Orbit 360° · Klik atau Seret Objek 3D'
 						: 'Scroll / W·S for 360° Orbit · Click or Drag Any 3D Object'}
 				</span>
+				{#if cyberPulse}
+					<span class="compass-live" role="status">
+						<span class="live-dot" aria-hidden="true"></span>
+						{locale === 'ms'
+							? `Nadi siber: ${pulseCommitCount()} komit · ${pulseCveCount()} CVE`
+							: `Cyber pulse: ${pulseCommitCount()} commits · ${pulseCveCount()} CVEs`}
+						<span class="pulse-src">
+							{cyberPulse.source === 'live'
+								? locale === 'ms'
+									? 'langsung'
+									: 'live'
+								: locale === 'ms'
+									? 'snapshot'
+									: 'snapshot'}
+						</span>
+					</span>
+				{/if}
 			</div>
 
 			<button
@@ -1766,6 +1878,32 @@
 	.compass-hint {
 		font-size: 0.65rem;
 		color: var(--spatial-hud-muted, var(--ink-secondary));
+	}
+
+	.compass-live {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-family: var(--font-mono, monospace);
+		font-size: 0.62rem;
+		letter-spacing: 0.02em;
+		color: var(--spatial-accent, var(--accent));
+	}
+
+	.pulse-src {
+		font-size: 0.58rem;
+		opacity: 0.75;
+	}
+
+	.live-dot {
+		display: inline-block;
+		width: 6px;
+		height: 6px;
+		border-radius: 9999px;
+		margin-left: 0.2rem;
+		background: #22c55e;
+		box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+		flex-shrink: 0;
 	}
 
 	/* MOD EDITORIAL CV */

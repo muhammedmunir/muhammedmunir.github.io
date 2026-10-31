@@ -54,13 +54,13 @@
 
 ## Sesi 4: Magnet Lawatan Harian — Chrono-Weather Malaysia, Live Cyber Pulse & Tactile Cyber-Bench
 
-- [ ] **4.1 Chrono-Weather Sync Malaysia (`src/lib/spine/live-world-feed.ts`)**: Segerakkan suasana matahari/bulan/lautan secara automatik mengikut waktu `Asia/Kuala_Lumpur` dan cuaca semasa Puchong (Open-Meteo tanpa kunci API, timeout `2.5s`, cache `15 minit`, fallback senyap ke preset tempatan, dengan override manual kekal berfungsi).
-- [ ] **4.2 Live GitHub & Public CVE Radar Pulse**: Sambungkan aktiviti komit awam `github.com/muhammedmunir` dan suapan kerentanan CVE awam (dengan snapshot fallback tempatan & sanitasi teks ketat) ke visualisasi denyutan Radar SOC Stesen 03 & Rumah Api Stesen 01.
-- [ ] **4.3 Tactile Cyber-Bench (`src/lib/spine/cyber-bench.ts` + UI Diegetik)**:
+- [x] **4.1 Chrono-Weather Sync Malaysia (`src/lib/spine/live-world-feed.ts`)**: Segerakkan suasana matahari/bulan/lautan secara automatik mengikut waktu `Asia/Kuala_Lumpur` dan cuaca semasa Puchong (Open-Meteo tanpa kunci API, timeout `2.5s`, cache `15 minit`, fallback senyap ke preset tempatan, dengan override manual kekal berfungsi).
+- [x] **4.2 Live GitHub & Public CVE Radar Pulse**: Sambungkan aktiviti komit awam `github.com/muhammedmunir` dan suapan kerentanan CVE awam (dengan snapshot fallback tempatan & sanitasi teks ketat) ke visualisasi denyutan Radar SOC Stesen 03 & Rumah Api Stesen 01.
+- [x] **4.3 Tactile Cyber-Bench (`src/lib/spine/cyber-bench.ts` + UI Diegetik)**:
   - **Alat 1 (`ai-tindak`)**: _Live Share-Intent Parser_ (ekstrak URL, telefon, amaun bayaran secara local-first + animasi pancaran 3D).
   - **Alat 2 (`net-tnb-fiber`)**: _Fiber-Optic Attenuation Simulator_ (`1310nm`/`1550nm`, jarak km, sambungan → kiraan `dB` sebenar + kecerahan teras laser 3D berubah langsung).
   - **Alat 3 (`ent-sutera`)**: _Supabase RLS JWT Packet Gate_ (uji peranan `anon` vs `owner` vs `auditor` → paket 3D menembusi atau ditangkis oleh perisai kaca).
-- [ ] **4.4 Gate Sesi 4 (`tdd` + `appsec`)**: Tulis ujian unit dalam `scripts/cyber-bench.test.mjs` dan `scripts/live-world-feed.test.mjs` (termasuk ujian kegagalan rangkaian & input berniat jahat XSS); pastikan semua ujian lulus.
+- [x] **4.4 Gate Sesi 4 (`tdd` + `appsec`)**: Tulis ujian unit dalam `scripts/cyber-bench.test.mjs` dan `scripts/live-world-feed.test.mjs` (termasuk ujian kegagalan rangkaian & input berniat jahat XSS); pastikan semua ujian lulus.
 
 ---
 
@@ -97,3 +97,8 @@
   - **Fail diubah**: `src/lib/spine/FiberSpineWorld.ts` (lapisan gentian bawah pulau `buildXRayFiberLayer` dalam adegan berasingan + `WebGLRenderTarget` HalfFloat sejajar kamera utama; API `setXRayActive`/`setLensPointer`/`isXRayActive` dan tempoh pudar `uAmount` dengan `uChromAb=0` untuk reduced-motion; pelupusan penuh), `FiberSpineExperience.svelte` (butang HUD `Lensa X-Ray` bergaya `util-pill`, pintasan kekunci `X`, lapisan sentuhan seret `lens-touch-layer`, spring tekan `cubic-bezier(0.34, 1.56, 0.64, 1)` pada HUD), `scripts/spine-verify.mjs` (kontrak Sesi 3).
   - **Keputusan ujian sebenar**: `npm run check` → 0 ralat / 0 amaran; `npm test` → 49/49 lulus; `npm run test:contrast` → 314/314, min 4.68:1; `node scripts/glass-contrast.mjs` → OK; `node scripts/spine-verify.mjs` → 5/5 seksyen lulus; `npm run build` → lulus (adapter-static).
   - **Had jujur**: Gate FPS `>= 45 FPS` apabila Lensa X-Ray aktif **tidak diukur** kerana pelayar Playwright belum dipasang (`npx playwright install chrome`). Optik Snell's Law dan lapisan gentian disahkan secara headless (struktur shader + uniform), bukan perbandingan piksel/FPS sebenar. Sesi seterusnya: **Sesi 4**.
+- **2026-10-31 (Sesi 4 — Selesai)**:
+  - **Fail baharu**: `src/lib/spine/live-world-feed.ts` (jam `Asia/Kuala_Lumpur` UTC+8 + Open-Meteo Puchong + GitHub Events `muhammedmunir` + CISA KEV; timeout `2.5s`, cache `15 minit`/`sessionStorage`, fallback senyap, sanitasi aksara kawalan & pemotongan panjang), `src/lib/spine/cyber-bench.ts` (3 alat tulen: `parseIntentText`, `fiberAttenuation`, `evaluateRlsGate`), `src/lib/spine/CyberBenchPanel.svelte` (panel kerja diegetik kaca cair + localStorage 3 alat), `scripts/cyber-bench.test.mjs` (9 ujian), `scripts/live-world-feed.test.mjs` (10 ujian).
+  - **Fail diubah**: `FiberSpineWorld.ts` (kaedah baharu `setCyberBenchSignal`/`setCyberBenchGate`/`setCyberPulseLevel`; pacuan laju radar SOC + denyutan nod ancaman daripada nadi CVE/GitHub), `FiberSpineExperience.svelte` (suapan langsung pada `onMount`, lencana status jujur `live-dot` pada butang cuaca & kompas, pendawaian `CyberBenchPanel` pada 3 prop), `scripts/spine-verify.mjs` (kontrak Sesi 4).
+  - **Keputusan ujian sebenar**: `npm run check` → 0 ralat / 0 amaran; `npm test` → 68/68 lulus; `npm run test:contrast` → 314/314, min 4.68:1; `node scripts/glass-contrast.mjs` → exit 0; `node scripts/spine-verify.mjs` → 5/5 seksyen lulus; `npm run build` → lulus (adapter-static).
+  - **Had jujur**: Tiada Playwright (pelayar belum dipasang) — interaksi visual Cyber-Bench, kecerahan teras gentian 3D, laju radar SOC dan lencana cuaca langsung **tidak diukur dalam pelayar**; disahkan statik/headless sahaja. Suapan langsung memerlukan rangkaian pelayar sebenar; fallback luar talian disahkan melalui ujian unit. Jargon "Rangkaian Gentian Bawah Pulau" dan suapan CVE kekal dilabel jujur sebagai data awam. Sesi seterusnya: **Sesi 5**.
