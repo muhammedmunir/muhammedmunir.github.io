@@ -121,3 +121,13 @@
     - **Mod 3D Tulen & Kapsul Spatial Mikro (Isu 2)**: Menggantikan paparan automatik kad 2D dengan kapsul mikro diegetik kemas (`collapsed = true` secara lalai); kamera makro diperluaskan (`focusRadius: 3.35m`, `focusLensY: 1.25m`, sudut isometrik 3/4 ~21°) membingkai prop exploded secara lapang.
     - **Lensa X-Ray & Imbasan Siber Diegetik (Isu 3)**: Pendaran gentian bawah tanah dinaikkan (`emissiveIntensity: 2.8`), radius kanta dioptimumkan (`280px`), butang topbar mencerminkan status `Lensa X-Ray: Aktif`, dan toast HUD `Mod Imbasan Siber` dipaparkan.
     - **Semakan Penuh**: `npm run check` (0 ralat, 0 amaran), `npm test` (73/73 lulus), pengesahan visual Chromium Playwright disahkan.
+	- **2026-11-02 (Pembedahan C9: Full Fix 3 Isu Utama Fiber Spine 3D)**:
+	    - **Pelarasan Tapak GLB & Hierarki Siluet (Bahagian 1)**: `diorama-glb.ts` kini menyelaraskan tapak model GLB tepat pada aras gelang pengapit pedestal (`y = 0.285m`); `scheduleGlbSwap` membuang penimpaan `bbox.min.y`; `assembleToyLayers` mengasingkan komponen tanpa menceraikan hierarki simpang berputar (`spinAxis`), mengekalkan integriti struktur Stesen 01 hingga 06; sasaran kamera makro dilaraskan (`focusRadius: 3.2m`, `focusLensY: 0.85m`, `target.y += 0.95m`) membingkai objek tepat di tengah.
+	    - **HUD Spatial Holografik Diegetik Tulen (Bahagian 2)**: Menghapuskan panel kad artikel teks 2D selebar 24rem dalam `DiegeticLeaderOverlay.svelte`. Digantikan dengan Kapsul Spatial Holografik Diegetik terapung kompak (lutsinar 95%, cip teknologi, tindakan terus, laser trigger, navigasi makro dan butang Esc) yang mengekalkan 100% pandangan 3D bebas halangan.
+	    - **Mod Imbasan Cetak Biru Siber X-Ray (Bahagian 3)**: `xray-lens.ts` dinaik taraf kepada Mod Imbasan Cetak Biru Siber (Cyber Blueprint Scan) menyeluruh dengan warna ton matriks siber, scanlines radar diegetik, dan pendaran gentian optik dasar laut di seluruh kepulauan; butang HUD dikemas kini dengan label jelas `Lensa X-Ray (Cetak Biru)` / `✕ Tutup Imbasan X-Ray` serta penunjuk denyutan neon.
+	    - **Pengesahan Gerbang Kualiti (Bahagian 4)**:
+	      - `npm run check`: 0 ralat, 0 amaran, 0 fail bermasalah.
+	      - `npm test`: 73/73 ujian lulus bersih.
+	      - `npm run test:calout-contrast`: 16.4:1 (gelap) / 17.56:1 (cerah), lulus WCAG AA/AAA.
+	      - `npm run test:contrast`: 314/314 pasangan token lulus (min 4.68:1).
+	      - `npm run build`: Binaan statik `build/` berjaya dijana.

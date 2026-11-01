@@ -67,7 +67,8 @@ export class DioramaGlbLoader {
 
 					const after = new THREE.Box3().setFromObject(scene);
 					const center = after.getCenter(new THREE.Vector3());
-					scene.position.set(-center.x, -after.min.y, -center.z);
+					// Selaraskan tapak model tepat di atas gelang clampRing pedestal (y = 0.285m)
+					scene.position.set(-center.x, -after.min.y + 0.285, -center.z);
 
 					this.handles.push(this.makeHandle(scene));
 					spec.onReady(scene);

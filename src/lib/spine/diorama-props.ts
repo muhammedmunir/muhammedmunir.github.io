@@ -13,9 +13,9 @@ import * as THREE from 'three';
 /** Peta hotspot -> model GLB ringan CC BY 4.0 (dimuat malas, bukan penyekat). */
 export const DIORAMA_GLB_MAP: Record<string, { path: string; targetHeight: number; spin: number }> =
 	{
-		'core-ring-sys': { path: '/models/astrolabe-lo.glb', targetHeight: 1.15, spin: 0.35 },
-		'net-soc': { path: '/models/drone.glb', targetHeight: 1.05, spin: 0.45 },
-		'net-tnb-fiber': { path: '/models/nautilus.glb', targetHeight: 1.1, spin: 0.28 }
+		'core-ring-sys': { path: '/models/astrolabe-lo.glb', targetHeight: 1.2, spin: 0.35 },
+		'net-soc': { path: '/models/drone.glb', targetHeight: 1.1, spin: 0.45 },
+		'net-tnb-fiber': { path: '/models/nautilus.glb', targetHeight: 1.15, spin: 0.28 }
 	};
 
 export function createBeveledSlabGeometry(
@@ -145,12 +145,13 @@ function buildCommonBase(
 	accentHex: number,
 	haloMat: THREE.MeshStandardMaterial
 ): void {
-	const plinthMat = M.metal(0x223249, accentHex, 0.16);
+	const plinthMat = M.metal(0x283548, accentHex, 0.2);
 
 	const basePlinth = new THREE.Mesh(
 		createBeveledSlabGeometry(1.32, 0.24, 1.32, 0.08, 0.03),
 		plinthMat
 	);
+	basePlinth.name = 'diorama-base-plinth';
 	basePlinth.position.y = 0.12;
 	basePlinth.castShadow = true;
 	basePlinth.receiveShadow = true;
@@ -163,7 +164,7 @@ function buildCommonBase(
 	// Alur pengapit rata (bukan cincin terapung) supaya tapak terbaca sebagai mesin
 	// kejuruteraan, bukan pelampung tiub mainan.
 	const clampRing = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.52, 0.028, 32), haloMat);
-	clampRing.position.y = 0.265;
+	clampRing.position.y = 0.28;
 	propGroup.add(clampRing);
 }
 
@@ -175,6 +176,7 @@ function buildNameplate(
 	M: DioramaMaterials
 ): void {
 	const plate = new THREE.Group();
+	plate.name = 'diorama-nameplate';
 	const backing = new THREE.Mesh(
 		createBeveledSlabGeometry(0.94, 0.24, 0.1, 0.03, 0.015),
 		M.metal(0x0f172a, accentHex, 0.3)

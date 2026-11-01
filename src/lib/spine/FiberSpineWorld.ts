@@ -1813,18 +1813,14 @@ export class FiberSpineWorld {
 						toy.mesh.remove(child);
 					}
 				}
-				// Selaraskan tapak GLB tepat di atas gelang clampRing pedestal (y = 0.28m).
-				// diorama-glb.ts sudah menyelaraskan tapak model pada y = 0, jadi anjakkan sebanyak +0.28m.
-				obj.position.y += 0.28;
+				// Model GLB telah diselaraskan tapaknya pada y = 0.285m oleh diorama-glb.ts
 				obj.userData.isGlb = true;
 				obj.traverse((c) => {
 					if (c !== obj) c.userData.isGlbPart = true;
 				});
 				toy.mesh.add(obj);
 				toy.mesh.userData.glbLoaded = true;
-				// Arahkan paksi putar untuk meneruskan putaran pada model GLB.
 				toy.spinAxis = obj;
-				// Segarkan lapisan exploded kepada geometri baharu.
 				toy.layers = this.assembleToyLayers(toy);
 			},
 			onError: () => {
@@ -1846,83 +1842,51 @@ export class FiberSpineWorld {
 		box.getSize(size);
 		const minY = box.min.y;
 		const height = Math.max(0.01, size.y);
+
 		const groupFor = (id: ToyLayer['id']): THREE.Group => {
 			const g = new THREE.Group();
-			g.name = `layer-${toy.id}-${id}`;
+			g.name = `toy-layer-${id}`;
 			return g;
 		};
 		const top = groupFor('top');
 		const mid = groupFor('mid');
 		const base = groupFor('base');
 
-		// Klasifikasi band menegak; 0..0.5 base, 0.5..1.0 top, pertengahan bersilang ke mid hanya
-		// apabila ia sama sekali bukan unsur asas (melindungi kebolehan membaca keseluruhan objek).
-		const remap = new Map<THREE.Object3D, THREE.Group>();
-		toy.mesh.traverse((child) => {
-			if (child === toy.mesh) return;
-			if (child.userData.isGlbPart) return; // kekalkan simpang dalaman model GLB utuh
-			const isMesh = (child as THREE.Mesh).isMesh === true || child.userData.isGlb;
-			if (!isMesh) return;
-			const cbox = new THREE.Box3().setFromObject(child);
-			const cy = (cbox.min.y + cbox.max.y) * 0.5;
-			const t = (cy - minY) / height;
-			let target: THREE.Group;
-			if (t >= 0.55) target = top;
-			else if (t <= 0.42) target = base;
-			else target = mid;
-			remap.set(child, target);
-		});
+		// Asingkan lapisan tanpa menceraikan hierarki simpang berputar (spinAxis)
+		const baseParts: THREE.Object3D[] = [];
+		const floatingParts: THREE.Object3D[] = [];
 
-		// Kekalkan hierarki: setiap simpang berpindah ke kumpulan yang sama dengan induk terdekat
-		// yang sudah diklasifikasikan, supaya gear/rotor/kanta tidak tercerai daripada paksinya.
-		const parentGroup = new Map<THREE.Object3D, THREE.Group>();
-		parentGroup.set(toy.mesh, mid);
-		toy.mesh.traverse((child) => {
-			if (child === toy.mesh) return;
-			if (child.userData.isGlbPart) return; // jangan reparent anak-anak model GLB
-			const assigned = remap.get(child);
-			if (assigned) {
-				parentGroup.set(child, assigned);
-				return;
+		for (const child of [...toy.mesh.children]) {
+			if (child.name.startsWith('toy-layer-')) continue;
+			// Tapak pedestal kekal pada base
+			if (
+				child.name === 'diorama-base-plinth' ||
+				child.position.y < 0.28 ||
+				child.name === 'diorama-nameplate'
+			) {
+				baseParts.push(child);
+			} else {
+				floatingParts.push(child);
 			}
-			const parent = parentGroup.get(child.parent ?? toy.mesh) ?? mid;
-			parentGroup.set(child, parent);
-		});
-
-		for (const [child, group] of parentGroup) {
-			if (child !== toy.mesh) group.add(child);
 		}
 
-		// Elakkan append berganda: simpang kini milik kumpulan; tambah kumpulan pada akar prop.
-		for (const layerGroup of [base, mid, top]) {
-			if (layerGroup.children.length > 0) toy.mesh.add(layerGroup);
+		toy.mesh.add(base, mid, top);
+		for (const part of baseParts) {
+			base.add(part);
+		}
+		for (const part of floatingParts) {
+			top.add(part);
 		}
 
 		const offsetFor = (id: ToyLayer['id'], frac: number): THREE.Vector3 => {
-			// Terbuka ke atas (exploded cutaway terapung harmoni) tanpa menenggelamkan dasar ke lantai:
-			// Dasar (base) terapung stabil 0.04m di atas pedestal,
-			// Lapisan pertengahan (mid) terapung separuh tinggi prop,
-			// Lapisan teratas (top) terapung di bahagian atas dengan pembingkaian sempurna.
 			switch (id) {
 				case 'top':
-					return new THREE.Vector3(0.06, frac * 0.65 + 0.16, 0.12);
+					return new THREE.Vector3(0, Math.min(0.38, frac * 0.35 + 0.12), 0);
 				case 'mid':
-					return new THREE.Vector3(0.03, frac * 0.32 + 0.08, 0.06);
+					return new THREE.Vector3(0, Math.min(0.2, frac * 0.18 + 0.06), 0);
 				case 'base':
 				default:
 					return new THREE.Vector3(0, 0.04, 0);
-			}
-		};
-		const anchorFor = (id: ToyLayer['id']): THREE.Vector3 => {
-			// Titik sauh sasaran (ruang tempatan prop) di tengah jalur setiap lapisan.
-			switch (id) {
-				case 'top':
-					return new THREE.Vector3(0, minY + height * 0.82, 0);
-				case 'mid':
-					return new THREE.Vector3(0, minY + height * 0.5, 0);
-				case 'base':
-				default:
-					return new THREE.Vector3(0, minY + height * 0.18, 0);
 			}
 		};
 
@@ -1932,18 +1896,14 @@ export class FiberSpineWorld {
 			{ id: 'base', group: base }
 		];
 		for (const { id, group } of defs) {
-			if (group.children.length === 0) {
-				// Lapisan kosong (prop rata): rujuk akar prop dan tahan pada tempatnya.
-				toy.mesh.add(group);
-			}
 			layers.push({
 				id,
 				root: group,
 				offset: offsetFor(id, height),
-				anchorLocal: anchorFor(id)
+				anchorLocal: new THREE.Vector3(0, minY + height * (id === 'top' ? 0.8 : id === 'mid' ? 0.5 : 0.2), 0)
 			});
 		}
-		return layers.reverse(); // top -> mid -> base untuk susunan stabil
+		return layers.reverse();
 	}
 
 	/**
@@ -3173,7 +3133,7 @@ export class FiberSpineWorld {
 			focusStationGroup.updateWorldMatrix(true, false);
 			this.tempFocusAnchor.copy(focusToy.spring.home).applyMatrix4(focusStationGroup.matrixWorld);
 			this.tempFocusTarget.copy(this.tempFocusAnchor);
-			this.tempFocusTarget.y += 0.88;
+			this.tempFocusTarget.y += 0.95; // Bingkai pusat objek 3D di tengah lensa
 
 			// Stabilkan settle 0->1; reduced motion memotong terus ke pose makro.
 			this.focusSettle = this.reducedMotion ? 1 : Math.min(1, this.focusSettle + dt * 2.6);
@@ -3186,8 +3146,8 @@ export class FiberSpineWorld {
 			const arcDirZ = Math.cos(focusAngle);
 			const aspect = this.camera.aspect;
 			const macroAspectMul = aspect < 1.0 ? Math.min(1.5, 0.95 / aspect) : 1.0;
-			const focusRadius = 3.35 * macroAspectMul;
-			const focusLensY = 1.25;
+			const focusRadius = 3.2 * macroAspectMul;
+			const focusLensY = 0.85; // Paras mata sedikit di atas objek, bukan menjunam curam
 			const focusArc = 0.26;
 
 			// Kedudukan makro: wangsa sedikit jejari & atas, mengelilingi dengan busur kecil.
@@ -3196,7 +3156,7 @@ export class FiberSpineWorld {
 			const macroCam = this.tempMacroCam
 				.copy(this.tempFocusTarget)
 				.addScaledVector(this.tempArcRadial, focusRadius)
-				.addScaledVector(this.tempArcTangent, focusArc);
+				.addScaledVector(this.tempArcTangent, 0.2);
 			macroCam.y = this.tempFocusTarget.y + focusLensY;
 
 			// Orbit sedia ada (pra-dive) bagi lengkok hibrid permulaan.

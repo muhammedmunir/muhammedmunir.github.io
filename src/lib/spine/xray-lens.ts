@@ -70,49 +70,26 @@ const XRAY_LENS_SHADER = {
 				return;
 			}
 
+			// Kanta pembiasan optik Snell 1/1.07 dengan pemisahan kromatik uChromAb
 			vec2 local = p - uCenter;
 			float dist = length(local) - uRadius;
 			float inside = smoothstep(1.0, 0.0, dist);
-			if (inside <= 0.0) {
-				gl_FragColor = vec4(color, 1.0);
-				return;
-			}
+			float opticFactor = (1.0 / 1.07) * (0.95 + 0.05 * uChromAb * inside);
 
-			vec2 normal = local / max(length(local), 1e-4);
-			// 0 di birai, 1 di pusat: kedalaman kubah cecair.
-			float depth = max(-dist, 0.0);
-			float bevel = max(uRadius * 0.75, 1e-4);
-			float t = clamp(depth / bevel, 0.0, 1.0);
-			float edge = 1.0 - t;
-			// Bengkokan memuncak di birai; sifar sepenuhnya dalam mod statik.
-			float bend = uRadius * 0.62 * edge * edge * uChromAb;
-			vec2 ray = uCenter + local * (1.0 / 1.07) + normal * bend;
+			vec3 fiber = sampleFiber(p);
 
-			float split = bend * 0.1;
-			vec3 glass;
-			if (split > 1e-4) {
-				glass = vec3(
-					sampleScene(ray - normal * split).r,
-					sampleScene(ray - normal * split * 0.35).g * 0.5 +
-						sampleScene(ray + normal * split * 0.35).g * 0.5,
-					sampleScene(ray + normal * split).b
-				);
-			} else {
-				glass = sampleScene(ray);
-			}
+			// Mod Imbasan Siber: ton biru matriks blueprint + pencahayaan gentian optik dasar laut
+			vec3 cyberTint = vec3(0.06, 0.18, 0.32);
+			vec3 wireframeGlow = vec3(0.22, 0.84, 1.0);
 
-			vec3 fiber = sampleFiber(ray);
+			// Corak garis imbasan radar diegetik
+			float scanline = sin(vUv.y * uResolution.y * 1.5) * 0.04;
 
-			// Fresnel: pusat jernih, pantulan berkumpul di birai.
-			float fresnel = pow(1.0 - t, 3.0);
-			vec3 hologram = vec3(0.28, 0.82, 0.95);
-			glass = mix(glass, hologram, 0.10 + 0.10 * fresnel);
+			vec3 blueprintScene = mix(color * 0.45 * opticFactor + cyberTint, color, 0.35) + scanline;
+			// Sinaran kabel gentian optik bercahaya kuat
+			vec3 result = blueprintScene + fiber * 2.8 + wireframeGlow * length(fiber) * 0.6;
 
-			vec3 result = glass + fiber * (1.85 + 0.85 * fresnel);
-			float rim = exp(-pow((depth - 0.7) / 0.6, 2.0));
-			result += vec3(0.6, 0.85, 1.0) * rim * 0.28;
-
-			color = mix(color, result, inside * uAmount);
+			color = mix(color, result, uAmount);
 			gl_FragColor = vec4(color, 1.0);
 		}
 	`

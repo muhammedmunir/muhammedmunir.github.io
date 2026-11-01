@@ -44,8 +44,7 @@
 	}: Props = $props();
 
 	let calout: HTMLElement | undefined = $state();
-	let gather = $state({ x: 74, yTop: 18, yMid: 32, yBase: 46 });
-	let collapsed = $state(false);
+	let gather = $state({ x: 74, yTop: 18, yMid: 28, yBase: 38 });
 
 	function measure() {
 		if (!calout) return;
@@ -84,7 +83,7 @@
 
 {#if view}
 	<div class="leader-root" aria-live="polite">
-		<!-- Garisan penunjuk SVG tajam dari titik sauh lapisan 3D ke kalout -->
+		<!-- Laser Sauh SVG dari Objek 3D ke HUD Telemetri -->
 		<svg class="leader-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
 			{#each markers as marker (marker.layer)}
 				{@const gy =
@@ -98,193 +97,95 @@
 			{/each}
 		</svg>
 
-		<!-- Kapsul Spatial Mikro Diegetik (Mod 3D Tulen) ATAU Kad Telemetri Kaca Cair Penuh -->
+		<!-- Kapsul Spatial Holografik Terapung (Tiada lagi helaian artikel 2D) -->
 		<aside
-			class="diegetic-calout"
-			class:micro-capsule={collapsed}
+			class="diegetic-calout spatial-hud"
 			aria-labelledby="leader-callout-title"
 			bind:this={calout}
 		>
-			{#if collapsed}
-				<!-- Kapsul Spatial Mikro 3D Tulen: [⚡ KOD-OBJEK • Tajuk Ringkas | ◇ Papar Maklumat ▾] -->
-				<div class="capsule-row">
-					<div class="capsule-identity">
-						<span class="capsule-bolt">⚡</span>
-						<span class="calout-code">{view.code}</span>
-						<span class="capsule-dot">•</span>
-						<strong id="leader-callout-title" class="capsule-title">{view.title[locale]}</strong>
-					</div>
-					<div class="capsule-controls">
+			<div class="hud-header">
+				<div class="hud-badge">
+					<span class="hud-pulse"></span>
+					<span class="calout-code">{view.code}</span>
+					{#if siblingCount > 1}
+						<span class="hud-counter">{siblingIndex + 1}/{siblingCount}</span>
+					{/if}
+				</div>
+				<button
+					type="button"
+					class="hud-close-btn"
+					onclick={onclose}
+					aria-label={locale === 'ms' ? 'Tutup pandangan makro (Esc)' : 'Close macro view (Esc)'}
+					title="Esc"
+				>
+					✕
+				</button>
+			</div>
+
+			<div class="hud-body">
+				<h2 id="leader-callout-title" class="hud-title">{view.title[locale]}</h2>
+				<p class="hud-subtitle">{view.subtitle[locale]}</p>
+			</div>
+
+			{#if view.tech.length > 0}
+				<div class="hud-chips">
+					{#each view.tech.slice(0, 4) as tech (tech)}
+						{#if chipAction(tech)}
+							<button type="button" class="hud-chip chip-link" onclick={() => onchip(tech)}>
+								{tech}
+							</button>
+						{:else}
+							<span class="hud-chip">{tech}</span>
+						{/if}
+					{/each}
+				</div>
+			{/if}
+
+			<div class="hud-footer">
+				{#if siblingCount > 1}
+					<div class="hud-nav-cluster">
 						<button
 							type="button"
-							class="hud-toggle-btn expand-btn"
-							onclick={() => {
-								collapsed = false;
-								void tick().then(measure);
-							}}
-							aria-label={locale === 'ms' ? 'Papar maklumat penuh' : 'Show full info'}
+							class="hud-nav-btn"
+							onclick={() => onstep(-1)}
+							aria-label={locale === 'ms' ? 'Objek sebelumnya' : 'Previous object'}
 						>
-							<span class="hud-toggle-icon">◇</span>
-							<span>{locale === 'ms' ? 'Papar Maklumat ▾' : 'Show Info ▾'}</span>
+							←
 						</button>
-						{#if siblingCount > 1}
-							<button
-								type="button"
-								class="capsule-nav-btn"
-								onclick={() => onstep(-1)}
-								aria-label={locale === 'ms' ? 'Objek sebelumnya' : 'Previous object'}
-								title={locale === 'ms' ? 'Objek sebelumnya (←)' : 'Previous object (←)'}
-							>
-								←
-							</button>
-							<button
-								type="button"
-								class="capsule-nav-btn"
-								onclick={() => onstep(1)}
-								aria-label={locale === 'ms' ? 'Objek seterusnya' : 'Next object'}
-								title={locale === 'ms' ? 'Objek seterusnya (→)' : 'Next object (→)'}
-							>
-								→
-							</button>
-						{/if}
 						<button
 							type="button"
-							class="capsule-close-btn"
-							onclick={onclose}
-							aria-label={locale === 'ms' ? 'Tutup dan kembali ke orbit' : 'Close and return to orbit'}
-							title={locale === 'ms' ? 'Tutup (Esc)' : 'Close (Esc)'}
+							class="hud-nav-btn"
+							onclick={() => onstep(1)}
+							aria-label={locale === 'ms' ? 'Objek seterusnya' : 'Next object'}
 						>
-							✕
+							→
 						</button>
-					</div>
-				</div>
-			{:else}
-				<div class="calout-bar">
-					<div class="calout-meta">
-						<span class="calout-code">{view.code}</span>
-						{#if siblingCount > 1}
-							<span class="calout-step">{siblingIndex + 1} / {siblingCount}</span>
-						{/if}
-					</div>
-					<button
-						type="button"
-						class="hud-toggle-btn"
-						onclick={() => {
-							collapsed = true;
-							void tick().then(measure);
-						}}
-						aria-label={locale === 'ms' ? 'Sembunyi ke mod 3D tulen' : 'Hide to pure 3D mode'}
-						title={locale === 'ms' ? 'Sembunyi ke mod 3D tulen' : 'Hide to pure 3D mode'}
-					>
-						<span class="hud-toggle-icon">◈</span>
-						<span>{locale === 'ms' ? 'Mod 3D Tulen ▴' : 'Pure 3D Mode ▴'}</span>
-					</button>
-				</div>
-
-				<h2 id="leader-callout-title" class="calout-title">{view.title[locale]}</h2>
-				<p class="calout-subtitle">{view.subtitle[locale]}</p>
-				<p class="calout-summary">{view.summary[locale]}</p>
-
-				{#if view.tech.length > 0}
-					<div class="chip-row calout-chips">
-						{#each view.tech as tech (tech)}
-							{#if chipAction(tech)}
-								<button
-									type="button"
-									class="chip chip-link"
-									onclick={() => onchip(tech)}
-									aria-label={locale === 'ms' ? `Buka ${tech}` : `Open ${tech}`}
-								>
-									{tech}
-								</button>
-							{:else}
-								<span class="chip">{tech}</span>
-							{/if}
-						{/each}
 					</div>
 				{/if}
 
-				<div class="calout-actions">
-					{#each view.actions as item (item.id)}
-						<button type="button" class="util-pill action-pill" onclick={() => onaction(item.action)}>
-							<span>{item.label[locale]}</span>
-						</button>
-					{/each}
+				{#if canBack}
+					<button type="button" class="hud-action-pill back-pill" onclick={onback}>
+						<span>{locale === 'ms' ? 'Kembali' : 'Back'}</span>
+					</button>
+				{/if}
 
-					{#if stationIndex === 2}
-						<button
-							type="button"
-							class="util-pill action-pill laser-pill"
-							disabled={!sceneReady || !laserReady}
-							onclick={onfire}
-						>
-							<span>
-								{locale === 'ms' ? `Tembak Laser (${laserHits})` : `Fire Laser (${laserHits})`}
-							</span>
-						</button>
-					{/if}
-				</div>
+				{#each view.actions as item (item.id)}
+					<button type="button" class="hud-action-pill" onclick={() => onaction(item.action)}>
+						<span>{item.label[locale]}</span>
+					</button>
+				{/each}
 
-				<div class="calout-nav">
-					{#if siblingCount > 1}
-						<button
-							type="button"
-							class="compass-arrow nav-btn"
-							onclick={() => onstep(-1)}
-							aria-label={locale === 'ms' ? 'Objek sebelumnya' : 'Previous object'}
-							title={locale === 'ms' ? 'Objek sebelumnya (←)' : 'Previous object (←)'}
-						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.5"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								aria-hidden="true"
-							>
-								<polyline points="15 18 9 12 15 6"></polyline>
-							</svg>
-						</button>
-						<button
-							type="button"
-							class="compass-arrow nav-btn"
-							onclick={() => onstep(1)}
-							aria-label={locale === 'ms' ? 'Objek seterusnya' : 'Next object'}
-							title={locale === 'ms' ? 'Objek seterusnya (→)' : 'Next object (→)'}
-						>
-							<svg
-								width="14"
-								height="14"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2.5"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-								aria-hidden="true"
-							>
-								<polyline points="9 18 15 12 9 6"></polyline>
-							</svg>
-						</button>
-					{/if}
-					{#if canBack}
-						<button type="button" class="util-pill back-pill" onclick={onback}>
-							<span>{locale === 'ms' ? 'Kembali' : 'Back'}</span>
-						</button>
-					{/if}
+				{#if stationIndex === 2}
 					<button
 						type="button"
-						class="util-pill close-pill"
-						onclick={onclose}
-						aria-label={locale === 'ms' ? 'Tutup dan kembali ke orbit' : 'Close and return to orbit'}
+						class="hud-action-pill laser-pill"
+						disabled={!sceneReady || !laserReady}
+						onclick={onfire}
 					>
-						<span>{locale === 'ms' ? 'Tutup' : 'Close'}</span>
+						<span>⚡ {locale === 'ms' ? `Laser (${laserHits})` : `Fire (${laserHits})`}</span>
 					</button>
-				</div>
-			{/if}
+				{/if}
+			</div>
 		</aside>
 	</div>
 {/if}
@@ -307,366 +208,232 @@
 
 	.leader-line {
 		fill: none;
-		stroke: var(--spatial-accent, var(--accent));
-		stroke-width: 0.2;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		opacity: 0.88;
-		vector-effect: non-scaling-stroke;
-		filter: drop-shadow(0 0 2px var(--spatial-accent, var(--accent)));
+		stroke: rgba(56, 189, 248, 0.75);
+		stroke-width: 0.22;
+		stroke-dasharray: 1.2 0.8;
+		filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.8));
 	}
 
 	.leader-dot {
-		fill: var(--spatial-accent, var(--accent));
-		opacity: 0.95;
-		vector-effect: non-scaling-stroke;
-		filter: drop-shadow(0 0 3px var(--spatial-accent, var(--accent)));
+		fill: #38bdf8;
+		stroke: #ffffff;
+		stroke-width: 0.3;
 	}
 
-	.diegetic-calout {
+	.diegetic-calout.spatial-hud {
 		pointer-events: auto;
-		position: fixed;
-		top: 6.75rem;
-		right: 1.15rem;
-		width: min(24rem, calc(100% - 2.3rem));
-		max-height: calc(100vh - 9rem);
-		overflow-y: auto;
-		scrollbar-width: thin;
-		padding: 0.9rem 1.05rem;
-		border-radius: var(--radius-xl, 20px);
-		background-color: var(--spatial-hud-bg, var(--surface));
-		background-image: var(--glass-sheen);
-		color: var(--spatial-hud-ink, var(--ink));
-		border: 1px solid var(--glass-border-hover, var(--spatial-hud-border));
-		-webkit-backdrop-filter: blur(28px) saturate(180%);
-		backdrop-filter: blur(28px) saturate(180%);
+		position: absolute;
+		top: 5.5rem;
+		right: 1.8rem;
+		width: min(23rem, calc(100vw - 3rem));
+		background: rgba(10, 18, 30, 0.82);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid rgba(56, 189, 248, 0.45);
+		border-radius: 1rem;
 		box-shadow:
-			inset 0 1px 0.5px rgba(255, 255, 255, 0.28),
-			inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.2),
-			0 0 24px rgba(56, 189, 248, 0.12),
-			var(--shadow-glass);
-		animation: caloutFloatIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-		transition: width 0.22s ease, max-height 0.22s ease, border-radius 0.22s ease, padding 0.22s ease;
-	}
-
-	.diegetic-calout.micro-capsule {
-		width: auto;
-		max-width: min(34rem, calc(100% - 2.3rem));
-		padding: 0.42rem 0.75rem;
-		border-radius: 999px;
-		max-height: none;
-		overflow: visible;
-	}
-
-	.capsule-row {
+			0 16px 36px -8px rgba(0, 0, 0, 0.65),
+			0 0 20px rgba(56, 189, 248, 0.2);
+		padding: 1.1rem 1.25rem;
 		display: flex;
-		align-items: center;
-		justify-content: space-between;
+		flex-direction: column;
 		gap: 0.75rem;
-		white-space: nowrap;
+		color: #f8fafc;
+		font-family: inherit;
+		animation: hudFadeIn 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 	}
 
-	.capsule-identity {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
+	:global([data-theme='light']) .diegetic-calout.spatial-hud {
+		background: rgba(248, 250, 252, 0.88);
+		border-color: rgba(14, 165, 233, 0.4);
+		color: #0f172a;
+		box-shadow:
+			0 16px 36px -8px rgba(15, 23, 42, 0.18),
+			0 0 20px rgba(14, 165, 233, 0.15);
 	}
 
-	.capsule-bolt {
-		color: #38bdf8;
-		font-size: 0.85rem;
-		line-height: 1;
-	}
-
-	.capsule-dot {
-		color: var(--spatial-hud-muted, var(--ink-secondary));
-		opacity: 0.5;
-	}
-
-	.capsule-title {
-		font-size: 0.85rem;
-		font-weight: 700;
-		color: var(--spatial-hud-ink, var(--ink));
-		overflow: hidden;
-		text-overflow: ellipsis;
-		max-width: 14rem;
-	}
-
-	.capsule-controls {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		flex-shrink: 0;
-	}
-
-	.capsule-nav-btn,
-	.capsule-close-btn {
-		display: grid;
-		place-items: center;
-		width: 26px;
-		height: 26px;
-		border-radius: 50%;
-		background: rgba(255, 255, 255, 0.06);
-		border: 1px solid var(--glass-border-hover, rgba(56, 189, 248, 0.25));
-		color: var(--spatial-hud-ink, var(--ink));
-		font-size: 0.75rem;
-		cursor: pointer;
-		transition: background 0.15s ease, transform 0.15s ease;
-	}
-
-	.capsule-nav-btn:hover,
-	.capsule-close-btn:hover {
-		background: rgba(56, 189, 248, 0.22);
-		transform: scale(1.08);
-	}
-
-	@keyframes caloutFloatIn {
+	@keyframes hudFadeIn {
 		from {
 			opacity: 0;
-			transform: translateY(12px) scale(0.97);
+			transform: translateX(12px) scale(0.97);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateX(0) scale(1);
 		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.diegetic-calout {
-			animation: none;
-		}
-	}
-
-	.calout-bar {
+	.hud-header {
 		display: flex;
-		align-items: center;
 		justify-content: space-between;
-		gap: 0.5rem;
-		margin-bottom: 0.2rem;
-	}
-
-	.calout-meta {
-		display: flex;
 		align-items: center;
-		gap: 0.5rem;
 	}
 
-	.hud-toggle-btn {
+	.hud-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.3rem;
-		background: rgba(56, 189, 248, 0.08);
-		border: 1px solid rgba(56, 189, 248, 0.32);
-		border-radius: 999px;
-		padding: 0.15rem 0.55rem;
-		font-family: var(--font-mono, monospace);
-		font-size: 0.65rem;
-		letter-spacing: 0.04em;
-		color: var(--spatial-accent, var(--accent));
-		cursor: pointer;
-		transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+		gap: 0.45rem;
+		background: rgba(56, 189, 248, 0.12);
+		border: 1px solid rgba(56, 189, 248, 0.3);
+		padding: 0.2rem 0.55rem;
+		border-radius: 9999px;
 	}
 
-	.hud-toggle-btn:hover {
-		background: rgba(56, 189, 248, 0.18);
-		border-color: rgba(56, 189, 248, 0.6);
-		transform: translateY(-1px);
-	}
-
-	.hud-toggle-icon {
-		font-size: 0.75rem;
-		line-height: 1;
+	.hud-pulse {
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: #38bdf8;
+		box-shadow: 0 0 8px #38bdf8;
 	}
 
 	.calout-code {
-		font-family: var(--font-mono, monospace);
-		font-size: 0.68rem;
-		letter-spacing: 0.08em;
-		color: var(--spatial-accent, var(--accent));
-	}
-
-	.calout-step {
-		font-family: var(--font-mono, monospace);
-		font-size: 0.68rem;
-		color: var(--spatial-hud-muted, var(--ink-secondary));
-	}
-
-	.calout-title {
-		margin: 0.1rem 0 0.15rem;
-		font-size: 1rem;
+		font-family: 'JetBrains Mono', Consolas, monospace;
+		font-size: 0.72rem;
 		font-weight: 700;
-		line-height: 1.25;
-		color: var(--spatial-hud-ink, var(--ink));
+		color: #38bdf8;
+		letter-spacing: 0.05em;
 	}
 
-	.calout-subtitle {
-		margin: 0 0 0.45rem;
-		font-size: 0.76rem;
-		font-weight: 600;
-		line-height: 1.4;
-		color: var(--spatial-accent, var(--accent));
-	}
-
-	.calout-summary {
-		margin: 0;
-		font-size: 0.9rem;
-		line-height: 1.55;
-		white-space: pre-line;
-		color: var(--spatial-hud-muted, var(--ink-secondary));
-	}
-
-	/* Kalout bergulir: bayang dalam di tepi bawah menandakan kandungan lanjutan
-	   supaya ayat tidak terpotong tanpa petunjuk. */
-	.diegetic-calout {
-		background-image:
-			var(--glass-sheen), linear-gradient(to top, rgb(0 0 0 / 0.28), transparent 2.2rem);
-		background-repeat: no-repeat;
-		background-position:
-			top left,
-			bottom left;
-		background-size:
-			auto,
-			100% 2.2rem;
-	}
-
-	.chip-row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.38rem;
-		margin-top: 0.6rem;
-	}
-
-	.chip {
-		font-family: var(--font-mono, monospace);
+	.hud-counter {
 		font-size: 0.7rem;
-		padding: 0.2rem 0.58rem;
-		border-radius: var(--radius-xs, 6px);
-		background: rgba(255, 255, 255, 0.07);
-		border: 1px solid rgba(255, 255, 255, 0.14);
-		color: var(--spatial-hud-ink, var(--ink));
+		opacity: 0.75;
+		font-family: monospace;
 	}
 
-	:root[data-theme='light'] .chip {
-		background: rgba(20, 24, 32, 0.05);
-		border: 1px solid rgba(20, 24, 32, 0.1);
-	}
-
-	.chip-link {
-		cursor: pointer;
-		transition: border-color var(--duration-fast, 150ms) ease;
-	}
-
-	.chip-link:hover,
-	.chip-link:focus-visible {
-		border-color: var(--spatial-accent, var(--accent));
-	}
-
-	.calout-actions {
+	.hud-close-btn {
+		background: transparent;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		color: inherit;
+		width: 1.8rem;
+		height: 1.8rem;
+		border-radius: 50%;
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.45rem;
-		margin-top: 0.75rem;
-	}
-
-	.util-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.38rem;
-		min-height: var(--size-touch, 40px);
-		padding: 0.4rem 0.85rem;
-		border-radius: var(--radius-pill, 9999px);
-		border: 1px solid var(--spatial-pill-border, var(--surface-border));
-		background-color: var(--spatial-pill-bg, var(--surface-hover));
-		color: var(--spatial-hud-ink, var(--ink));
-		font-size: 0.78rem;
-		font-weight: 600;
-		cursor: pointer;
-		text-decoration: none;
-		transition:
-			background-color var(--duration-fast, 150ms) ease,
-			border-color var(--duration-fast, 150ms) ease;
-	}
-
-	.action-pill {
-		min-height: var(--size-touch, 40px);
-	}
-
-	.action-pill:hover {
-		border-color: var(--spatial-accent, var(--accent));
-		background-color: var(--spatial-pill-hover-bg, var(--surface-hover));
-	}
-
-	.laser-pill {
-		background: var(--spatial-accent, var(--accent));
-		color: var(--on-accent);
-		border-color: transparent;
-		font-weight: 700;
-	}
-
-	.laser-pill:hover {
-		filter: brightness(1.08);
-	}
-
-	.laser-pill:disabled {
-		cursor: not-allowed;
-		opacity: 0.55;
-	}
-
-	.calout-nav {
-		display: flex;
-		align-items: center;
-		justify-content: flex-end;
-		gap: 0.4rem;
-		margin-top: 0.8rem;
-	}
-
-	.compass-arrow {
-		width: 36px;
-		height: 36px;
-		flex-shrink: 0;
-		border-radius: var(--radius-pill, 9999px);
-		border: 1px solid var(--spatial-pill-border, var(--surface-border));
-		background: var(--spatial-pill-bg, var(--surface-hover));
-		color: var(--spatial-hud-ink, var(--ink));
-		cursor: pointer;
-		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		cursor: pointer;
+		font-size: 0.85rem;
+		transition: all 0.15s ease;
 	}
 
-	.back-pill {
-		margin-left: auto;
+	.hud-close-btn:hover {
+		background: rgba(239, 68, 68, 0.2);
+		border-color: #ef4444;
+		color: #ef4444;
 	}
 
-	.close-pill {
-		background: var(--spatial-accent, var(--accent));
-		color: var(--on-accent);
-		border-color: transparent;
+	.hud-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.hud-title {
+		font-size: 1.05rem;
 		font-weight: 700;
+		line-height: 1.3;
+		margin: 0;
+		color: #ffffff;
 	}
 
-	.close-pill:hover {
-		filter: brightness(1.08);
+	:global([data-theme='light']) .hud-title {
+		color: #0f172a;
 	}
 
-	@media (max-width: 768px) {
-		.diegetic-calout {
-			top: auto;
-			left: 0.6rem;
-			right: 0.6rem;
-			bottom: max(0.6rem, env(safe-area-inset-bottom));
-			width: auto;
-			max-height: 36vh;
-		}
+	.hud-subtitle {
+		font-size: 0.78rem;
+		line-height: 1.4;
+		margin: 0;
+		opacity: 0.78;
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.leader-line {
-			opacity: 1;
-		}
+	.hud-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+	}
+
+	.hud-chip {
+		font-size: 0.68rem;
+		font-family: 'JetBrains Mono', Consolas, monospace;
+		padding: 0.18rem 0.45rem;
+		border-radius: 0.35rem;
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: inherit;
+	}
+
+	.hud-chip.chip-link {
+		cursor: pointer;
+		border-color: rgba(56, 189, 248, 0.35);
+	}
+
+	.hud-chip.chip-link:hover {
+		background: rgba(56, 189, 248, 0.2);
+		border-color: #38bdf8;
+	}
+
+	.hud-footer {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+		padding-top: 0.25rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.08);
+	}
+
+	.hud-nav-cluster {
+		display: flex;
+		gap: 0.25rem;
+	}
+
+	.hud-nav-btn {
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		color: inherit;
+		width: 1.8rem;
+		height: 1.8rem;
+		border-radius: 0.35rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		font-size: 0.85rem;
+	}
+
+	.hud-nav-btn:hover {
+		background: rgba(56, 189, 248, 0.2);
+		border-color: #38bdf8;
+	}
+
+	.hud-action-pill {
+		flex: 1;
+		min-width: 4rem;
+		background: rgba(56, 189, 248, 0.18);
+		border: 1px solid rgba(56, 189, 248, 0.45);
+		color: #38bdf8;
+		padding: 0.38rem 0.75rem;
+		border-radius: 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		cursor: pointer;
+		text-align: center;
+		transition: all 0.15s ease;
+	}
+
+	.hud-action-pill:hover {
+		background: #38bdf8;
+		color: #030712;
+	}
+
+	.hud-action-pill.laser-pill {
+		background: rgba(244, 63, 94, 0.2);
+		border-color: rgba(244, 63, 94, 0.5);
+		color: #fb7185;
+	}
+
+	.hud-action-pill.laser-pill:hover:not(:disabled) {
+		background: #f43f5e;
+		color: #ffffff;
 	}
 </style>

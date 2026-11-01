@@ -699,7 +699,9 @@
 					class:active={xrayActive}
 					aria-pressed={xrayActive}
 					onclick={toggleXRay}
-					title={locale === 'ms' ? 'Lensa X-Ray (X)' : 'X-Ray Lens (X)'}
+					title={locale === 'ms'
+							? (xrayActive ? 'Tutup Imbasan X-Ray (X)' : 'Lensa X-Ray Cetak Biru (X)')
+							: (xrayActive ? 'Close X-Ray Scan (X)' : 'X-Ray Lens Blueprint (X)')}
 					aria-label={locale === 'ms'
 						? `Lensa X-Ray: ${xrayActive ? 'Aktif' : 'Tidak Aktif'}`
 						: `X-Ray Lens: ${xrayActive ? 'Active' : 'Inactive'}`}
@@ -720,8 +722,8 @@
 					</svg>
 					<span class="pill-label">
 						{locale === 'ms'
-							? (xrayActive ? 'Lensa X-Ray: Aktif' : 'Lensa X-Ray')
-							: (xrayActive ? 'X-Ray Lens: Active' : 'X-Ray Lens')}
+							? (xrayActive ? '✕ Tutup Imbasan X-Ray' : 'Lensa X-Ray (Cetak Biru)')
+							: (xrayActive ? '✕ Close X-Ray Scan' : 'X-Ray Lens (Blueprint)')}
 					</span>
 				</button>
 
