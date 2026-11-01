@@ -3287,9 +3287,12 @@ export class FiberSpineWorld {
 
 			const layers: LayerMarker[] = [];
 			if (toy.id === this.focusToyId && toy.layers) {
-				// Titik sauh 3 lapisan (Sesi 1): dipancarkan dari ruang dunia ke skrin.
+				// Titik sauh 3 lapisan (Sesi 1): dipancarkan dari ruang dunia ke skrin mengikut bukaan semasa.
 				for (const layer of toy.layers) {
-					this.tempLayerAnchor.copy(layer.anchorLocal).applyMatrix4(toy.mesh.matrixWorld);
+					this.tempLayerAnchor
+						.copy(layer.anchorLocal)
+						.add(layer.root.position)
+						.applyMatrix4(toy.mesh.matrixWorld);
 					this.tempLayerAnchor.project(this.camera);
 					const lx = (this.tempLayerAnchor.x * 0.5 + 0.5) * 100;
 					const ly = (-this.tempLayerAnchor.y * 0.5 + 0.5) * 100;

@@ -391,6 +391,7 @@
 
 	function applyExhibitAction(action: ExhibitAction) {
 		if (action.kind === 'link' && action.url) {
+			playConfirm();
 			window.open(action.url, '_blank', 'noopener,noreferrer');
 			return;
 		}
@@ -400,6 +401,7 @@
 			return;
 		}
 		if (action.kind === 'navigate') {
+			playConfirm();
 			const view = resolveExhibitView(action.route);
 			if (view) {
 				// Teknologi boleh merujuk hotspot: selari kamera & prop apabila relevan.
@@ -413,6 +415,7 @@
 			return;
 		}
 		if (action.kind === 'back') {
+			playBlip(520);
 			if (selectedHotspotId) {
 				exhibitView = resolveExhibitView({ kind: 'hotspot', id: selectedHotspotId });
 				exhibitCanBack = false;
@@ -435,7 +438,10 @@
 	function handleExhibitChip(chip: string) {
 		if (!exhibitView) return;
 		const action = getChipAction(exhibitView, chip);
-		if (action) applyExhibitAction(action);
+		if (action) {
+			playBlip(720);
+			applyExhibitAction(action);
+		}
 	}
 
 	function stepExhibit(delta: number) {
@@ -448,6 +454,7 @@
 		const nextIdx = (((currentIdx + delta) % list.length) + list.length) % list.length;
 		const nextHotspot = list[nextIdx];
 		if (!nextHotspot) return;
+		playBlip(delta > 0 ? 640 : 540);
 		if (world && sceneReady) {
 			// Lantunan taktil mencetus onHotspotSelect -> openExhibit (dive + calout).
 			world.bounceProp(nextHotspot.id);

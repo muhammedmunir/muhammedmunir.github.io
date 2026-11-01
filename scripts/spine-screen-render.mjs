@@ -2,7 +2,15 @@ import assert from 'node:assert/strict';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { chromium } from 'playwright';
 
-const url = process.env.SPINE_URL || 'http://127.0.0.1:5173/';
+let url = process.env.SPINE_URL;
+if (!url) {
+	try {
+		const res = await fetch('http://127.0.0.1:5174/');
+		url = res.ok ? 'http://127.0.0.1:5174/' : 'http://127.0.0.1:5173/';
+	} catch {
+		url = 'http://127.0.0.1:5174/';
+	}
+}
 const output = `.crew/artifacts/monitor-glare/${process.env.SPINE_CAPTURE || 'current'}`;
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({

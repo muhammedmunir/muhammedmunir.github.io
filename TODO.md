@@ -116,3 +116,8 @@
     - `npm test`: **73/73 ujian lulus**.
     - `npm run build`: binaan statik `build/` berjaya dijana.
     - `node scripts/spine-verify.mjs`: **5/5 seksyen integriti lulus**.
+  - **2026-11-01 (Pengilapan Interaksi 3D & Maklum Balas Haptik)**:
+    - **Dive Makro & Sauh 3-Lapisan Dinamik**: Menyelaras pancaran titik sauh lapisan 3D dalam `FiberSpineWorld.ts` (`updateProjectedMarkers`) supaya mengambil kira anjakan spring fizikal `layer.root.position`, menghapuskan sebarang hanyutan antara garisan laser SVG dan lapisan prop semasa bukaan exploded.
+    - **Penjejakan Kalout Dinamik**: Menambah ukuran semula responsif (`$effect` pada `view`) dalam `DiegeticLeaderOverlay.svelte` untuk menyelaraskan garisan SVG sejurus pertukaran item.
+    - **Maklum Balas Haptik Audio**: Menyambungkan bunyi siber (`playConfirm` dan `playBlip`) pada pautan luar, navigasi cip, butang undur, dan langkah `←`/`→`.
+    - **Semakan Penuh**: `npm run check` (0 ralat, 0 amaran), `npm test` (73/73 lulus), `npm run build` (binaan statik siap).

@@ -143,11 +143,6 @@
 	<aside
 		class="spine-loading-curtain"
 		class:exiting
-		onclick={forceDismiss}
-		onkeydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') forceDismiss();
-		}}
-		tabindex="0"
 		role="status"
 		aria-live="polite"
 		aria-label={locale === 'ms'

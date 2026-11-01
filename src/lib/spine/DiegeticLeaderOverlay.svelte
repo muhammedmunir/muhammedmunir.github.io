@@ -66,6 +66,12 @@
 		void tick().then(measure);
 	});
 
+	$effect(() => {
+		if (view && calout) {
+			void tick().then(measure);
+		}
+	});
+
 	function pointsFor(marker: LayerMarker, gy: number): string {
 		const mx = Math.max(2, Math.min(98, marker.x));
 		const my = Math.max(2, Math.min(98, marker.y));
