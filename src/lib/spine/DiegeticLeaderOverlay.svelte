@@ -45,6 +45,7 @@
 
 	let calout: HTMLElement | undefined = $state();
 	let gather = $state({ x: 74, yTop: 18, yMid: 32, yBase: 46 });
+	let collapsed = $state(false);
 
 	function measure() {
 		if (!calout) return;
@@ -100,55 +101,76 @@
 		<!-- Kalout diegetik kaca cair -->
 		<aside class="diegetic-calout" aria-labelledby="leader-callout-title" bind:this={calout}>
 			<div class="calout-bar">
-				<span class="calout-code">{view.code}</span>
-				{#if siblingCount > 1}
-					<span class="calout-step">{siblingIndex + 1} / {siblingCount}</span>
-				{/if}
+				<div class="calout-meta">
+					<span class="calout-code">{view.code}</span>
+					{#if siblingCount > 1}
+						<span class="calout-step">{siblingIndex + 1} / {siblingCount}</span>
+					{/if}
+				</div>
+				<button
+					type="button"
+					class="hud-toggle-btn"
+					onclick={() => {
+						collapsed = !collapsed;
+						void tick().then(measure);
+					}}
+					aria-label={collapsed
+						? (locale === 'ms' ? 'Papar maklumat penuh' : 'Show full info')
+						: (locale === 'ms' ? 'Sembunyi ke mod 3D tulen' : 'Hide to pure 3D mode')}
+					title={collapsed
+						? (locale === 'ms' ? 'Papar maklumat penuh' : 'Show full info')
+						: (locale === 'ms' ? 'Sembunyi ke mod 3D tulen' : 'Hide to pure 3D mode')}
+				>
+					<span class="hud-toggle-icon">{collapsed ? '◈' : '◇'}</span>
+					<span>{collapsed ? (locale === 'ms' ? 'Maklumat' : 'Info') : (locale === 'ms' ? 'Pemandangan 3D' : '3D View')}</span>
+				</button>
 			</div>
 
 			<h2 id="leader-callout-title" class="calout-title">{view.title[locale]}</h2>
-			<p class="calout-subtitle">{view.subtitle[locale]}</p>
-			<p class="calout-summary">{view.summary[locale]}</p>
+			{#if !collapsed}
+				<p class="calout-subtitle">{view.subtitle[locale]}</p>
+				<p class="calout-summary">{view.summary[locale]}</p>
 
-			{#if view.tech.length > 0}
-				<div class="chip-row calout-chips">
-					{#each view.tech as tech (tech)}
-						{#if chipAction(tech)}
-							<button
-								type="button"
-								class="chip chip-link"
-								onclick={() => onchip(tech)}
-								aria-label={locale === 'ms' ? `Buka ${tech}` : `Open ${tech}`}
-							>
-								{tech}
-							</button>
-						{:else}
-							<span class="chip">{tech}</span>
-						{/if}
+				{#if view.tech.length > 0}
+					<div class="chip-row calout-chips">
+						{#each view.tech as tech (tech)}
+							{#if chipAction(tech)}
+								<button
+									type="button"
+									class="chip chip-link"
+									onclick={() => onchip(tech)}
+									aria-label={locale === 'ms' ? `Buka ${tech}` : `Open ${tech}`}
+								>
+									{tech}
+								</button>
+							{:else}
+								<span class="chip">{tech}</span>
+							{/if}
+						{/each}
+					</div>
+				{/if}
+
+				<div class="calout-actions">
+					{#each view.actions as item (item.id)}
+						<button type="button" class="util-pill action-pill" onclick={() => onaction(item.action)}>
+							<span>{item.label[locale]}</span>
+						</button>
 					{/each}
+
+					{#if stationIndex === 2}
+						<button
+							type="button"
+							class="util-pill action-pill laser-pill"
+							disabled={!sceneReady || !laserReady}
+							onclick={onfire}
+						>
+							<span>
+								{locale === 'ms' ? `Tembak Laser (${laserHits})` : `Fire Laser (${laserHits})`}
+							</span>
+						</button>
+					{/if}
 				</div>
 			{/if}
-
-			<div class="calout-actions">
-				{#each view.actions as item (item.id)}
-					<button type="button" class="util-pill action-pill" onclick={() => onaction(item.action)}>
-						<span>{item.label[locale]}</span>
-					</button>
-				{/each}
-
-				{#if stationIndex === 2}
-					<button
-						type="button"
-						class="util-pill action-pill laser-pill"
-						disabled={!sceneReady || !laserReady}
-						onclick={onfire}
-					>
-						<span>
-							{locale === 'ms' ? `Tembak Laser (${laserHits})` : `Fire Laser (${laserHits})`}
-						</span>
-					</button>
-				{/if}
-			</div>
 
 			<div class="calout-nav">
 				{#if siblingCount > 1}
@@ -267,8 +289,10 @@
 		box-shadow:
 			inset 0 1px 0.5px rgba(255, 255, 255, 0.28),
 			inset 0 -0.5px 0.5px rgba(0, 0, 0, 0.2),
+			0 0 24px rgba(56, 189, 248, 0.12),
 			var(--shadow-glass);
 		animation: caloutFloatIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+		transition: width 0.22s ease, max-height 0.22s ease;
 	}
 
 	@keyframes caloutFloatIn {
@@ -294,6 +318,39 @@
 		justify-content: space-between;
 		gap: 0.5rem;
 		margin-bottom: 0.2rem;
+	}
+
+	.calout-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.hud-toggle-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		background: rgba(56, 189, 248, 0.08);
+		border: 1px solid rgba(56, 189, 248, 0.32);
+		border-radius: 999px;
+		padding: 0.15rem 0.55rem;
+		font-family: var(--font-mono, monospace);
+		font-size: 0.65rem;
+		letter-spacing: 0.04em;
+		color: var(--spatial-accent, var(--accent));
+		cursor: pointer;
+		transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+	}
+
+	.hud-toggle-btn:hover {
+		background: rgba(56, 189, 248, 0.18);
+		border-color: rgba(56, 189, 248, 0.6);
+		transform: translateY(-1px);
+	}
+
+	.hud-toggle-icon {
+		font-size: 0.75rem;
+		line-height: 1;
 	}
 
 	.calout-code {

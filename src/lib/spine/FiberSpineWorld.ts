@@ -1892,15 +1892,18 @@ export class FiberSpineWorld {
 		}
 
 		const offsetFor = (id: ToyLayer['id'], frac: number): THREE.Vector3 => {
-			// Terbuka sepanjang paksi menegak (exaggerated cutaway) + hempap jejari keluar sedikit.
-			const magnitude = 0.55 + (toy.stationIndex % 2) * 0.12;
+			// Terbuka ke atas (exploded cutaway terapung harmoni) tanpa menenggelamkan dasar ke lantai:
+			// Dasar (base) terapung stabil 0.04m di atas pedestal,
+			// Lapisan pertengahan (mid) terapung separuh tinggi prop,
+			// Lapisan teratas (top) terapung di bahagian atas dengan pembingkaian sempurna.
 			switch (id) {
 				case 'top':
-					return new THREE.Vector3(0.08, frac, 0.16);
+					return new THREE.Vector3(0.06, frac * 0.65 + 0.16, 0.12);
+				case 'mid':
+					return new THREE.Vector3(0.03, frac * 0.32 + 0.08, 0.06);
 				case 'base':
-					return new THREE.Vector3(-0.08, -frac, -0.14);
 				default:
-					return new THREE.Vector3(0, 0, 0.3 * (magnitude - 0.55) + 0.07);
+					return new THREE.Vector3(0, 0.04, 0);
 			}
 		};
 		const anchorFor = (id: ToyLayer['id']): THREE.Vector3 => {
@@ -1908,10 +1911,11 @@ export class FiberSpineWorld {
 			switch (id) {
 				case 'top':
 					return new THREE.Vector3(0, minY + height * 0.82, 0);
-				case 'base':
-					return new THREE.Vector3(0, minY + height * 0.18, 0);
-				default:
+				case 'mid':
 					return new THREE.Vector3(0, minY + height * 0.5, 0);
+				case 'base':
+				default:
+					return new THREE.Vector3(0, minY + height * 0.18, 0);
 			}
 		};
 
@@ -3162,7 +3166,7 @@ export class FiberSpineWorld {
 			focusStationGroup.updateWorldMatrix(true, false);
 			this.tempFocusAnchor.copy(focusToy.spring.home).applyMatrix4(focusStationGroup.matrixWorld);
 			this.tempFocusTarget.copy(this.tempFocusAnchor);
-			this.tempFocusTarget.y += 0.55;
+			this.tempFocusTarget.y += 0.88;
 
 			// Stabilkan settle 0->1; reduced motion memotong terus ke pose makro.
 			this.focusSettle = this.reducedMotion ? 1 : Math.min(1, this.focusSettle + dt * 2.6);
@@ -3175,9 +3179,9 @@ export class FiberSpineWorld {
 			const arcDirZ = Math.cos(focusAngle);
 			const aspect = this.camera.aspect;
 			const macroAspectMul = aspect < 1.0 ? Math.min(1.5, 0.95 / aspect) : 1.0;
-			const focusRadius = 2.35 * macroAspectMul;
-			const focusLensY = 0.34;
-			const focusArc = 0.22;
+			const focusRadius = 3.25 * macroAspectMul;
+			const focusLensY = 1.15;
+			const focusArc = 0.26;
 
 			// Kedudukan makro: wangsa sedikit jejari & atas, mengelilingi dengan busur kecil.
 			this.tempArcRadial.set(arcDirX, 0, arcDirZ);

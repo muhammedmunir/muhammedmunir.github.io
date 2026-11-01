@@ -2,8 +2,18 @@ import assert from 'node:assert/strict';
 import { preview } from 'vite';
 import { chromium } from 'playwright';
 
-const server = await preview({ preview: { port: 0, host: '127.0.0.1' }, logLevel: 'error' });
-const url = server.resolvedUrls.local[0];
+let server;
+let url = process.env.SPINE_URL;
+if (!url) {
+	try {
+		const res = await fetch('http://127.0.0.1:5174/');
+		if (res.ok) url = 'http://127.0.0.1:5174/';
+	} catch {}
+}
+if (!url) {
+	server = await preview({ preview: { port: 0, host: '127.0.0.1' }, logLevel: 'error' });
+	url = server.resolvedUrls.local[0];
+}
 
 const browser = await chromium.launch({
 	headless: true,
@@ -86,7 +96,7 @@ for (const theme of ['dark', 'light']) {
 
 console.log(JSON.stringify(results, null, 2));
 await browser.close();
-await server.close();
+if (server) await server.close();
 
 assert.ok(results.dark.contrast >= 4.5, `Kontras tema gelap ${results.dark.contrast} >= 4.5`);
 assert.ok(results.light.contrast >= 4.5, `Kontras tema cerah ${results.light.contrast} >= 4.5`);
