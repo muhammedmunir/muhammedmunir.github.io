@@ -81,13 +81,23 @@
 		return stages[0];
 	});
 
-	// Animasi penumpuan peratusan yang lancar (lerp)
+	function forceDismiss() {
+		if (dismissed) return;
+		exiting = true;
+		setTimeout(() => {
+			dismissed = true;
+			onComplete?.();
+		}, 380);
+	}
+
+	// Animasi penumpuan peratusan yang lancar & responsif
 	$effect(() => {
-		const target = Math.min(100, Math.max(0, progress));
+		const target = ready ? 100 : Math.min(100, Math.max(0, progress));
 		const step = () => {
 			if (displayProgress < target) {
 				const diff = target - displayProgress;
-				displayProgress = Math.min(target, displayProgress + Math.max(0.4, diff * 0.12));
+				const speed = ready ? Math.max(4.0, diff * 0.45) : Math.max(1.8, diff * 0.25);
+				displayProgress = Math.min(target, displayProgress + speed);
 				animFrame = requestAnimationFrame(step);
 			} else if (displayProgress > target) {
 				displayProgress = target;
@@ -99,16 +109,21 @@
 
 	// Pengendalian peralihan penamatan apabila status siap (ready)
 	$effect(() => {
-		if (ready && displayProgress >= 99 && !exiting && !dismissed) {
-			const timer = setTimeout(() => {
-				exiting = true;
-				const exitTimer = setTimeout(() => {
-					dismissed = true;
-					onComplete?.();
-				}, 680);
-				return () => clearTimeout(exitTimer);
-			}, 320);
-			return () => clearTimeout(timer);
+		if (ready) {
+			const failSafe = setTimeout(() => {
+				forceDismiss();
+			}, 2500);
+
+			if (displayProgress >= 98 && !exiting && !dismissed) {
+				const timer = setTimeout(() => {
+					forceDismiss();
+				}, 200);
+				return () => {
+					clearTimeout(timer);
+					clearTimeout(failSafe);
+				};
+			}
+			return () => clearTimeout(failSafe);
 		}
 	});
 
@@ -128,6 +143,11 @@
 	<aside
 		class="spine-loading-curtain"
 		class:exiting
+		onclick={forceDismiss}
+		onkeydown={(e) => {
+			if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') forceDismiss();
+		}}
+		tabindex="0"
 		role="status"
 		aria-live="polite"
 		aria-label={locale === 'ms'

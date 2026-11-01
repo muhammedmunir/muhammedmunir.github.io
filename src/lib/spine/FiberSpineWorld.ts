@@ -372,9 +372,9 @@ const OCEAN_FRAGMENT_SHADER = /* glsl */ `
 		float shallowLagoon = max(1.0 - smoothstep(6.0, 14.0, minIslandDist), (1.0 - smoothstep(1.5, 5.5, ringDist)) * 0.58);
 		baseWater = mix(baseWater, uWaterScatter * 0.78, shallowLagoon * 0.52);
 
-		float cablePulse = 0.65 + 0.35 * sin(length(vWorldPos.xz) * 0.5 - uTime * 3.8);
-		float ringGlow = exp(-ringDist * 0.85) * cablePulse;
-		vec3 subseaCableColor = vec3(0.08, 0.78, 0.96) * ringGlow * 0.42;
+		float cablePulse = 0.72 + 0.28 * sin(length(vWorldPos.xz) * 0.5 - uTime * 3.8);
+		float ringGlow = exp(-ringDist * 0.68) * cablePulse;
+		vec3 subseaCableColor = vec3(0.12, 0.86, 1.0) * ringGlow * 0.85;
 
 		vec3 waterBody = baseWater + sss + subseaCableColor;
 		vec3 color = mix(waterBody, skyReflect, fresnel * 0.76);
@@ -1560,8 +1560,16 @@ export class FiberSpineWorld {
 		const w = canvas.width;
 		const h = canvas.height;
 		ctx.clearRect(0, 0, w, h);
-		ctx.fillStyle = palette.background;
-		ctx.fillRect(0, 0, w, h);
+
+		// Latar kaca diegetik separa lutsinar + sempadan neon cyan 1px
+		ctx.fillStyle = this.theme === 'light' ? 'rgba(241, 245, 249, 0.28)' : 'rgba(6, 18, 34, 0.24)';
+		ctx.beginPath();
+		ctx.roundRect(4, 4, w - 8, h - 8, 22);
+		ctx.fill();
+		ctx.lineWidth = 3;
+		ctx.strokeStyle = 'rgba(56, 189, 248, 0.78)';
+		ctx.stroke();
+
 		ctx.fillStyle = palette.accent;
 		ctx.font = `600 30px ${palette.fontMono}`;
 		ctx.fillText(station.shortTab[this.locale], 56, 60);
@@ -1685,15 +1693,29 @@ export class FiberSpineWorld {
 		}
 
 		const signBacking = new THREE.Mesh(
-			createBeveledSlabGeometry(8.2, 1.43, 0.16, 0.05, 0.02),
-			pillarMat
+			createBeveledSlabGeometry(8.12, 1.38, 0.06, 0.03, 0.015),
+			this.createOpticalGlassMaterial(0x38bdf8)
 		);
 		signBacking.position.set(0, 4.38, 0);
 		archGroup.add(signBacking);
 
-		const signMat = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false });
+		const signMat = new THREE.MeshPhysicalMaterial({
+			map: texture,
+			transparent: true,
+			transmission: 0.85,
+			roughness: 0.15,
+			metalness: 0.05,
+			ior: 1.48,
+			clearcoat: 0.4,
+			clearcoatRoughness: 0.12,
+			emissive: new THREE.Color(0x38bdf8),
+			emissiveMap: texture,
+			emissiveIntensity: 0.35,
+			depthWrite: false,
+			toneMapped: false
+		});
 		const signFace = new THREE.Mesh(new THREE.PlaneGeometry(8.0, 1.33), signMat);
-		signFace.position.set(0, 4.38, 0.09);
+		signFace.position.set(0, 4.38, 0.05);
 		archGroup.add(signFace);
 
 		this.stationHeaders.push({
@@ -2330,23 +2352,22 @@ export class FiberSpineWorld {
 		if (this.renderer) {
 			this.renderer.toneMapping =
 				this.qualityTier === 'lite' ? THREE.ACESFilmicToneMapping : THREE.AgXToneMapping;
-			// AGX mampat kontras; imbangi pendedahan supaya neon gentian optik kekal hidup tanpa melunturkan hitam.
-			this.renderer.toneMappingExposure = isLight ? 1.18 : 0.74;
+			this.renderer.toneMappingExposure = isLight ? 1.18 : 1.12;
 		}
 		if (this.bloomPass) {
-			this.bloomPass.strength = isLight ? 0.20 : 0.36;
-			this.bloomPass.radius = 0.48;
-			this.bloomPass.threshold = isLight ? 0.98 : 0.99;
+			this.bloomPass.strength = isLight ? 0.22 : 0.48;
+			this.bloomPass.radius = 0.52;
+			this.bloomPass.threshold = isLight ? 0.96 : 0.88;
 		}
-		this.scene.environmentIntensity = isLight ? 0.78 : 0.48;
+		this.scene.environmentIntensity = isLight ? 0.88 : 0.82;
 
 		this.keyLight.color.copy(cfg.sunColor);
-		this.keyLight.intensity = isLight ? 1.45 : 0.82;
+		this.keyLight.intensity = isLight ? 1.55 : 1.35;
 		this.hemiLight.color.copy(cfg.skyHorizon);
-		this.hemiLight.intensity = isLight ? 0.55 : 0.32;
-		this.ambientLight.intensity = isLight ? 0.36 : 0.18;
-		this.stationSpotLight.intensity = isLight ? 2.4 : 1.6;
-		this.rimLight.intensity = isLight ? 2.0 : 1.2;
+		this.hemiLight.intensity = isLight ? 0.62 : 0.52;
+		this.ambientLight.intensity = isLight ? 0.38 : 0.30;
+		this.stationSpotLight.intensity = isLight ? 2.8 : 2.6;
+		this.rimLight.intensity = isLight ? 2.2 : 2.1;
 
 		if (this.pulseMat) {
 			this.pulseMat.color.setHex(isLight ? 0x0284c7 : 0x38bdf8);
@@ -2357,8 +2378,8 @@ export class FiberSpineWorld {
 		}
 
 		for (const mat of this.glowMaterials) {
-			const base = (mat.userData.baseEmissive as number | undefined) ?? 0.5;
-			mat.emissiveIntensity = isLight ? base * 0.9 : base * 0.65;
+			const base = (mat.userData.baseEmissive as number | undefined) ?? 0.65;
+			mat.emissiveIntensity = isLight ? base * 1.05 : base * 1.35;
 		}
 
 		this.refreshToyHighlights();
@@ -3227,7 +3248,7 @@ export class FiberSpineWorld {
 		this.focusSpotIntensity +=
 			((focusStationIdx >= 0 ? 2.6 : 0) - this.focusSpotIntensity) * Math.min(1, dt * 5);
 		const isLight = this.theme === 'light';
-		this.stationSpotLight.intensity = (isLight ? 2.4 : 1.6) + this.focusSpotIntensity;
+		this.stationSpotLight.intensity = (isLight ? 2.8 : 2.6) + this.focusSpotIntensity;
 
 		if (this.skyMesh) {
 			this.skyMesh.position.copy(this.camera.position);
