@@ -13,9 +13,9 @@ import * as THREE from 'three';
 /** Peta hotspot -> model GLB ringan CC BY 4.0 (dimuat malas, bukan penyekat). */
 export const DIORAMA_GLB_MAP: Record<string, { path: string; targetHeight: number; spin: number }> =
 	{
-		'core-ring-sys': { path: '/models/astrolabe-lo.glb', targetHeight: 0.56, spin: 0.35 },
-		'net-soc': { path: '/models/drone.glb', targetHeight: 0.6, spin: 0.45 },
-		'net-tnb-fiber': { path: '/models/nautilus.glb', targetHeight: 0.58, spin: 0.28 }
+		'core-ring-sys': { path: '/models/astrolabe-lo.glb', targetHeight: 1.15, spin: 0.35 },
+		'net-soc': { path: '/models/drone.glb', targetHeight: 1.05, spin: 0.45 },
+		'net-tnb-fiber': { path: '/models/nautilus.glb', targetHeight: 1.1, spin: 0.28 }
 	};
 
 export function createBeveledSlabGeometry(

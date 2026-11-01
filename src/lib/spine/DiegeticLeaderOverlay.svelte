@@ -45,7 +45,7 @@
 
 	let calout: HTMLElement | undefined = $state();
 	let gather = $state({ x: 74, yTop: 18, yMid: 32, yBase: 46 });
-	let collapsed = $state(true);
+	let collapsed = $state(false);
 
 	function measure() {
 		if (!calout) return;
