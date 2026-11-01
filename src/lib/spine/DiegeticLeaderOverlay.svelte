@@ -45,7 +45,7 @@
 
 	let calout: HTMLElement | undefined = $state();
 	let gather = $state({ x: 74, yTop: 18, yMid: 32, yBase: 46 });
-	let collapsed = $state(false);
+	let collapsed = $state(true);
 
 	function measure() {
 		if (!calout) return;
@@ -98,36 +98,90 @@
 			{/each}
 		</svg>
 
-		<!-- Kalout diegetik kaca cair -->
-		<aside class="diegetic-calout" aria-labelledby="leader-callout-title" bind:this={calout}>
-			<div class="calout-bar">
-				<div class="calout-meta">
-					<span class="calout-code">{view.code}</span>
-					{#if siblingCount > 1}
-						<span class="calout-step">{siblingIndex + 1} / {siblingCount}</span>
-					{/if}
+		<!-- Kapsul Spatial Mikro Diegetik (Mod 3D Tulen) ATAU Kad Telemetri Kaca Cair Penuh -->
+		<aside
+			class="diegetic-calout"
+			class:micro-capsule={collapsed}
+			aria-labelledby="leader-callout-title"
+			bind:this={calout}
+		>
+			{#if collapsed}
+				<!-- Kapsul Spatial Mikro 3D Tulen: [⚡ KOD-OBJEK • Tajuk Ringkas | ◇ Papar Maklumat ▾] -->
+				<div class="capsule-row">
+					<div class="capsule-identity">
+						<span class="capsule-bolt">⚡</span>
+						<span class="calout-code">{view.code}</span>
+						<span class="capsule-dot">•</span>
+						<strong id="leader-callout-title" class="capsule-title">{view.title[locale]}</strong>
+					</div>
+					<div class="capsule-controls">
+						<button
+							type="button"
+							class="hud-toggle-btn expand-btn"
+							onclick={() => {
+								collapsed = false;
+								void tick().then(measure);
+							}}
+							aria-label={locale === 'ms' ? 'Papar maklumat penuh' : 'Show full info'}
+						>
+							<span class="hud-toggle-icon">◇</span>
+							<span>{locale === 'ms' ? 'Papar Maklumat ▾' : 'Show Info ▾'}</span>
+						</button>
+						{#if siblingCount > 1}
+							<button
+								type="button"
+								class="capsule-nav-btn"
+								onclick={() => onstep(-1)}
+								aria-label={locale === 'ms' ? 'Objek sebelumnya' : 'Previous object'}
+								title={locale === 'ms' ? 'Objek sebelumnya (←)' : 'Previous object (←)'}
+							>
+								←
+							</button>
+							<button
+								type="button"
+								class="capsule-nav-btn"
+								onclick={() => onstep(1)}
+								aria-label={locale === 'ms' ? 'Objek seterusnya' : 'Next object'}
+								title={locale === 'ms' ? 'Objek seterusnya (→)' : 'Next object (→)'}
+							>
+								→
+							</button>
+						{/if}
+						<button
+							type="button"
+							class="capsule-close-btn"
+							onclick={onclose}
+							aria-label={locale === 'ms' ? 'Tutup dan kembali ke orbit' : 'Close and return to orbit'}
+							title={locale === 'ms' ? 'Tutup (Esc)' : 'Close (Esc)'}
+						>
+							✕
+						</button>
+					</div>
 				</div>
-				<button
-					type="button"
-					class="hud-toggle-btn"
-					onclick={() => {
-						collapsed = !collapsed;
-						void tick().then(measure);
-					}}
-					aria-label={collapsed
-						? (locale === 'ms' ? 'Papar maklumat penuh' : 'Show full info')
-						: (locale === 'ms' ? 'Sembunyi ke mod 3D tulen' : 'Hide to pure 3D mode')}
-					title={collapsed
-						? (locale === 'ms' ? 'Papar maklumat penuh' : 'Show full info')
-						: (locale === 'ms' ? 'Sembunyi ke mod 3D tulen' : 'Hide to pure 3D mode')}
-				>
-					<span class="hud-toggle-icon">{collapsed ? '◈' : '◇'}</span>
-					<span>{collapsed ? (locale === 'ms' ? 'Maklumat' : 'Info') : (locale === 'ms' ? 'Pemandangan 3D' : '3D View')}</span>
-				</button>
-			</div>
+			{:else}
+				<div class="calout-bar">
+					<div class="calout-meta">
+						<span class="calout-code">{view.code}</span>
+						{#if siblingCount > 1}
+							<span class="calout-step">{siblingIndex + 1} / {siblingCount}</span>
+						{/if}
+					</div>
+					<button
+						type="button"
+						class="hud-toggle-btn"
+						onclick={() => {
+							collapsed = true;
+							void tick().then(measure);
+						}}
+						aria-label={locale === 'ms' ? 'Sembunyi ke mod 3D tulen' : 'Hide to pure 3D mode'}
+						title={locale === 'ms' ? 'Sembunyi ke mod 3D tulen' : 'Hide to pure 3D mode'}
+					>
+						<span class="hud-toggle-icon">◈</span>
+						<span>{locale === 'ms' ? 'Mod 3D Tulen ▴' : 'Pure 3D Mode ▴'}</span>
+					</button>
+				</div>
 
-			<h2 id="leader-callout-title" class="calout-title">{view.title[locale]}</h2>
-			{#if !collapsed}
+				<h2 id="leader-callout-title" class="calout-title">{view.title[locale]}</h2>
 				<p class="calout-subtitle">{view.subtitle[locale]}</p>
 				<p class="calout-summary">{view.summary[locale]}</p>
 
@@ -170,67 +224,67 @@
 						</button>
 					{/if}
 				</div>
-			{/if}
 
-			<div class="calout-nav">
-				{#if siblingCount > 1}
+				<div class="calout-nav">
+					{#if siblingCount > 1}
+						<button
+							type="button"
+							class="compass-arrow nav-btn"
+							onclick={() => onstep(-1)}
+							aria-label={locale === 'ms' ? 'Objek sebelumnya' : 'Previous object'}
+							title={locale === 'ms' ? 'Objek sebelumnya (←)' : 'Previous object (←)'}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<polyline points="15 18 9 12 15 6"></polyline>
+							</svg>
+						</button>
+						<button
+							type="button"
+							class="compass-arrow nav-btn"
+							onclick={() => onstep(1)}
+							aria-label={locale === 'ms' ? 'Objek seterusnya' : 'Next object'}
+							title={locale === 'ms' ? 'Objek seterusnya (→)' : 'Next object (→)'}
+						>
+							<svg
+								width="14"
+								height="14"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2.5"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								aria-hidden="true"
+							>
+								<polyline points="9 18 15 12 9 6"></polyline>
+							</svg>
+						</button>
+					{/if}
+					{#if canBack}
+						<button type="button" class="util-pill back-pill" onclick={onback}>
+							<span>{locale === 'ms' ? 'Kembali' : 'Back'}</span>
+						</button>
+					{/if}
 					<button
 						type="button"
-						class="compass-arrow nav-btn"
-						onclick={() => onstep(-1)}
-						aria-label={locale === 'ms' ? 'Objek sebelumnya' : 'Previous object'}
-						title={locale === 'ms' ? 'Objek sebelumnya (←)' : 'Previous object (←)'}
+						class="util-pill close-pill"
+						onclick={onclose}
+						aria-label={locale === 'ms' ? 'Tutup dan kembali ke orbit' : 'Close and return to orbit'}
 					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							aria-hidden="true"
-						>
-							<polyline points="15 18 9 12 15 6"></polyline>
-						</svg>
+						<span>{locale === 'ms' ? 'Tutup' : 'Close'}</span>
 					</button>
-					<button
-						type="button"
-						class="compass-arrow nav-btn"
-						onclick={() => onstep(1)}
-						aria-label={locale === 'ms' ? 'Objek seterusnya' : 'Next object'}
-						title={locale === 'ms' ? 'Objek seterusnya (→)' : 'Next object (→)'}
-					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2.5"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							aria-hidden="true"
-						>
-							<polyline points="9 18 15 12 9 6"></polyline>
-						</svg>
-					</button>
-				{/if}
-				{#if canBack}
-					<button type="button" class="util-pill back-pill" onclick={onback}>
-						<span>{locale === 'ms' ? 'Kembali' : 'Back'}</span>
-					</button>
-				{/if}
-				<button
-					type="button"
-					class="util-pill close-pill"
-					onclick={onclose}
-					aria-label={locale === 'ms' ? 'Tutup dan kembali ke orbit' : 'Close and return to orbit'}
-				>
-					<span>{locale === 'ms' ? 'Tutup' : 'Close'}</span>
-				</button>
-			</div>
+				</div>
+			{/if}
 		</aside>
 	</div>
 {/if}
@@ -292,7 +346,81 @@
 			0 0 24px rgba(56, 189, 248, 0.12),
 			var(--shadow-glass);
 		animation: caloutFloatIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-		transition: width 0.22s ease, max-height 0.22s ease;
+		transition: width 0.22s ease, max-height 0.22s ease, border-radius 0.22s ease, padding 0.22s ease;
+	}
+
+	.diegetic-calout.micro-capsule {
+		width: auto;
+		max-width: min(34rem, calc(100% - 2.3rem));
+		padding: 0.42rem 0.75rem;
+		border-radius: 999px;
+		max-height: none;
+		overflow: visible;
+	}
+
+	.capsule-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		white-space: nowrap;
+	}
+
+	.capsule-identity {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.capsule-bolt {
+		color: #38bdf8;
+		font-size: 0.85rem;
+		line-height: 1;
+	}
+
+	.capsule-dot {
+		color: var(--spatial-hud-muted, var(--ink-secondary));
+		opacity: 0.5;
+	}
+
+	.capsule-title {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--spatial-hud-ink, var(--ink));
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 14rem;
+	}
+
+	.capsule-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		flex-shrink: 0;
+	}
+
+	.capsule-nav-btn,
+	.capsule-close-btn {
+		display: grid;
+		place-items: center;
+		width: 26px;
+		height: 26px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid var(--glass-border-hover, rgba(56, 189, 248, 0.25));
+		color: var(--spatial-hud-ink, var(--ink));
+		font-size: 0.75rem;
+		cursor: pointer;
+		transition: background 0.15s ease, transform 0.15s ease;
+	}
+
+	.capsule-nav-btn:hover,
+	.capsule-close-btn:hover {
+		background: rgba(56, 189, 248, 0.22);
+		transform: scale(1.08);
 	}
 
 	@keyframes caloutFloatIn {

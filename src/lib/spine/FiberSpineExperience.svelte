@@ -718,7 +718,11 @@
 						<circle cx="11" cy="11" r="7" />
 						<path d="M21 21l-4.35-4.35M11 8v6M8 11h6" />
 					</svg>
-					<span class="pill-label">{locale === 'ms' ? 'Lensa X-Ray' : 'X-Ray Lens'}</span>
+					<span class="pill-label">
+						{locale === 'ms'
+							? (xrayActive ? 'Lensa X-Ray: Aktif' : 'Lensa X-Ray')
+							: (xrayActive ? 'X-Ray Lens: Active' : 'X-Ray Lens')}
+					</span>
 				</button>
 
 				<button
@@ -953,6 +957,18 @@
 			<div class="hover-reticle-badge" role="status">
 				<span class="reticle-pulse"></span>
 				<span>{hoveredPromptText}</span>
+			</div>
+		{/if}
+
+		<!-- Lencana Status Imbasan Lensa X-Ray -->
+		{#if xrayActive && viewMode === '3d'}
+			<div class="xray-status-toast" role="status" aria-live="polite">
+				<span class="xray-pulse-icon">🔍</span>
+				<span>
+					{locale === 'ms'
+						? 'Mod Imbasan Siber: Mendedahkan Rangkaian Gentian Optik Bawah Laut & Rangka Mesin'
+						: 'Cyber Scan Mode: Revealing Subsea Optical Network & Machine Framework'}
+				</span>
 			</div>
 		{/if}
 
@@ -1698,6 +1714,44 @@
 		border-radius: var(--radius-pill, 9999px);
 		background: var(--spatial-accent, var(--accent));
 		box-shadow: 0 0 8px var(--spatial-accent, var(--accent)); /* ds-allow-hardcode */
+	}
+
+	.xray-status-toast {
+		position: fixed;
+		top: 5.25rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 26;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		padding: 0.42rem 1.15rem;
+		border-radius: var(--radius-pill, 9999px);
+		background: rgba(4, 16, 32, 0.88);
+		border: 1px solid rgba(56, 189, 248, 0.65);
+		box-shadow:
+			0 0 28px rgba(56, 189, 248, 0.35),
+			inset 0 1px 0 rgba(255, 255, 255, 0.3);
+		color: #38bdf8;
+		font-family: var(--font-mono, monospace);
+		font-size: 0.74rem;
+		letter-spacing: 0.02em;
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		pointer-events: none;
+		white-space: nowrap;
+		animation: toastSlideDown 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	@keyframes toastSlideDown {
+		from {
+			opacity: 0;
+			transform: translate(-50%, -10px);
+		}
+		to {
+			opacity: 1;
+			transform: translate(-50%, 0);
+		}
 	}
 
 	/* Lapisan Sentuhan Lensa X-Ray (Sesi 3.3) */

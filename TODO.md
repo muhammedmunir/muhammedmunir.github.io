@@ -116,8 +116,8 @@
     - `npm test`: **73/73 ujian lulus**.
     - `npm run build`: binaan statik `build/` berjaya dijana.
     - `node scripts/spine-verify.mjs`: **5/5 seksyen integriti lulus**.
-  - **2026-11-01 (Pengilapan Interaksi 3D & Maklum Balas Haptik)**:
-    - **Dive Makro & Sauh 3-Lapisan Dinamik**: Menyelaras pancaran titik sauh lapisan 3D dalam `FiberSpineWorld.ts` (`updateProjectedMarkers`) supaya mengambil kira anjakan spring fizikal `layer.root.position`, menghapuskan sebarang hanyutan antara garisan laser SVG dan lapisan prop semasa bukaan exploded.
-    - **Penjejakan Kalout Dinamik**: Menambah ukuran semula responsif (`$effect` pada `view`) dalam `DiegeticLeaderOverlay.svelte` untuk menyelaraskan garisan SVG sejurus pertukaran item.
-    - **Maklum Balas Haptik Audio**: Menyambungkan bunyi siber (`playConfirm` dan `playBlip`) pada pautan luar, navigasi cip, butang undur, dan langkah `←`/`→`.
-    - **Semakan Penuh**: `npm run check` (0 ralat, 0 amaran), `npm test` (73/73 lulus), `npm run build` (binaan statik siap).
+  - **2026-11-01 (Audit Forensik & Pembaikan Visual 3D)**:
+    - **Penyelarasan Tapak GLB & Pedestal (Isu 1)**: Model GLB astrolab dipasang tegak tepat di atas gelang clampRing (`obj.position.y += 0.28m`), simpang dalaman dilindungi daripada pereraian dalam `assembleToyLayers`, dan papan tanda kod diturunkan ke muka hadapan `basePlinth` (`y=0.12, z=0.665`) tanpa menghalang medali 3D.
+    - **Mod 3D Tulen & Kapsul Spatial Mikro (Isu 2)**: Menggantikan paparan automatik kad 2D dengan kapsul mikro diegetik kemas (`collapsed = true` secara lalai); kamera makro diperluaskan (`focusRadius: 3.35m`, `focusLensY: 1.25m`, sudut isometrik 3/4 ~21°) membingkai prop exploded secara lapang.
+    - **Lensa X-Ray & Imbasan Siber Diegetik (Isu 3)**: Pendaran gentian bawah tanah dinaikkan (`emissiveIntensity: 2.8`), radius kanta dioptimumkan (`280px`), butang topbar mencerminkan status `Lensa X-Ray: Aktif`, dan toast HUD `Mod Imbasan Siber` dipaparkan.
+    - **Semakan Penuh**: `npm run check` (0 ralat, 0 amaran), `npm test` (73/73 lulus), pengesahan visual Chromium Playwright disahkan.

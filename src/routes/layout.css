@@ -45,7 +45,7 @@
 	--screen-online: #34d399;
 	--screen-halo: #4bdcff;
 
-	/* HUD biasa kekal solid; kaca dipilih hanya oleh panel yang memerlukannya. */
+	/* HUD berteras kontras tinggi untuk WCAG AA pada persekitaran 3D Three.js */
 	--spatial-hud-bg: #10151c;
 	--spatial-hud-border: rgba(255, 255, 255, 0.14);
 	--spatial-hud-ink: var(--ink);

@@ -145,18 +145,18 @@ function buildCommonBase(
 	accentHex: number,
 	haloMat: THREE.MeshStandardMaterial
 ): void {
-	const titaniumMat = M.metal(0x1e293b, accentHex, 0.2);
+	const plinthMat = M.metal(0x223249, accentHex, 0.16);
 
 	const basePlinth = new THREE.Mesh(
 		createBeveledSlabGeometry(1.32, 0.24, 1.32, 0.08, 0.03),
-		titaniumMat
+		plinthMat
 	);
 	basePlinth.position.y = 0.12;
 	basePlinth.castShadow = true;
 	basePlinth.receiveShadow = true;
 	propGroup.add(basePlinth);
 
-	const plinthCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.14, 28), titaniumMat);
+	const plinthCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 0.14, 28), plinthMat);
 	plinthCollar.position.y = 0.26;
 	propGroup.add(plinthCollar);
 
@@ -191,8 +191,8 @@ function buildNameplate(
 		plate.add(face);
 	}
 
-	plate.position.set(0, 0.34, 0.62);
-	plate.rotation.x = -0.06;
+	plate.position.set(0, 0.12, 0.665);
+	plate.rotation.x = 0;
 	propGroup.add(plate);
 }
 
@@ -253,16 +253,19 @@ export function buildDioramaProp(ctx: DioramaBuildContext): DioramaPropBuild {
 			// Astrolab Kejuruteraan Berlapis (proksi tersedia; GLB swap masuk).
 			kind = 'astrolabe_gear';
 			const hub = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22, 0), glowMat);
+			hub.position.y = 0.55;
 			silhouette.add(hub);
 			for (let r = 0; r < 3; r++) {
 				const gear = new THREE.Mesh(
 					new THREE.TorusGeometry(0.34 + r * 0.13, 0.026, 14, 48),
 					r === 1 ? glowMat : chromeMat
 				);
+				gear.position.y = 0.55;
 				gear.rotation.set(r * 0.8 + 0.3, r * 1.05, r * 0.45);
 				silhouette.add(gear);
 			}
 			const spoke = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.16, 0.5, 18), glowMat);
+			spoke.position.y = 0.55;
 			spoke.rotation.z = Math.PI / 2;
 			silhouette.add(spoke);
 			spinAxis = silhouette;

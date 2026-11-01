@@ -1813,8 +1813,13 @@ export class FiberSpineWorld {
 						toy.mesh.remove(child);
 					}
 				}
-				// Selaras tapak GLB dengan aras siluet prosedural (0.34 m di atas akar prop).
-				obj.position.y = 0.34;
+				// Selaraskan tapak GLB tepat di atas gelang clampRing pedestal (y = 0.28m).
+				// diorama-glb.ts sudah menyelaraskan tapak model pada y = 0, jadi anjakkan sebanyak +0.28m.
+				obj.position.y += 0.28;
+				obj.userData.isGlb = true;
+				obj.traverse((c) => {
+					if (c !== obj) c.userData.isGlbPart = true;
+				});
 				toy.mesh.add(obj);
 				toy.mesh.userData.glbLoaded = true;
 				// Arahkan paksi putar untuk meneruskan putaran pada model GLB.
@@ -1855,7 +1860,8 @@ export class FiberSpineWorld {
 		const remap = new Map<THREE.Object3D, THREE.Group>();
 		toy.mesh.traverse((child) => {
 			if (child === toy.mesh) return;
-			const isMesh = (child as THREE.Mesh).isMesh === true;
+			if (child.userData.isGlbPart) return; // kekalkan simpang dalaman model GLB utuh
+			const isMesh = (child as THREE.Mesh).isMesh === true || child.userData.isGlb;
 			if (!isMesh) return;
 			const cbox = new THREE.Box3().setFromObject(child);
 			const cy = (cbox.min.y + cbox.max.y) * 0.5;
@@ -1873,6 +1879,7 @@ export class FiberSpineWorld {
 		parentGroup.set(toy.mesh, mid);
 		toy.mesh.traverse((child) => {
 			if (child === toy.mesh) return;
+			if (child.userData.isGlbPart) return; // jangan reparent anak-anak model GLB
 			const assigned = remap.get(child);
 			if (assigned) {
 				parentGroup.set(child, assigned);
@@ -2058,13 +2065,13 @@ export class FiberSpineWorld {
 		const fiberMat = new THREE.MeshStandardMaterial({
 			color: 0x22d3ee,
 			emissive: 0x38bdf8,
-			emissiveIntensity: 1.6,
+			emissiveIntensity: 2.8,
 			metalness: 0.15,
-			roughness: 0.5,
+			roughness: 0.35,
 			depthTest: true,
 			depthWrite: false
 		});
-		fiberMat.userData.baseEmissive = 1.6;
+		fiberMat.userData.baseEmissive = 2.8;
 		this.glowMaterials.push(fiberMat);
 
 		const pulseMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe });
@@ -2137,8 +2144,8 @@ export class FiberSpineWorld {
 			);
 		}
 		u.uCenter.value.copy(center);
-		// Kanta ~21vh diameter: cukup untuk membaca potongan rentas tanpa menelan skrin.
-		u.uRadius.value = Math.min(Math.min(width, height) * 0.21, 240);
+		// Kanta pemeriksa berpadanan: cukup untuk membaca potongan rentas tanpa menelan skrin.
+		u.uRadius.value = Math.min(Math.min(width, height) * 0.24, 280);
 
 		// Render adegan gentian berasingan Cuma apabila X-Ray hampir aktif.
 		if (
@@ -3179,8 +3186,8 @@ export class FiberSpineWorld {
 			const arcDirZ = Math.cos(focusAngle);
 			const aspect = this.camera.aspect;
 			const macroAspectMul = aspect < 1.0 ? Math.min(1.5, 0.95 / aspect) : 1.0;
-			const focusRadius = 3.25 * macroAspectMul;
-			const focusLensY = 1.15;
+			const focusRadius = 3.35 * macroAspectMul;
+			const focusLensY = 1.25;
 			const focusArc = 0.26;
 
 			// Kedudukan makro: wangsa sedikit jejari & atas, mengelilingi dengan busur kecil.

@@ -108,7 +108,7 @@ const XRAY_LENS_SHADER = {
 			vec3 hologram = vec3(0.28, 0.82, 0.95);
 			glass = mix(glass, hologram, 0.10 + 0.10 * fresnel);
 
-			vec3 result = glass + fiber * (1.15 + 0.55 * fresnel);
+			vec3 result = glass + fiber * (1.85 + 0.85 * fresnel);
 			float rim = exp(-pow((depth - 0.7) / 0.6, 2.0));
 			result += vec3(0.6, 0.85, 1.0) * rim * 0.28;
 
