@@ -1,14 +1,14 @@
 {
   "name": "Muhammed Munir | Di Sebalik Sistem",
   "short_name": "Munir",
-  "description": "Portfolio Muhammed Munir — Di Sebalik Sistem.",
+  "description": "Portfolio Muhammed Munir: Di Sebalik Sistem.",
   "lang": "ms-MY",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#f3eee6",
-  "theme_color": "#201e1b",
+  "background_color": "#0a0f1a",
+  "theme_color": "#0a0f1a",
   "icons": [
     {
       "src": "/icon-192.png",

@@ -107,9 +107,13 @@ export const PROFILE = {
 	shortName: 'Muhammed Munir',
 	monogram: 'MM',
 	profilePhoto: '/profile_photo.jpg',
+	tagline: {
+		ms: 'Saya bina sistem di sebalik tabir.',
+		en: 'I build the systems behind the scenes.'
+	},
 	headline: {
-		ms: 'Full-Stack Systems Engineer & IT Professional • Network Security (UTM)',
-		en: 'Full-Stack Systems Engineer & IT Professional • Network Security (UTM)'
+		ms: 'Full-Stack Developer • Keselamatan Rangkaian (UTM)',
+		en: 'Full-Stack Developer • Network Security (UTM)'
 	},
 	location: 'Puchong, Selangor',
 	email: 'muhammed.munir97.mm@gmail.com',
@@ -130,8 +134,8 @@ export const PROFILE = {
 		}
 	],
 	summary: {
-		ms: 'Jurutera Sistem Full-Stack yang serba boleh dan mementingkan keselamatan dengan pengalaman terbukti dalam membangunkan serta menyelenggara platform perusahaan berkebolehpercayaan tinggi, sistem pengurusan aset sektor awam, dan aplikasi automasi berasaskan AI. Sangat mahir dalam Vue.js 3, Laravel 11/12 (Filament), SvelteKit, Flutter, Docker Swarm, dan Python Computer Vision, disokong oleh latar belakang akademik Sains Komputer (Keselamatan Rangkaian) dari UTM, pensijilan rangkaian industri Cisco, serta pengalaman pertahanan ancaman Security Operations Center (SOC) di Tenaga Nasional Berhad (TNB).',
-		en: 'Versatile, security-conscious Full-Stack Systems Engineer with proven experience developing and maintaining high-reliability enterprise platforms, public sector asset management systems, and AI-driven automation applications. Highly skilled in Vue.js 3, Laravel 11/12 (Filament), SvelteKit, Flutter, Docker Swarm, and Python Computer Vision, backed by an academic background in Computer Science (Network Security) from UTM, industry Cisco networking certifications, and hands-on Security Operations Center (SOC) threat defense experience at Tenaga Nasional Berhad (TNB).'
+		ms: 'Full-Stack Developer yang mementingkan keselamatan dan kebolehpercayaan sistem, dengan pengalaman dalam penyelenggaraan, pembangunan modul baharu, serta pembaikan pepijat sistem sektor awam (EMESYS, SUTERA, ADiMS) dan pembangunan aplikasi web serta mudah alih di YHCM Sdn Bhd, Nova Bitara, dan Tenaga Nasional Berhad (TNB). Mahir dalam Vue.js 3, Laravel 11/12 (Filament), SvelteKit, Flutter, dan Docker Swarm, disokong oleh Ijazah Sains Komputer (Keselamatan Rangkaian) dari UTM, pensijilan rangkaian Cisco, serta pengalaman operasi keselamatan SOC di TNB.',
+		en: 'Security-conscious Full-Stack Developer with proven experience in system maintenance, new module development, and bug fixing for public-sector systems (EMESYS, SUTERA, ADiMS), alongside web and mobile development at YHCM Sdn Bhd, Nova Bitara, and Tenaga Nasional Berhad (TNB). Skilled in Vue.js 3, Laravel 11/12 (Filament), SvelteKit, Flutter, and Docker Swarm, backed by a Computer Science (Network Security) degree from UTM, Cisco certifications, and SOC threat monitoring experience at TNB.'
 	}
 };
 
@@ -267,8 +271,8 @@ export const STATIONS: SpineStation[] = [
 			en: 'Muhammed Munir Bin Mohd Azmi'
 		},
 		subtitle: {
-			ms: 'Full-Stack Systems Engineer & IT Professional • Network Security (UTM)',
-			en: 'Full-Stack Systems Engineer & IT Professional • Network Security (UTM)'
+			ms: 'Full-Stack Developer • Keselamatan Rangkaian (UTM)',
+			en: 'Full-Stack Developer • Network Security (UTM)'
 		},
 		narrative: {
 			ms: PROFILE.summary.ms,
@@ -414,8 +418,8 @@ export const STATIONS: SpineStation[] = [
 			en: 'YHCM Sdn Bhd, Nova Bitara & TNB Enterprise Mobility'
 		},
 		subtitle: {
-			ms: 'Programmer / Full-Stack Enterprise Developer (YHCM) · Web Developer & IT Support (Nova Bitara) · Protégé (TNB).',
-			en: 'Programmer / Full-Stack Enterprise Developer (YHCM) · Web Developer & IT Support (Nova Bitara) · Protégé (TNB).'
+			ms: 'Full-Stack Developer (YHCM) · Web Developer & IT Support (Nova Bitara) · Protégé (TNB).',
+			en: 'Full-Stack Developer (YHCM) · Web Developer & IT Support (Nova Bitara) · Protégé (TNB).'
 		},
 		narrative: {
 			ms: 'Stesen kedua memaparkan 3 pengalaman kerja pembangunan sistem saya mengikut CV: (1) Di YHCM Sdn Bhd (Apr 2026 – Kini, Shah Alam), saya menyelenggara dan menaik taraf sistem web perusahaan kritikal sektor awam (eMesys, Sutera, ADIMS) menggunakan Vue.js 3, Laravel Filament, MySQL, MariaDB, PostgreSQL 17, Docker Swarm, serta mentadbir pelayan Linux (Ubuntu) dan Windows Server. (2) Di Nova Bitara Development Sdn Bhd (Dis 2025 – Mac 2026, Sunway), saya membangunkan Sistem Pinjaman Bercagar IWA001 (SvelteKit, Supabase RLS, JWT), portal korporat Infinity World (SvelteKit, Redis, Resend API), dan e-dagang Laravel/MySQL (DirectAdmin, Cloudflare WAF/CDN). (3) Di Tenaga Nasional Berhad (Apr 2025 – Dis 2025, Shah Alam), saya menerajui pembangunan aplikasi Onboardx menggunakan Flutter (Dart), JavaScript, 4 pangkalan data, Microsoft Azure Ubuntu (NSG), dan Jenkins CI/CD.',
@@ -478,8 +482,8 @@ export const STATIONS: SpineStation[] = [
 				code: 'WORK-01',
 				pinLabel: { ms: 'YHCM Sdn Bhd (Apr 2026–Kini)', en: 'YHCM Sdn Bhd (Apr 2026–Present)' },
 				title: {
-					ms: 'Programmer / Full-Stack Enterprise Developer — YHCM Sdn Bhd',
-					en: 'Programmer / Full-Stack Enterprise Developer — YHCM Sdn Bhd'
+					ms: 'Full-Stack Developer: YHCM Sdn Bhd',
+					en: 'Full-Stack Developer: YHCM Sdn Bhd'
 				},
 				subtitle: {
 					ms: 'Apr 2026 – Present · Shah Alam, Selangor · eMesys, Sutera & ADIMS',
@@ -1283,8 +1287,8 @@ export const CAREER_TIMELINE: CareerEntry[] = [
 		id: 'yhcm',
 		company: 'YHCM Sdn Bhd',
 		role: {
-			ms: 'Programmer / Full-Stack Enterprise Developer',
-			en: 'Programmer / Full-Stack Enterprise Developer'
+			ms: 'Full-Stack Developer',
+			en: 'Full-Stack Developer'
 		},
 		period: 'Apr 2026 – Present',
 		location: 'Shah Alam, Selangor',

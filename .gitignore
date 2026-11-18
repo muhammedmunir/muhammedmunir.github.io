@@ -32,3 +32,14 @@ vite.config.ts.timestamp-*
 !.crew/graphs/.gitkeep
 .claude/
 motion-01-hero-desktop.png
+.local-review/
+
+# Fail peribadi: surat & resume permohonan kerja (repo ini AWAM)
+/applications/
+
+# Tangkapan skrin audit & artifak di root (bukan aset laman)
+/*.png
+/.a11y-focused.json
+
+# Sandaran sementara
+*.bak-cleanup

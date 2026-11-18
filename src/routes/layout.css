@@ -4,6 +4,16 @@
 
 :root,
 :root[data-theme='dark'] {
+	--work-paper: #09090b;
+	--work-surface: #121215;
+	--work-surface-hover: #27272a;
+	--work-ink: #f4f4f5;
+	--work-muted: #b4b4bd;
+	--work-accent: #e5b580;
+	--work-active-bg: #f4f4f5;
+	--work-active-ink: #09090b;
+	--work-line: #3f3f46;
+
 	/* Kaca telus; kontras teks dilindungi pelapik setempat, bukan panel legap. */
 	--bg: #0b0c0e;
 	--bg-subtle: #121418;
@@ -73,6 +83,16 @@
 }
 
 :root[data-theme='light'] {
+	--work-paper: #eceff3;
+	--work-surface: #ffffff;
+	--work-surface-hover: #f4f7fa;
+	--work-ink: #0f172a;
+	--work-muted: #475569;
+	--work-accent: #1848bd;
+	--work-active-bg: #1848bd;
+	--work-active-ink: #ffffff;
+	--work-line: #cbd5e1;
+
 	/* Kaca cerah dengan aksen tembaga yang lebih jelas dibaca. */
 	--bg: #faf8f5;
 	--bg-subtle: #f2eee8;

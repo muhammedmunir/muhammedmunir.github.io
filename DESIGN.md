@@ -1,30 +1,33 @@
-# MUNIR — SYSTEMS IN MOTION
+# MUNIR: EDITORIAL DARK TECH SYSTEM PORTFOLIO
 
 ## Approved direction
 
-Primary audience: hiring managers, technical leads, engineering managers and technology companies; prospective clients are secondary. Identity must communicate Muhammed Munir / Full-Stack Software Engineer immediately. Engineering credibility precedes spectacle. User authorized implementation and original procedural assets, but explicitly withheld commit, push and production deployment approval.
+Primary audience: hiring managers, technical leads, engineering managers, and technology companies. Identity must communicate Muhammed Munir Bin Mohd Azmi as a Full-Stack Systems Software Engineer immediately. Engineering credibility, system architecture clarity, and real production responsibilities precede spectacle.
+
+Reference benchmarks (`CLAUDE.md`):
+1. `https://kamizanamir.github.io/` — Sharp editorial hierarchy, bold Syne / Plus Jakarta Sans typography, high-contrast monochrome dark and warm paper light themes.
+2. `https://kiabai.me/` — Tactile micro-interactions, clean engineering telemetry, and structured backend/architecture presentation.
+3. `https://afzalportfolio.pages.dev/` — Dense, high-impact project cards with zero wasted empty space.
 
 ## Composition and purpose
 
-- ENERGY 3 / RHYTHM 3 / MOTION 3: confident typographic scale, asymmetrical reading/visual lanes, varied project alignment and scroll-linked spatial change; no decorative idle loop.
-- Graphite `#121619`, ivory `#f4eee3`, secondary text `#c4beb3`, copper `#d9a17b`, surfaces `#1c2327`, interactive borders `#89979b`, focus `#ffe2a8`. One fixed dark world, including Contact. Forced-colors delegates to system colors.
-- Local Helvetica/Arial family: immediate rendering without external font downloads, restrained editorial tracking, giant name as a visual anchor rather than a fictitious registered trademark. No monospace-as-engineering costume.
-- Nine shared-geometry beveled laminae create an architectural M-channel aperture. Real thickness, directional light, shadows and cut surfaces establish depth without particles, HUD, grids or fake telemetry.
-- Hero assembled / eMesys separated record layers / OnboardX fanned leaves / vision aligned apertures / about calm joinery / contact resolved assembly. These are conceptual relationships, not production topology or actual system output.
-- Desktop reserves left reading lane and right sculptural aperture. Mobile places identity before a lower-field aperture with different camera distance and mask. Project windows allow the same sculpture to remain visible between solid reading surfaces. About and Contact are intentionally opaque and calm; the settled contact sculpture is therefore not a prominent visible closing feature in this prototype.
+- Dial: ENERGY 3 / RHYTHM 3 / MOTION 2 (confident display typography, asymmetric editorial grid, interactive RBAC system console, zero empty 3D rooms).
+- Dark theme (`data-theme="dark"`): paper `#0a0f1a`, surface `#121a2b`, surface-hover `#1a243b`, ink `#f1f5f9`, muted `#94a3b8`, accent `#38bdf8`, active `#1d4ed8`, line `#23324d`.
+- Light theme (`data-theme="light"`): paper `#eceff3`, surface `#ffffff`, surface-hover `#f4f7fa`, ink `#0f172a`, muted `#475569`, accent `#1848bd`, active `#1848bd`, line `#cbd5e1`.
+- Typography: `Syne` for display headings (at least 2.5x body scale on hero); `Plus Jakarta Sans` for body copy and UI controls; system monospace for system codes, coordinates, and RBAC telemetry.
 
 ## Architecture and interaction
 
-`SystemsPortfolio.svelte` owns semantic continuous HTML, language, verified project data and inline Contact. `MotionWorld.svelte` owns SSR fallback and guarded loading. `world.ts` owns procedural scene, section-derived scroll anchors and event-driven rendering. `/` and `/spatial/` share the page. Layout no longer mounts old HUD/navigation.
+1. **01 // Hero & Executive Dossier**: Asymmetric 2-column editorial masthead with display typography, live employment status (`Full-Stack Developer @ YHCM Sdn Bhd`), verified portrait card with key engineering metrics, and direct actions (`Download Resume PDF`, `Full Reading CV`, `Contact`).
+2. **02 // Systems & Engineering Showcase**:
+   - **Maintained Public-Sector Systems (YHCM Sdn Bhd)**: Dedicated 3-card architectural showcase for `EMESYS`, `SUTERA`, and `ADiMS` with explicit scope (system maintenance, new module development, bug fixing, RBAC & statutory audit compliance) and UI preview inspection.
+   - **Engineered Corporate & Product Systems**: Structured grid for `ONBOARDX` (TNB), `IWA001 Loan System` (Nova Bitara), `Infinity World Portal` (Nova Bitara), `9Router AI Office`, and `Baby Kick Tracker`, plus open-source/personal engineering archive (`TINDAK`, `Computer Vision Suite`, `Lumina Glass Studio`, `AI Policy RAG`).
+3. **03 // Interactive Zero-Trust & RBAC Console**: 2D interactive engineering workbench powered by `system-state.mjs` (`transition`, `outcome`) allowing reviewers to toggle the Homelab uplink cable, test `Visitor` (RBAC Denied) vs `Owner` (Verified Access) NFC credentials, and inspect system architecture & UI screenshots.
+4. **04 // Career Chronology (2017 - Present)**: Full 7-step timeline (`JOURNEY_STEPS`) covering YHCM Sdn Bhd, Nova Bitara Development, 3x Tenaga Nasional Berhad roles (Protégé, SOC Threat Defense, ICT Fiber Mapping), and UTM Degree/Diploma.
+5. **05 // Technical Capabilities, Education & Certifications**: 5 CV skill domains (`TECHNICAL_SKILLS`), UTM Bachelor (CGPA 3.17) & Diploma (CGPA 2.72), and 7 verified certifications (5 Cisco + 2 Data).
 
-Native document scroll is the source of truth; no wheel interception, scroll locking, mandatory chapter buttons, core dialogs, snapping or reveal-hidden content. Header links are optional shortcuts. Native links, language buttons, form controls and resume remain functional. Pointer parallax is bounded and unavailable to coarse pointers. Reduced motion chooses one assembled static composition. Hidden tabs cancel pending frames. Context loss returns permanently to the authored SVG without retry. Teardown disposes geometry/material/shadows/renderer/listeners/observers.
+## Acceptance and verification
 
-## Facts and boundaries
-
-Projects and technical capabilities are sourced from `system-projects.ts`, `cortex-data.ts` and existing translations. OnboardX is TNB / Flutter, not Nova Bitara. Feature lists are labeled documented capabilities rather than assuming every feature is a personally delivered contribution. Career periods follow Experience. Conceptual diagrams are explicitly labeled, not invented screenshots. No invented results, clients, metrics, deployment status or confidential data.
-
-## Acceptance and outstanding review
-
-Target WCAG 2.2 AA, not a compliance claim. Semantic landmarks, one h1, h2 sections/h3 subsections, skip main, logical native focus, visible rings, 44px controls, associated errors and a mounted status region. Form POST fallback avoids leaking messages in GET URLs. No WebGL-only information. Audit includes all six sections, language, form validation/error/success, reduced motion and context loss.
-
-Browser geometry and automation are evidence of behavior, not aesthetic quality. The current runtime cannot inspect screenshot pixels. Human visual sign-off, draft diagram accessible-name confirmation, real screen reader and physical mobile GPU review remain open. See `docs/motion-verification.md` for executed checks and raw unresolved audit counts. Earlier spatial/editorial reports describe superseded builds. Legacy source remains unmounted, not deleted without explicit confirmation.
+- WCAG 2.2 AA contrast across dark and light themes.
+- Mobile-first responsive reflow tested at 390px (mobile) and 1440px (desktop) via Playwright screenshots.
+- Minimum 44px x 44px touch targets, visible `:focus-visible` outlines, keyboard navigation, and zero horizontal overflow.
