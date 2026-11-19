@@ -20,6 +20,7 @@
   let focus = $state<FocusView>('console');
   let ready = $state(false);
   let failed = $state(false);
+  let webglMissing = $state(false);
   let paused = $state(false);
   let help = $state(false);
   let contact = $state(false);
@@ -136,6 +137,13 @@
     return () => clearInterval(timer);
   });
 
+  function hasWebGL() {
+    try {
+      const probe = document.createElement('canvas');
+      return !!(probe.getContext('webgl2') || probe.getContext('webgl'));
+    } catch { return false; }
+  }
+
   onMount(() => {
     initPreferences();
     if (matchMedia('(max-width: 639px)').matches) focus = 'console';
@@ -152,8 +160,16 @@
         world.setFocus(focus);
         world.setJourneyStep(journeyStep); world.setSkillCategory(skillCategory); world.setPaused(paused);
         ready = true;
-      } catch { failed = true; help = true; }
-    }).catch(() => { failed = true; help = true; });
+     } catch (error) {
+       console.error('[Workbench] Dunia 3D gagal dibina:', error);
+       webglMissing = !hasWebGL();
+       failed = true; help = true;
+     }
+   }).catch((error) => {
+     console.error('[Workbench] Modul dunia 3D gagal dimuatkan:', error);
+     webglMissing = !hasWebGL();
+     failed = true; help = true;
+   });
     return () => { disposed = true; motion.removeEventListener('change', updateMotion); world?.dispose(); };
   });
 </script>
@@ -218,7 +234,10 @@
     </details>
     <div class="scene-area">
       <canvas bind:this={canvas} aria-label={t('Dunia portfolio 3D. Gunakan butang fokus dan zum di atas, atau kawalan alternatif di bawah.', '3D portfolio world. Use the focus and zoom buttons above, or alternative controls below.')}></canvas>
-      <p class="render-status" role="status" hidden={ready}>{failed ? t('WebGL tidak tersedia. Gunakan kawalan dan versi teks di bawah.', 'WebGL unavailable. Use the controls and text version below.') : !ready ? t('Menyediakan dunia 3D…', 'Preparing the 3D world…') : ''}</p>
+      <p class="render-status" role="status" hidden={ready}>{failed ? (webglMissing
+    ? t('WebGL tidak tersedia. Gunakan kawalan dan versi teks di bawah.', 'WebGL unavailable. Use the controls and text version below.')
+    : t('Dunia 3D gagal dimuatkan. Kandungan di bawah tetap lengkap.', 'The 3D world failed to load. The content below is complete.'))
+  : !ready ? t('Menyediakan dunia 3D…', 'Preparing the 3D world…') : ''}</p>
       {#if ready && view === 'desk' && !inspection && hoverLabel && hover && anchors[hover]}
         <span class="object-hint" style:left={`clamp(80px, ${anchors[hover].x}px, calc(100% - 80px))`} style:top={`${Math.max(22, anchors[hover].y - 34)}px`}>{hoverLabel}</span>
       {/if}

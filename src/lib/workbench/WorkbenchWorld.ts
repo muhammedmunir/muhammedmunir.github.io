@@ -2392,8 +2392,10 @@ export class WorkbenchWorld {
         this.consoleBounds.expandByObject(child);
       }
     }
+    // Paparan panoramik membingkai seluruh meja: konsol, hologram dan stesen dossier.
+    const deskBounds = new THREE.Box3().setFromObject(this.dossier.group);
     const panoramic = this.consoleBounds.clone().union(this.screenBounds);
-    panoramic.union(deskBounds);
+    if (!deskBounds.isEmpty()) panoramic.union(deskBounds);
     this.consoleBounds.set(new THREE.Vector3(-2.5, 0.92, -1.9), new THREE.Vector3(2.8, 3.2, 3.1));
     this.focusBounds.set('console', this.consoleBounds);
     this.focusBounds.set('screen', this.screenBounds);
