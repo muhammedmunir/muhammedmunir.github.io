@@ -374,7 +374,7 @@
   footer span { font-weight: 400; color: var(--work-muted); }
   footer div { display: flex; flex-wrap: wrap; gap: 4px 8px; }
   footer button { text-decoration: underline; text-underline-offset: 4px; }
-  #bench-controls { position: fixed; z-index: 5; inset: auto 16px max(16px, env(safe-area-inset-bottom)); max-height: 75svh; overflow: auto; overscroll-behavior: contain; padding: 20px; background: var(--work-paper); border: 1px solid var(--work-muted); box-shadow: 0 12px 50px #26334130; }
+  #bench-controls { margin: 16px var(--gutter); padding: 20px; background: var(--work-surface); border: 1px solid var(--work-line); }
   #bench-controls[hidden] { display: none; }
   h2 { font-size: 20px; color: inherit; margin: 0 0 16px; }
   h3 { font-size: 14px; color: inherit; margin: 20px 0 8px; }
@@ -416,7 +416,6 @@
     .project-picker select { flex: 1; }
     .inspection-tools { gap: 6px 12px; padding-block: 8px; }
     .inspection-tools p { flex-basis: 100%; margin-block: 0; }
-    #bench-controls { position: relative; inset: auto; margin: 16px; max-height: none; box-shadow: none; padding: 16px; }
   }
   @media (forced-colors: active) {
     :is(button, a, summary, section, main, h2):focus-visible { outline-color: Highlight; }
