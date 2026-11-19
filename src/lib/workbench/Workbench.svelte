@@ -3,7 +3,7 @@
   import { base } from '$app/paths';
   import { INITIAL_STATE, MODULES, transition, outcome } from './system-state.mjs';
   import { PROJECT_MEDIA } from './project-media';
-  import { PROFILE, TECHNICAL_SKILLS, CERTIFICATIONS } from '$lib/spine/spine-data';
+  import { PROFILE, TECHNICAL_SKILLS, CERTIFICATIONS } from '$lib/content/portfolio-data';
   import { JOURNEY_STEPS } from './journey-data';
   import ContactModal from './ContactModal.svelte';
   import { initPreferences, getTheme, getLocale, toggleTheme, toggleLocale } from './preferences.svelte';

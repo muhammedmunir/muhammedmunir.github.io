@@ -138,7 +138,9 @@ Kemudian jalankan pelayan dev pada port 5199 dan ujian asap dari Pelan 002:
 npx vite dev --port 5199 --strictPort &
 WORKBENCH_URL=http://localhost:5199/ node scripts/workbench-smoke.mjs
 ```
-**Verify**: `SMOKE OK`. Juga buka `http://localhost:5199/cv`: halaman mesti memaparkan nama penuh (sahkan dengan `curl -s http://localhost:5199/cv | grep -c "Muhammed Munir"` → ≥1). Hentikan pelayan dev.
+**Verify**: `SMOKE OK`. Juga buka `http://localhost:5199/cv`: halaman mesti memaparkan nama penuh (sahkan dengan `curl -sL http://localhost:5199/cv | grep -c "Muhammed Munir"` → ≥1). Hentikan pelayan dev.
+
+Kemas kini 2026-11-19: `/cv` mengembalikan 308 ke `/cv/`; `-L` mengikuti pengalihan sebelum kandungan halaman disemak.
 
 ### Langkah 4: Commit
 

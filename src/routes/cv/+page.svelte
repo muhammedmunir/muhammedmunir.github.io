@@ -9,7 +9,7 @@
 		CERTIFICATIONS,
 		PROJECT_ARCHIVE,
 		type LocalizedText
-	} from '$lib/spine/spine-data';
+	} from '$lib/content/portfolio-data';
 	import ContactModal from '$lib/workbench/ContactModal.svelte';
 	import {
 		initPreferences, getLocale, getTheme, toggleLocale, toggleTheme

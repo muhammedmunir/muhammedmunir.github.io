@@ -1,6 +1,6 @@
 <script lang="ts">
   import { base } from '$app/paths';
-  import { PROFILE } from '$lib/spine/spine-data';
+  import { PROFILE } from '$lib/content/portfolio-data';
   import type { LocaleMode } from './preferences.svelte';
 
   let {

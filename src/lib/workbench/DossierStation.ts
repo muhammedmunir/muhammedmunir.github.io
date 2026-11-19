@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { base } from '$app/paths';
-import { PROFILE, TECHNICAL_SKILLS } from '$lib/spine/spine-data';
+import { PROFILE, TECHNICAL_SKILLS } from '$lib/content/portfolio-data';
 import { JOURNEY_STEPS } from './journey-data';
 import type { LocaleMode, ThemeMode } from './preferences.svelte';
 
