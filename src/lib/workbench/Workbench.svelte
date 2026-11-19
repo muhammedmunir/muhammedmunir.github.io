@@ -5,6 +5,7 @@
   import { PROJECT_MEDIA } from './project-media';
   import { PROFILE, TECHNICAL_SKILLS, CERTIFICATIONS } from '$lib/content/portfolio-data';
   import { JOURNEY_STEPS } from './journey-data';
+  import HeroIdentity from './HeroIdentity.svelte';
   import ContactModal from './ContactModal.svelte';
   import { initPreferences, getTheme, getLocale, toggleTheme, toggleLocale } from './preferences.svelte';
   import type { WorkbenchWorld, Part, BenchState, FocusView } from './WorkbenchWorld';
@@ -200,8 +201,9 @@
     {/each}
   </nav>
   <main id="workbench-main" tabindex="-1">
+    <HeroIdentity {locale} oncontact={() => contact = true} />
     <div class="scene-heading">
-      <h1 bind:this={heading} tabindex="-1">{title}</h1>
+      <h2 bind:this={heading} tabindex="-1">{title}</h2>
       {#if view === 'desk'}
         <div class="project-picker"><label for="project-select">{t('Projek', 'Project')}</label>
           <select id="project-select" value={benchState.module} onchange={event => { const index = Number(event.currentTarget.value); if (!inserted || index !== benchState.module) selectModule(index); }}>
@@ -330,7 +332,7 @@
   .view-nav button { min-width: 0; padding: 8px 4px; font-size: .75rem; font-weight: 600; }
   main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .scene-heading { padding: 14px var(--gutter) 8px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 24px; }
-  h1 { flex-shrink: 0; max-width: 100%; font-family: var(--font-heading); font-size: clamp(24px, 2.6vw, 34px); line-height: 1.15; letter-spacing: -.04em; margin: 0; color: inherit; overflow-wrap: anywhere; }
+  .scene-heading h2 { flex-shrink: 0; max-width: 100%; font-family: var(--font-heading); font-size: clamp(24px, 2.6vw, 34px); line-height: 1.15; letter-spacing: -.04em; margin: 0; color: inherit; overflow-wrap: anywhere; }
   .scene-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px; padding: 4px var(--gutter) 8px; }
   .focus-controls, .camera-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-width: 0; }
   .focus-controls { flex: 1 1 20rem; }
@@ -384,7 +386,7 @@
   button:not(:disabled):hover, a:hover { text-decoration: underline; }
   button:not(:disabled):active { text-decoration: underline; text-underline-offset: 3px; }
   .end { margin-top: 20px; }
-  :is(button, a, summary, section, main, h1):focus-visible { outline: 3px solid var(--work-accent); outline-offset: 3px; }
+  :is(button, a, summary, section, main, h2):focus-visible { outline: 3px solid var(--work-accent); outline-offset: 3px; }
   .skip-link { position: fixed; top: -120px; left: 16px; z-index: 9; padding: 12px; background: var(--work-paper); }
   .skip-link:focus { top: 12px; }
   @media (min-width: 640px) {
@@ -418,7 +420,7 @@
     #bench-controls { position: relative; inset: auto; margin: 16px; max-height: none; box-shadow: none; padding: 16px; }
   }
   @media (forced-colors: active) {
-    :is(button, a, summary, section, main, h1):focus-visible { outline-color: Highlight; }
+    :is(button, a, summary, section, main, h2):focus-visible { outline-color: Highlight; }
     button[aria-pressed='true'] { border-color: Highlight; outline: 2px solid Highlight; outline-offset: -3px; }
   }
 </style>
