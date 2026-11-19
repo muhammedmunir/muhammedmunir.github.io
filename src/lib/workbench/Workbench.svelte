@@ -313,7 +313,7 @@
 <ContactModal open={contact} {locale} onclose={() => contact = false} />
 
 <style>
-  .workbench { --gutter: 16px; min-height: 100svh; min-height: 100dvh; background: var(--work-paper); color: var(--work-ink); display: flex; flex-direction: column; position: relative; }
+  .workbench { --gutter: 16px; background: var(--work-paper); color: var(--work-ink); display: flex; flex-direction: column; position: relative; }
   header, footer { padding: 8px var(--gutter); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; position: relative; }
   header { border-bottom: 1px solid var(--work-line); }
   .identity { font-family: var(--font-heading); font-size: 32px; font-weight: 800; letter-spacing: -.07em; text-decoration: none; }
@@ -340,7 +340,7 @@
   .camera-controls { margin-left: auto; }
   .camera-controls button { border-color: var(--work-muted); }
   .zoom-button { font-size: 22px; padding: 0; }
-  .scene-area { flex: 1 1 18rem; min-height: 18rem; position: relative; }
+  .scene-area { flex: 0 0 auto; height: min(72svh, 720px); min-height: 22rem; position: relative; }
   @media (max-width: 639px) {
     .scene-heading { padding-top: 10px; }
     .scene-toolbar { gap: 6px; }
@@ -348,9 +348,6 @@
     .focus-controls button { white-space: nowrap; }
     .camera-controls { width: 100%; }
     .camera-controls button:last-child { flex: 1; }
-  }
-  @media (min-width: 640px) {
-    .scene-area { flex-basis: 22rem; min-height: 20rem; }
   }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .render-status { position: absolute; top: 35%; left: var(--gutter); right: var(--gutter); padding: 16px; margin: 0; background: var(--work-surface); color: var(--work-ink); font-size: .875rem; border: 1px solid var(--work-muted); }
@@ -401,7 +398,6 @@
     .workbench { --gutter: 32px; }
     .menu-toggle { display: none; }
     #portfolio-links, #portfolio-links.expanded { display: flex; flex: 0 1 auto; flex-wrap: wrap; }
-    .scene-area { flex-basis: 24rem; }
   }
   .camera-disclosure { padding-inline: var(--gutter); }
   .camera-disclosure > summary { width: fit-content; color: var(--work-muted); }
@@ -411,7 +407,7 @@
   select:focus-visible { outline: 3px solid var(--work-accent); outline-offset: 3px; }
   .telemetry { margin-block: 12px; color: var(--work-muted); font-size: .75rem; }
   @media (max-width: 639px) {
-    .scene-area { min-height: 24rem; flex-basis: 24rem; }
+    .scene-area { height: 56svh; min-height: 18rem; }
     .scene-heading { gap: 12px; }
     .project-picker { width: 100%; margin: 0; }
     .project-picker select { flex: 1; }
