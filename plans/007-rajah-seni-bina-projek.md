@@ -195,7 +195,7 @@ HOME_URL=http://localhost:5199/ node scripts/home-visual.mjs   # jika Pelan 006 
 
 - [ ] `node --test scripts/architecture.test.mjs` → semua lulus
 - [ ] `npm test` → 0 gagal; `npm run check` → `0 ERRORS 0 WARNINGS`; `npm run build` exit 0
-- [ ] `git diff --stat main -- src/lib/workbench/system-state.mjs` → kosong (data tidak diubah)
+- [ ] `git diff --stat bdae964 -- src/lib/workbench/system-state.mjs` → kosong (data tidak diubah sejak fail itu mula di-commit dalam Pelan 001; fail ini tiada dalam cawangan `main`)
 - [ ] Tangkapan `.crew/artifacts/sistem/1440.png` dan `390.png` wujud
 - [ ] `grep -rn "box-shadow\|filter: blur" src/lib/workbench/ArchitectureDiagram.svelte src/lib/workbench/SystemsSection.svelte` → tiada
 - [ ] Baris 007 dalam `plans/README.md` → `DONE`
