@@ -1,33 +1,59 @@
-# MUNIR: EDITORIAL DARK TECH SYSTEM PORTFOLIO
+# DESIGN.md: Portfolio Muhammed Munir (sumber tunggal reka bentuk)
 
-## Approved direction
+Dokumen ini satu-satunya rujukan reka bentuk. Jika dokumen lain bercanggah, dokumen ini menang.
+Dokumen lama diarkibkan dalam `docs/archive/`.
 
-Primary audience: hiring managers, technical leads, engineering managers, and technology companies. Identity must communicate Muhammed Munir Bin Mohd Azmi as a Full-Stack Systems Software Engineer immediately. Engineering credibility, system architecture clarity, and real production responsibilities precede spectacle.
+## Audiens & ujian 10 saat
 
-Reference benchmarks (`CLAUDE.md`):
-1. `https://kamizanamir.github.io/` — Sharp editorial hierarchy, bold Syne / Plus Jakarta Sans typography, high-contrast monochrome dark and warm paper light themes.
-2. `https://kiabai.me/` — Tactile micro-interactions, clean engineering telemetry, and structured backend/architecture presentation.
-3. `https://afzalportfolio.pages.dev/` — Dense, high-impact project cards with zero wasted empty space.
+Pengambil pekerja, ketua teknikal dan pengurus kejuruteraan. Dalam 10 saat pertama tanpa skrol atau interaksi, pelawat MESTI dapat membaca:
+1. Nama: Muhammed Munir.
+2. Peranan: Full-Stack Developer • Keselamatan Rangkaian.
+3. Bukti: sistem sektor awam yang disenggara (YHCM) dan projek yang dibina.
+4. Tindakan: Resume PDF dan Hubungi.
 
-## Composition and purpose
+## Konsep: "Meja Jurutera Sistem"
 
-- Dial: ENERGY 3 / RHYTHM 3 / MOTION 2 (confident display typography, asymmetric editorial grid, interactive RBAC system console, zero empty 3D rooms).
-- Dark theme (`data-theme="dark"`): paper `#0a0f1a`, surface `#121a2b`, surface-hover `#1a243b`, ink `#f1f5f9`, muted `#94a3b8`, accent `#38bdf8`, active `#1d4ed8`, line `#23324d`.
-- Light theme (`data-theme="light"`): paper `#eceff3`, surface `#ffffff`, surface-hover `#f4f7fa`, ink `#0f172a`, muted `#475569`, accent `#1848bd`, active `#1848bd`, line `#cbd5e1`.
-- Typography: `Syne` for display headings (at least 2.5x body scale on hero); `Plus Jakarta Sans` for body copy and UI controls; system monospace for system codes, coordinates, and RBAC telemetry.
+1. **Hero berbingkai (Arah A).** Identiti dalam HTML di atas, kemudian dunia 3D Workbench sebagai pentas terhad ketinggian (desktop `min(72svh, 720px)`, mudah alih `56svh`). Dunia 3D ialah identiti visual dan alat penerokaan, BUKAN satu-satunya cara membaca kandungan.
+2. **Sistem (Arah B).** Setiap projek dipaparkan sebagai rajah seni bina interaktif (nod komponen dan aliran data), bukan kad biasa.
+3. **Editorial.** Profil, Perjalanan kerjaya, Kemahiran dan Sijil dalam HTML penuh di bawah hero. Versi penuh di `/cv`.
 
-## Architecture and interaction
+## Token (dari `src/routes/layout.css`; jangan tambah palet baharu)
 
-1. **01 // Hero & Executive Dossier**: Asymmetric 2-column editorial masthead with display typography, live employment status (`Full-Stack Developer @ YHCM Sdn Bhd`), verified portrait card with key engineering metrics, and direct actions (`Download Resume PDF`, `Full Reading CV`, `Contact`).
-2. **02 // Systems & Engineering Showcase**:
-   - **Maintained Public-Sector Systems (YHCM Sdn Bhd)**: Dedicated 3-card architectural showcase for `EMESYS`, `SUTERA`, and `ADiMS` with explicit scope (system maintenance, new module development, bug fixing, RBAC & statutory audit compliance) and UI preview inspection.
-   - **Engineered Corporate & Product Systems**: Structured grid for `ONBOARDX` (TNB), `IWA001 Loan System` (Nova Bitara), `Infinity World Portal` (Nova Bitara), `9Router AI Office`, and `Baby Kick Tracker`, plus open-source/personal engineering archive (`TINDAK`, `Computer Vision Suite`, `Lumina Glass Studio`, `AI Policy RAG`).
-3. **03 // Interactive Zero-Trust & RBAC Console**: 2D interactive engineering workbench powered by `system-state.mjs` (`transition`, `outcome`) allowing reviewers to toggle the Homelab uplink cable, test `Visitor` (RBAC Denied) vs `Owner` (Verified Access) NFC credentials, and inspect system architecture & UI screenshots.
-4. **04 // Career Chronology (2017 - Present)**: Full 7-step timeline (`JOURNEY_STEPS`) covering YHCM Sdn Bhd, Nova Bitara Development, 3x Tenaga Nasional Berhad roles (Protégé, SOC Threat Defense, ICT Fiber Mapping), and UTM Degree/Diploma.
-5. **05 // Technical Capabilities, Education & Certifications**: 5 CV skill domains (`TECHNICAL_SKILLS`), UTM Bachelor (CGPA 3.17) & Diploma (CGPA 2.72), and 7 verified certifications (5 Cisco + 2 Data).
+| Token | Gelap | Cerah |
+|---|---|---|
+| `--work-paper` | `#09090b` | `#eceff3` |
+| `--work-surface` | `#121215` | `#ffffff` |
+| `--work-surface-hover` | `#27272a` | `#f4f7fa` |
+| `--work-ink` | `#f4f4f5` | `#0f172a` |
+| `--work-muted` | `#b4b4bd` | `#475569` |
+| `--work-accent` | `#e5b580` | `#1848bd` |
+| `--work-line` | `#3f3f46` | `#cbd5e1` |
 
-## Acceptance and verification
+Satu aksen sahaja: `--work-accent` (amber hangat), hanya untuk tindakan utama, keadaan aktif dan aliran data dalam rajah.
 
-- WCAG 2.2 AA contrast across dark and light themes.
-- Mobile-first responsive reflow tested at 390px (mobile) and 1440px (desktop) via Playwright screenshots.
-- Minimum 44px x 44px touch targets, visible `:focus-visible` outlines, keyboard navigation, and zero horizontal overflow.
+## Tipografi
+
+- Paparan: `Syne` (`--font-heading`). Nama dalam hero sekurang-kurangnya 2.5x saiz badan.
+- Badan & UI: `Plus Jakarta Sans` (`--font-body`).
+- Kod, ID sistem dan telemetri: monospace sistem.
+
+## Larangan (antislop)
+
+- Tiada gradien biru/ungu, orb kabur, cahaya neon bertaburan.
+- Tiada butang berbentuk pil; jejari 6–8px.
+- Tiada bayang terapung kabur; guna sempadan 1px `--work-line`.
+- Kaca/blur maksimum 1 elemen.
+- Tiada teks penting yang hanya wujud dalam tekstur 3D.
+- Tiada emoji dalam UI. Tiada nombor atau metrik rekaan.
+
+## Kerahsiaan
+
+EMESYS, SUTERA dan ADiMS ialah sistem dalaman agensi kerajaan dengan kod sulit. Rajah seni bina untuk sistem ini mesti umum (lapisan, peranan, aliran) tanpa nama jadual, endpoint, IP, nama pelayan atau butiran keselamatan dalaman.
+
+## Penerimaan
+
+- WCAG 2.2 AA kontras untuk kedua-dua tema (`npm run test:contrast`).
+- Responsif pada 390px dan 1440px, tanpa limpahan mendatar; sasaran sentuh ≥44px; `:focus-visible` jelas; navigasi papan kekunci penuh.
+- `prefers-reduced-motion` dihormati: tiada animasi bergerak; dunia 3D statik.
+- Dunia 3D berhenti render apabila di luar skrin.
+- Bukti visual setiap perubahan UI: tangkapan Playwright 390px dan 1440px.

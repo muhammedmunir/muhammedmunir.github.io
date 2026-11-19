@@ -42,6 +42,14 @@ Untuk mengelakkannya:
    bawah, dan laporkan bukti (output arahan) kepada pemilik.
 6. Jika C9 tersekat pada langkah yang sama dua kali: STOP, tulis sebab dalam
    lajur Status sebagai `BLOCKED: <sebab>`, dan laporkan. Jangan berimprovisasi.
+7. **Sunting fail dengan alat Edit, bukan skrip Python/sed/PowerShell.** Alat
+   Edit memaparkan diff yang jelas, jadi pemilik dan pengawal *auto mode* boleh
+   menyemaknya. Skrip yang menulis teks tersembunyi akan disekat, terutamanya
+   untuk `CLAUDE.md` (2026-11-19, Pelan 003). Satu suntingan Edit bagi setiap
+   perubahan. Arahan `git mv`/`git rm` dan semakan `grep` masih guna shell.
+8. **Jika Python perlu mencetak teks**, jalankan dengan
+   `PYTHONIOENCODING=utf-8`. Terminal Windows menggunakan `cp1252` dan gagal
+   mencetak aksara seperti `→` dan `·`.
 
 ## Turutan pelaksanaan & status
 
@@ -49,7 +57,7 @@ Untuk mengelakkannya:
 |------|-------|-----------|-------|-----------------|--------|
 | 001 | Simpan kerja Workbench dalam git dengan selamat | P1 | S | — | DONE |
 | 002 | Baiki dunia 3D halaman utama yang rosak & ralat yang disorok | P1 | S | 001 | DONE |
-| 003 | Tetapkan satu arah reka bentuk (DESIGN.md, CLAUDE.md, README) | P1 | S | 001 | TODO |
+| 003 | Tetapkan satu arah reka bentuk (DESIGN.md, CLAUDE.md, README) | P1 | S | 001 | DONE |
 | 004 | Buang kod mati Fiber Spine & sisa prototaip | P2 | M | 001, 002 | TODO |
 | 005 | Pulihkan halaman dasar privasi Baby Kick Tracker | P1 | S | 001 | TODO |
 | 006 | Arah A: hero 3D berbingkai + kandungan editorial | P2 | L | 002, 003, 004 | TODO |
