@@ -8,6 +8,7 @@
   import EditorialSummary from './EditorialSummary.svelte';
   import HeroIdentity from './HeroIdentity.svelte';
   import ContactModal from './ContactModal.svelte';
+import SystemsSection from './SystemsSection.svelte';
   import { initPreferences, getTheme, getLocale, toggleTheme, toggleLocale } from './preferences.svelte';
   import type { WorkbenchWorld, Part, BenchState, FocusView } from './WorkbenchWorld';
   import type { DossierView } from './DossierStation';
@@ -286,7 +287,7 @@
       </section>
     {/if}
   </main>
-  <!-- Pelan 007: SystemsSection -->
+  <SystemsSection {locale} />
   <EditorialSummary {locale} />
   <footer>
     {#if simulation}<p class="telemetry">SOC TELEMETRY: {benchState.connected ? 'ONLINE' : 'OFFLINE'} · {t('SIMULASI TEMPATAN', 'LOCAL SIMULATION')}</p>{/if}
