@@ -5,6 +5,7 @@
   import { PROJECT_MEDIA } from './project-media';
   import { PROFILE, TECHNICAL_SKILLS, CERTIFICATIONS } from '$lib/content/portfolio-data';
   import { JOURNEY_STEPS } from './journey-data';
+  import EditorialSummary from './EditorialSummary.svelte';
   import HeroIdentity from './HeroIdentity.svelte';
   import ContactModal from './ContactModal.svelte';
   import { initPreferences, getTheme, getLocale, toggleTheme, toggleLocale } from './preferences.svelte';
@@ -282,6 +283,8 @@
       </section>
     {/if}
   </main>
+  <!-- Pelan 007: SystemsSection -->
+  <EditorialSummary {locale} />
   <footer>
     {#if simulation}<p class="telemetry">SOC TELEMETRY: {benchState.connected ? 'ONLINE' : 'OFFLINE'} · {t('SIMULASI TEMPATAN', 'LOCAL SIMULATION')}</p>{/if}
     <p role="status">{#if view !== 'desk'}{t('Profil awam · Tidak memerlukan kad akses', 'Public profile · No access card required')}
