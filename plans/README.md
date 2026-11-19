@@ -48,7 +48,7 @@ Untuk mengelakkannya:
 | Plan | Tajuk | Keutamaan | Usaha | Bergantung pada | Status |
 |------|-------|-----------|-------|-----------------|--------|
 | 001 | Simpan kerja Workbench dalam git dengan selamat | P1 | S | — | DONE |
-| 002 | Baiki dunia 3D halaman utama yang rosak & ralat yang disorok | P1 | S | 001 | TODO |
+| 002 | Baiki dunia 3D halaman utama yang rosak & ralat yang disorok | P1 | S | 001 | DONE |
 | 003 | Tetapkan satu arah reka bentuk (DESIGN.md, CLAUDE.md, README) | P1 | S | 001 | TODO |
 | 004 | Buang kod mati Fiber Spine & sisa prototaip | P2 | M | 001, 002 | TODO |
 | 005 | Pulihkan halaman dasar privasi Baby Kick Tracker | P1 | S | 001 | TODO |

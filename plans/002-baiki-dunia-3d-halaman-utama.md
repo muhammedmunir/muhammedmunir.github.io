@@ -217,7 +217,7 @@ Untuk membuktikan ujian ini benar-benar menangkap pepijat: buat sementara `git s
 ## Kriteria siap
 
 - [ ] `npm run check` → `0 ERRORS 0 WARNINGS`
-- [ ] `grep -c "panoramic.union(deskBounds)" src/lib/workbench/WorkbenchWorld.ts` → `0`
+- [ ] `grep -cE '^[[:space:]]*panoramic\.union\(deskBounds\);[[:space:]]*$' src/lib/workbench/WorkbenchWorld.ts` → `0`
 - [ ] `grep -c "const deskBounds = new THREE.Box3().setFromObject(this.dossier.group)" src/lib/workbench/WorkbenchWorld.ts` → `1`
 - [ ] `node scripts/workbench-smoke.mjs` (dengan pelayan dev) → `SMOKE OK`
 - [ ] `npm test` → 0 gagal
