@@ -6,7 +6,13 @@
 > berimprovisasi. Apabila selesai, kemas kini baris status pelan ini dalam
 > `plans/README.md`.
 >
-> **Semakan drift (jalankan dahulu)**: `test -e src/routes/baby-kick-privacy && echo WUJUD || echo TIADA` → `TIADA`. Jika `WUJUD`, STOP (seseorang sudah memulihkannya).
+> **Semakan drift (jalankan dahulu)**: `test -e src/routes/baby-kick-privacy/+page.svelte && echo WUJUD || echo TIADA`.
+> - `TIADA` → mulakan dari Langkah 1.
+> - `WUJUD` → semak sama ada ia hasil Langkah 1 yang sudah dibuat:
+>   `git show "f23eecc^:src/routes/baby-kick-privacy/+page.svelte" | cmp -s - src/routes/baby-kick-privacy/+page.svelte && echo SAMA-ASAL`.
+>   Jika `SAMA-ASAL`, Langkah 1 sudah selesai; sambung dari Langkah 1b. Jika tidak sama dan fail belum mempunyai baris JSDoc dari Langkah 1c, STOP (seseorang telah mengubahnya).
+
+> **Kemas kini 2026-11-19**: Percubaan pertama berhenti dengan betul pada Langkah 2 kerana dua perkara yang terlepas dalam pelan asal: (1) `svelte-check` melaporkan `Parameter 'l' implicitly has an 'any' type` di baris 6; (2) imej `/Logo_BiK.png` turut dipadam dalam commit `f23eecc`, jadi prerender gagal dengan `404`. Langkah 1b dan 1c ditambah untuk kedua-duanya. Logo ialah satu-satunya aset tempatan yang dirujuk oleh halaman ini (disemak: pautan lain ialah luar, `mailto:` atau `/`).
 
 ## Status
 
@@ -44,17 +50,18 @@ atau diturunkan. Pelan ini memulihkan halaman asal tanpa perubahan kandungan.
 ## Skop
 
 **Dalam skop**:
-- `src/routes/baby-kick-privacy/+page.svelte` (cipta daripada sejarah git)
+- `src/routes/baby-kick-privacy/+page.svelte` (cipta daripada sejarah git, ditambah SATU baris komen JSDoc)
+- `static/Logo_BiK.png` (pulihkan daripada sejarah git, tanpa perubahan)
 
 **Luar skop**:
-- Kandungan undang-undang dalam halaman: JANGAN ubah ayat, tarikh atau bahagian. Pindah verbatim.
+- Kandungan undang-undang dalam halaman: JANGAN ubah ayat, tarikh atau bahagian. Pindah verbatim. Satu-satunya perubahan yang dibenarkan ialah baris komen JSDoc dalam Langkah 1c, yang tidak mengubah paparan atau logik.
 - `static/sitemap.xml`: tidak perlu menambah halaman privasi.
 - Mana-mana fail lain.
 
 ## Aliran kerja git
 
 - Satu commit. Mesej: `fix(privacy): pulihkan dasar privasi Baby Kick Tracker di /baby-kick-privacy`
-- Stage eksplisit: `git add src/routes/baby-kick-privacy/+page.svelte`. Jangan push.
+- Stage eksplisit: `git add src/routes/baby-kick-privacy/+page.svelte static/Logo_BiK.png`. Jangan push.
 
 ## Langkah
 
@@ -65,6 +72,29 @@ mkdir -p src/routes/baby-kick-privacy
 git show f23eecc^:src/routes/baby-kick-privacy/+page.svelte > src/routes/baby-kick-privacy/+page.svelte
 ```
 **Verify**: `wc -l < src/routes/baby-kick-privacy/+page.svelte` → `470`; `grep -c "Baby Kick Tracker - Privacy Policy" src/routes/baby-kick-privacy/+page.svelte` → `1`.
+
+### Langkah 1b: Pulihkan imej logo daripada sejarah git
+
+Guna `git restore` (tiada redirect `>`, jadi fail tidak boleh dikosongkan jika arahan gagal):
+```bash
+git restore --source=f23eecc^ -- static/Logo_BiK.png
+```
+**Verify**: `test "$(git hash-object static/Logo_BiK.png)" = "$(git rev-parse 'f23eecc^:static/Logo_BiK.png')" && echo LOGO-SAMA` → `LOGO-SAMA`.
+
+### Langkah 1c: Tambah anotasi jenis JSDoc pada `toggleLang`
+
+`svelte-check` (ketat, `noImplicitAny`) menolak `function toggleLang(l)` kerana `l` tiada jenis. Fail ini menggunakan `<script>` JavaScript biasa, jadi gunakan komen JSDoc, BUKAN tukar ke TypeScript.
+
+Dengan **alat Edit** (peraturan 7 dalam `plans/README.md`), gantikan:
+```
+    function toggleLang(l) {
+```
+dengan:
+```
+    /** @param {'en' | 'ms'} l */
+    function toggleLang(l) {
+```
+**Verify**: `npm run check` → `0 ERRORS`; `diff <(git show "f23eecc^:src/routes/baby-kick-privacy/+page.svelte") src/routes/baby-kick-privacy/+page.svelte | grep -c '^>'` → `1` (hanya satu baris ditambah).
 
 ### Langkah 2: Semak jenis dan bina
 
@@ -102,7 +132,8 @@ git commit -m "fix(privacy): pulihkan dasar privasi Baby Kick Tracker di /baby-k
 - [ ] `test -f src/routes/baby-kick-privacy/+page.svelte && echo ADA` → `ADA`
 - [ ] `npm run build` exit 0 dan output mengandungi halaman baby-kick-privacy
 - [ ] `curl` pada pelayan dev → HTTP 200 dan mengandungi "Information We Collect"
-- [ ] Kandungan sama dengan asal: `diff <(git show f23eecc^:src/routes/baby-kick-privacy/+page.svelte) src/routes/baby-kick-privacy/+page.svelte` → tiada output
+- [ ] Kandungan sama dengan asal kecuali SATU baris JSDoc: `diff <(git show "f23eecc^:src/routes/baby-kick-privacy/+page.svelte") src/routes/baby-kick-privacy/+page.svelte | grep -E '^[<>]'` → tepat satu baris, `> /** @param {'en' | 'ms'} l */`
+- [ ] Logo sama dengan asal: `git hash-object static/Logo_BiK.png` = `git rev-parse 'f23eecc^:static/Logo_BiK.png'`
 - [ ] Baris 005 dalam `plans/README.md` → `DONE`
 
 ## Syarat STOP
