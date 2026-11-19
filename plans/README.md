@@ -77,7 +77,7 @@ Untuk mengelakkannya:
 | 004 | Buang kod mati Fiber Spine & sisa prototaip | P2 | M | 001, 002 | DONE |
 | 005 | Pulihkan halaman dasar privasi Baby Kick Tracker | P1 | S | 001 | DONE |
 | 006 | Arah A: hero 3D berbingkai + kandungan editorial | P2 | L | 002, 003, 004 | DONE |
-| 007 | Arah B: rajah seni bina projek interaktif | P2 | L | 003, 004 | TODO |
+| 007 | Arah B: rajah seni bina projek interaktif | P2 | L | 003, 004 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
