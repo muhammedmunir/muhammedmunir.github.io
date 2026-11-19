@@ -110,9 +110,10 @@ ls build | grep -i baby
 ```bash
 npx vite dev --port 5199 --strictPort &
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5199/baby-kick-privacy
-curl -s http://localhost:5199/baby-kick-privacy | grep -c "Information We Collect"
+curl -sL -o /dev/null -w "%{http_code}\n" http://localhost:5199/baby-kick-privacy
+curl -sL http://localhost:5199/baby-kick-privacy | grep -c "Information We Collect"
 ```
-**Verify**: `200`, kemudian ≥`1`. Ambil tangkapan skrin 390px dan 1440px dengan Playwright (simpan di `.crew/artifacts/privacy/`, yang sudah diabaikan oleh git) dan pastikan teks boleh dibaca (bukan teks gelap atas latar gelap). Jika tidak boleh dibaca kerana gaya global `layout.css`, lihat syarat STOP. Hentikan pelayan dev.
+**Verify**: `308` (pengalihan ke `/baby-kick-privacy/`; ini DIJANGKA kerana halaman dijana sebagai `baby-kick-privacy/index.html`, dan GitHub Pages berkelakuan sama), kemudian `200` selepas mengikut pengalihan, kemudian ≥`1`. Pelayar Playwright Chromium sudah dipasang pada mesin ini (digunakan 2026-11-18 dari `node_modules` portfolio dengan `chromium.launch()` lalai); jika `chromium.launch()` gagal, jalankan `npx playwright install chromium` sekali. Ambil tangkapan skrin 390px dan 1440px dengan Playwright (simpan di `.crew/artifacts/privacy/`, yang sudah diabaikan oleh git) dan pastikan teks boleh dibaca (bukan teks gelap atas latar gelap). Jika tidak boleh dibaca kerana gaya global `layout.css`, lihat syarat STOP. Hentikan pelayan dev.
 
 ### Langkah 4: Commit
 
@@ -131,7 +132,7 @@ git commit -m "fix(privacy): pulihkan dasar privasi Baby Kick Tracker di /baby-k
 
 - [ ] `test -f src/routes/baby-kick-privacy/+page.svelte && echo ADA` → `ADA`
 - [ ] `npm run build` exit 0 dan output mengandungi halaman baby-kick-privacy
-- [ ] `curl` pada pelayan dev → HTTP 200 dan mengandungi "Information We Collect"
+- [ ] `curl -sL` pada pelayan dev → HTTP 200 dan mengandungi "Information We Collect" (tanpa `-L`: 308 ke garis miring akhir, dijangka)
 - [ ] Kandungan sama dengan asal kecuali SATU baris JSDoc: `diff <(git show "f23eecc^:src/routes/baby-kick-privacy/+page.svelte") src/routes/baby-kick-privacy/+page.svelte | grep -E '^[<>]'` → tepat satu baris, `> /** @param {'en' | 'ms'} l */`
 - [ ] Logo sama dengan asal: `git hash-object static/Logo_BiK.png` = `git rev-parse 'f23eecc^:static/Logo_BiK.png'`
 - [ ] Baris 005 dalam `plans/README.md` → `DONE`
