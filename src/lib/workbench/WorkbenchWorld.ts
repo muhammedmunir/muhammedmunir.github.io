@@ -2745,6 +2745,9 @@ export class WorkbenchWorld {
     this.geometries.forEach(g => g.dispose());
     this.materials.forEach(m => m.dispose());
     this.textures.forEach(t => t.dispose());
+    this.geometries.clear();
+    this.materials.clear();
+    this.textures.clear();
     this.scene.traverse(o => {
       if (o instanceof THREE.DirectionalLight) o.shadow.dispose();
     });
