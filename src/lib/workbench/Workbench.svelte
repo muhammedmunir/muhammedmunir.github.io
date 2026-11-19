@@ -153,6 +153,7 @@
     const updateMotion = () => { reduced = motion.matches; if (reduced) playing = false; };
     updateMotion(); motion.addEventListener('change', updateMotion);
     let disposed = false;
+    let observer: IntersectionObserver | undefined;
     import('./WorkbenchWorld').then(({ WorkbenchWorld }) => {
       if (disposed) return;
       try {
@@ -161,6 +162,8 @@
         syncWorld(); world.setTheme(getTheme()); world.setLocale(getLocale());
         world.setFocus(focus);
         world.setJourneyStep(journeyStep); world.setSkillCategory(skillCategory); world.setPaused(paused);
+        observer = new IntersectionObserver(([entry]) => world?.setOffscreen(!entry.isIntersecting), { threshold: 0 });
+        observer.observe(canvas.parentElement!);
         ready = true;
      } catch (error) {
        console.error('[Workbench] Dunia 3D gagal dibina:', error);
@@ -172,7 +175,7 @@
      webglMissing = !hasWebGL();
      failed = true; help = true;
    });
-    return () => { disposed = true; motion.removeEventListener('change', updateMotion); world?.dispose(); };
+    return () => { disposed = true; observer?.disconnect(); motion.removeEventListener('change', updateMotion); world?.dispose(); };
   });
 </script>
 

@@ -47,6 +47,7 @@ export class WorkbenchWorld {
   private consoleBounds = new THREE.Box3();
   private screenBounds = new THREE.Box3();
   private renderDirty = true;
+  private offscreen = false;
   private lastRender = 0;
   private disposed = false;
   private pendingImages = new Set<HTMLImageElement>();
@@ -2378,6 +2379,11 @@ export class WorkbenchWorld {
     this.renderScreenTexture();
   }
 
+  setOffscreen(value: boolean) {
+    this.offscreen = value;
+    if (!value) this.renderDirty = true;
+  }
+
   setPaused(value: boolean) {
     this.renderDirty = true;
     this.paused = value;
@@ -2429,7 +2435,7 @@ export class WorkbenchWorld {
   private animate = (now: number) => {
     if (this.dead) return;
     this.frame = requestAnimationFrame(this.animate);
-    if (document.hidden) {
+    if (document.hidden || this.offscreen) {
       this.last = now;
       return;
     }

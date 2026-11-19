@@ -223,12 +223,14 @@ WorkbenchWorld.prototype.setOffscreen = function (v) { window.__offscreen = v; r
 });
 // buka halaman pada 1440x900, tunggu networkidle + 6s
 await page.evaluate(() => document.getElementById('sijil').scrollIntoView());
-await page.waitForTimeout(800);
+await page.waitForFunction(() => window.__offscreen === true, undefined, { timeout: 10000 });
 const off = await page.evaluate(() => window.__offscreen);      // mesti true
 await page.evaluate(() => window.scrollTo(0, 0));
-await page.waitForTimeout(800);
+await page.waitForFunction(() => window.__offscreen === false, undefined, { timeout: 10000 });
 const on = await page.evaluate(() => window.__offscreen);       // mesti false
 ```
+Kemas kini 2026-11-19: Skrol lancar boleh mengambil lebih daripada 800 ms. Verify menunggu perubahan keadaan pemerhati dengan had 10 saat bagi setiap peralihan.
+
 → `off === true` dan `on === false`. Kemudian `SMOKE OK`, dan tangkapan skrin selepas skrol semula ke atas menunjukkan dunia 3D masih dirender.
 
 ### Langkah 6: Ujian visual `scripts/home-visual.mjs`
