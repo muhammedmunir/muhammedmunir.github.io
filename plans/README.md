@@ -50,6 +50,22 @@ Untuk mengelakkannya:
 8. **Jika Python perlu mencetak teks**, jalankan dengan
    `PYTHONIOENCODING=utf-8`. Terminal Windows menggunakan `cp1252` dan gagal
    mencetak aksara seperti `→` dan `·`.
+9. **STOP yang berpunca daripada pelan, bukan kod: C9 boleh membetulkannya
+   sendiri dengan kelulusan pemilik.** Jika bukti menunjukkan kesilapan ada
+   pada arahan Verify atau syarat STOP (contoh: `curl` tanpa `-L` menerima
+   308, import relatif yang terlepas, `grep` terkena fail sandaran), dan kod
+   itu sendiri betul:
+   (a) tunjukkan bukti dalam satu jadual ringkas;
+   (b) cadangkan pembetulan MINIMUM pada Verify/STOP sahaja;
+   (c) tunggu pemilik membalas `ya`;
+   (d) sunting pelan dengan alat Edit, tambah nota `Kemas kini <tarikh>: <sebab>`,
+   kemudian sambung.
+   DILARANG menggunakan peraturan ini untuk mengubah skop, fail sasaran,
+   kandungan undang-undang atau data. Jika pembetulan memerlukan perubahan
+   skop, kekal STOP dan laporkan (pemilik akan merujuk perancang).
+10. **Jika auto mode menyekat arahan pemadaman** (`git rm`, `rm`), jangan cari
+   jalan lain. Senaraikan arahan tepat (satu baris setiap satu) supaya pemilik
+   boleh menjalankannya dengan awalan `!`, kemudian tunggu `sambung`.
 
 ## Turutan pelaksanaan & status
 
