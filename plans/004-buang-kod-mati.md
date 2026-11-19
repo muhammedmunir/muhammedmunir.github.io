@@ -104,6 +104,8 @@ grep -rln "lib/content/portfolio-data" src | wc -l
 ```
 → `0`, kemudian `4`.
 
+**Nota (kemas kini 2026-11-19)**: JANGAN jalankan `npm run check` di antara Langkah 1 dan 2 sebagai syarat lulus. Selepas Langkah 1, `npm run check` DIJANGKA melaporkan ~33 ralat dalam tepat 6 fail yang akan dipadam dalam Langkah 2 (5 fail dalam `src/lib/spine/` mengimport `./spine-data` secara relatif, dan `Workbench-2d-editorial.svelte`). Ini telah disahkan oleh perancang. Ralat ini hilang selepas Langkah 2; semakan jenis sebenar ialah Langkah 3.
+
 ### Langkah 2: Padam kod mati
 
 ```bash
@@ -117,10 +119,10 @@ Dalam `package.json`, buang baris `"test:screen": "node scripts/spine-screen-ren
 **Verify**:
 ```bash
 ls src/lib/spine 2>/dev/null | wc -l
-grep -rn "lib/spine/" src scripts | wc -l
+grep -rn --exclude="*.bak-cleanup" "lib/spine/" src scripts | wc -l
 node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'));console.log('package.json sah')"
 ```
-→ `0`, `0`, `package.json sah`. (Jika folder `src/lib/spine` masih wujud tetapi kosong, padam dengan `rmdir src/lib/spine`.)
+→ `0`, `0`, `package.json sah`. (`*.bak-cleanup` ialah sandaran lokal pemilik yang di-ignore oleh git dan tidak dikompil; JANGAN padam atau sunting.) (Jika folder `src/lib/spine` masih wujud tetapi kosong, padam dengan `rmdir src/lib/spine`.)
 
 ### Langkah 3: Semakan penuh
 
@@ -155,7 +157,7 @@ Tiada ujian baharu. Perlindungan: `npm run check` (rujukan rosak), `npm run buil
 
 - [ ] `test -d src/lib/spine && echo ADA || echo TIADA` → `TIADA`
 - [ ] `test -f src/lib/content/portfolio-data.ts && echo ADA` → `ADA`
-- [ ] `grep -rn "lib/spine" src scripts | wc -l` → `0`
+- [ ] `grep -rn --exclude="*.bak-cleanup" "lib/spine" src scripts | wc -l` → `0`
 - [ ] `npm run check` → `0 ERRORS`; `npm test` → 35 lulus 0 gagal; `npm run build` exit 0
 - [ ] `workbench-smoke.mjs` → `SMOKE OK`
 - [ ] `grep -c "spine-cache-" src/service-worker.ts` → `1` (tidak disentuh)
@@ -163,7 +165,7 @@ Tiada ujian baharu. Perlindungan: `npm run check` (rujukan rosak), `npm run buil
 
 ## Syarat STOP
 
-- Selepas Langkah 1, `npm run check` melaporkan ralat import yang menyebut fail SELAIN 4 pengimport yang disenaraikan (bermakna ada pengimport tersembunyi).
+- Dalam Langkah 3, `npm run check` melaporkan sebarang ralat (selepas Langkah 2, fail mati sudah tiada, jadi ralat bermakna ada pengimport tersembunyi).
 - `npm run build` gagal dengan `Could not resolve` yang merujuk fail yang dipadam.
 - Bilangan ujian bukan 35.
 - `SMOKE OK` gagal selepas Langkah 2 tetapi lulus sebelum Langkah 2.
