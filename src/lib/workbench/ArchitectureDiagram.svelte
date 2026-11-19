@@ -4,14 +4,24 @@
   /** @type {{ module: any, locale?: string }} */
   let { module, locale = 'ms' } = $props();
 
-  const arch = buildArchitecture(module);
-  const layers = arch.layers;
+  /** @type {{ id: string, restricted: boolean, layers: any[], nodes: any[], tags: string[], flows: any[] }} */
+  const arch = $derived(buildArchitecture(module));
+  /** @type {any[]} */
+  const layers = $derived(arch.layers);
   /** @type {Record<string, Array<{ label: string, layer: string }>>} */
-  const nodesByLayer = {};
-  for (const node of arch.nodes) {
-    if (!nodesByLayer[node.layer]) nodesByLayer[node.layer] = [];
-    nodesByLayer[node.layer].push(node);
-  }
+  const nodesByLayer = $derived.by(() => {
+    /** @type {Record<string, Array<{ label: string, layer: string }>>} */
+    const result = {};
+    for (const node of arch.nodes) {
+      if (!result[node.layer]) result[node.layer] = [];
+      result[node.layer].push(node);
+    }
+    return result;
+  });
+  /** @type {string} */
+  const restrictedNote = $derived(locale === 'en'
+    ? 'Confidential government system: generic architecture only.'
+    : 'Sistem kerajaan sulit: seni bina umum sahaja.');
 
   /** @type {{ label: string, layer: string } | null} */
   let selectedNode = $state(null);
@@ -37,10 +47,6 @@
     }
     return locale === 'en' ? (module.roleEn || module.role) : module.role;
   }
-
-  const restrictedNote = locale === 'en'
-    ? 'Confidential government system: generic architecture only.'
-    : 'Sistem kerajaan sulit: seni bina umum sahaja.';
 </script>
 
 <style>

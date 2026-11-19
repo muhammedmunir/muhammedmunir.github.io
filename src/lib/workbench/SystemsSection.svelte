@@ -14,7 +14,7 @@
   let activeModule = $state(BUILT_MODULES[0]);
 
   /** @type {'ms' | 'en'} */
-  const loc = /** @type {'ms' | 'en'} */ (locale);
+  const loc = $derived(/** @type {'ms' | 'en'} */ (locale));
 </script>
 
 <style>
