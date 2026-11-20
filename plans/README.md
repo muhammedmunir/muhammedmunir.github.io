@@ -103,7 +103,7 @@ Untuk mengelakkannya:
 | 013 | Sistem sebagai kajian kes: panel identiti projek, tanpa tangkapan skrin | P1 | S | 012 | DONE |
 | 014 | Editorial: profil, garis masa kerjaya, kemahiran dan sijil | P1 | S | 013 | DONE |
 | 015 | Kemahiran dan sijil | P2 | S | 012 | REJECTED: digabungkan ke dalam 014 (komponen yang sama) |
-| 016 | Pentas 3D berbingkai dengan pengenalan dan petunjuk interaksi | P1 | S | 014 | TODO (ditulis dan diuji oleh perancang 2026-11-20) |
+| 016 | Pentas 3D berbingkai dengan pengenalan dan petunjuk interaksi | P1 | S | 014 | DONE (Langkah 1–4 oleh C9; C9 tertutup, Langkah 5–7 disahkan dan di-commit oleh perancang) |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 

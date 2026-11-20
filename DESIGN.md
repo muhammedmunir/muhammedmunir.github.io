@@ -13,7 +13,7 @@ Pengambil pekerja, ketua teknikal dan pengurus kejuruteraan. Dalam 10 saat perta
 
 ## Konsep: "Meja Jurutera Sistem"
 
-1. **Hero berbingkai (Arah A).** Identiti dalam HTML di atas, kemudian dunia 3D Workbench sebagai pentas terhad ketinggian (desktop `min(72svh, 720px)`, mudah alih `56svh`). Dunia 3D ialah identiti visual dan alat penerokaan, BUKAN satu-satunya cara membaca kandungan.
+1. **Hero berbingkai (Arah A).** Identiti dalam HTML di atas, kemudian dunia 3D Workbench sebagai pentas terhad ketinggian (desktop `min(64svh, 620px)` dalam bingkai 1px `--work-line` berjejari 8px, mudah alih `56svh`), dengan satu ayat pengenalan dan petunjuk interaksi (tetikus atau sentuhan) di atasnya. Dunia 3D ialah identiti visual dan alat penerokaan, BUKAN satu-satunya cara membaca kandungan.
 2. **Sistem (Arah B).** Setiap projek dipaparkan sebagai rajah seni bina interaktif (nod komponen dan aliran data), bukan kad biasa.
 3. **Editorial.** Profil, Perjalanan kerjaya, Kemahiran dan Sijil dalam HTML penuh di bawah hero. Versi penuh di `/cv`.
 

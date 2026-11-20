@@ -236,6 +236,15 @@ import SystemsSection from './SystemsSection.svelte';
         </div>
       {/if}
     </div>
+    {#if view === 'desk'}
+      <div class="scene-intro">
+        <p>{t('Setiap kaset di rak ialah satu projek. Pilih projek, atau tekan kaset, dan konsol memaparkannya sebagai hologram.', 'Each cartridge on the rack is a project. Pick a project, or select a cartridge, and the console projects it as a hologram.')}</p>
+        <p class="scene-hints">
+          <span class="hint-pointer">{t('Seret untuk memutar · Roda tetikus untuk zum · Klik objek untuk menggunakannya', 'Drag to rotate · Scroll to zoom · Click an object to use it')}</span>
+          <span class="hint-touch">{t('Seret untuk memutar · Cubit untuk zum · Ketik objek untuk menggunakannya', 'Drag to rotate · Pinch to zoom · Tap an object to use it')}</span>
+        </p>
+      </div>
+    {/if}
     <details class="camera-disclosure">
       <summary>{t('Kamera & sudut pandang', 'Camera & viewpoints')}</summary>
     <div class="scene-toolbar">
@@ -366,7 +375,7 @@ import SystemsSection from './SystemsSection.svelte';
   .camera-controls { margin-left: auto; }
   .camera-controls button { border-color: var(--work-muted); }
   .zoom-button { font-size: 22px; padding: 0; }
-  .scene-area { flex: 0 0 auto; height: min(72svh, 720px); min-height: 22rem; position: relative; }
+  .scene-area { flex: 0 0 auto; height: min(64svh, 620px); min-height: 22rem; position: relative; margin-inline: var(--gutter); border: 1px solid var(--work-line); border-radius: 8px; overflow: hidden; }
   @media (max-width: 639px) {
     .scene-heading { padding-top: 10px; }
     .scene-toolbar { gap: 6px; }
@@ -427,6 +436,11 @@ import SystemsSection from './SystemsSection.svelte';
     #portfolio-links, #portfolio-links.expanded { display: flex; flex: 0 1 auto; flex-wrap: wrap; }
   }
   .camera-disclosure { padding-inline: var(--gutter); }
+  .scene-intro { padding: 0 var(--gutter) 10px; max-width: 72ch; }
+  .scene-intro p { margin: 0; color: var(--work-ink); line-height: 1.55; }
+  .scene-intro .scene-hints { margin-top: 4px; color: var(--work-muted); font-size: .875rem; }
+  .hint-touch { display: none; }
+  @media (pointer: coarse) { .hint-pointer { display: none; } .hint-touch { display: inline; } }
   .camera-disclosure > summary { width: fit-content; color: var(--work-muted); }
   .camera-disclosure .scene-toolbar { padding: 4px 0 12px; }
   .project-picker { display: flex; align-items: center; gap: 12px; margin-left: auto; font-size: .8125rem; color: var(--work-muted); min-width: 0; }
