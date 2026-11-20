@@ -43,3 +43,8 @@ motion-01-hero-desktop.png
 
 # Sandaran sementara
 *.bak-cleanup
+
+# Dokumen peribadi/klien di root: simpan lokal sahaja, jangan terbitkan (repo awam)
+/SISTEM PINJAMAN BERCAGAR IWA001.pdf
+/LANDING PAGE COMPANY.pdf
+/Resume ATS Muhammed Munir final.docx
