@@ -101,7 +101,7 @@ Untuk mengelakkannya:
 | 011 | Putaran kamera tanpa seret (WCAG 2.5.7), pautan langkau ke Sistem, pembetulan telefon | P1 | S | 006, 007 | DONE |
 | 012 | Hero: gambar diri, kenyataan nilai, fakta daripada data sebenar | P1 | S | 011 | DONE |
 | 013 | Sistem sebagai kajian kes: panel identiti projek, tanpa tangkapan skrin | P1 | S | 012 | DONE |
-| 014 | Editorial: profil, garis masa kerjaya, kemahiran dan sijil | P1 | S | 013 | TODO (ditulis dan diuji oleh perancang 2026-11-20) |
+| 014 | Editorial: profil, garis masa kerjaya, kemahiran dan sijil | P1 | S | 013 | DONE |
 | 015 | Kemahiran dan sijil | P2 | S | 012 | REJECTED: digabungkan ke dalam 014 (komponen yang sama) |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
