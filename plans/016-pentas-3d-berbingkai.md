@@ -118,7 +118,7 @@ grep -c "hint-touch" src/lib/workbench/Workbench.svelte
 grep -c "min(64svh, 620px)" src/lib/workbench/Workbench.svelte DESIGN.md
 npm run check
 ```
-→ `3`; `3`; kedua-dua fail `1`; `0 ERRORS 0 WARNINGS`.
+→ `4` (markup + 3 peraturan CSS); `3`; kedua-dua fail `1`; `0 ERRORS 0 WARNINGS`.
 
 ### Langkah 5: Ujian penuh
 
