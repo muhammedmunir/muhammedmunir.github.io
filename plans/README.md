@@ -78,6 +78,10 @@ Untuk mengelakkannya:
 | 005 | Pulihkan halaman dasar privasi Baby Kick Tracker | P1 | S | 001 | DONE |
 | 006 | Arah A: hero 3D berbingkai + kandungan editorial | P2 | L | 002, 003, 004 | DONE |
 | 007 | Arah B: rajah seni bina projek interaktif | P2 | L | 003, 004 | DONE |
+| 008 | Pecah WorkbenchWorld.ts kepada modul berasingan | P1 | L | 006, 007 | REJECTED: premis salah (fail 2,758 baris, bukan 111K); risiko tinggi tanpa nilai kepada pelawat. Draf diarkib di `.crew/artifacts/008-draf-modul/`. |
+| 009 | Ujian unit untuk WorkbenchWorld (characterization tests) | P0 | M | 006, 007 | DONE |
+| 010 | Konsolidasi data portfolio (system-state.mjs + portfolio-data.ts) | P1 | M | 006, 007 | TODO (semak premis dahulu: pelan ditulis model sandaran) |
+| 011 | Tingkatkan aksesibiliti & navigasi papan kekunci Workbench 3D | P1 | M | 006, 007 | TODO (premis salah sebahagian: `prefers-reduced-motion` SUDAH ada dalam WorkbenchWorld; semak semula sebelum laksana) |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
@@ -89,6 +93,9 @@ Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | RE
 - 004 sebelum 006 dan 007: membuang 7,800+ baris kod mati mengurangkan kekeliruan dan memindahkan fail data ke lokasi tetap yang dirujuk oleh 006/007.
 - 005 bebas; boleh dibuat bila-bila selepas 001.
 - Deploy: CI (`.github/workflows/deploy.yml`) menjalankan `npm run check`. Selagi 002 belum DONE, push ke `main` akan GAGAL deploy.
+- **009 (ujian unit) mesti sebelum 008 (refactor)** — "characterization tests first" untuk mengunci tingkah laku WorkbenchWorld sebelum pecah modul.
+- 010 (konsolidasi data) boleh berjalan selari dengan 008/009 — tidak bergantung pada refactor WorkbenchWorld.
+- 011 (aksesibiliti) boleh berjalan selari — hanya menambah handler input & ARIA, tidak ubah struktur data.
 
 ## Keputusan pemilik yang belum dibuat (bukan pelan)
 
@@ -99,4 +106,4 @@ Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | RE
 
 - Membina semula dunia 3D dari sifar dengan konsep baharu: ditolak. Workbench (9,622 baris) sudah bertema rangkaian/homelab yang sesuai; masalahnya pepijat dan peranan 3D, bukan konsep.
 - Audit keselamatan aplikasi: ditolak untuk kali ini. Laman statik tanpa backend; borang hubungan guna Web3Forms.
-- Memecahkan `WorkbenchWorld.ts` (2,747 baris) kepada modul: ditangguh. Tiada ujian yang cukup untuk refactor selamat; buat selepas 006.
+- **Memecahkan `WorkbenchWorld.ts` (111K baris) kepada modul: dijadualkan sebagai Plan 008 & 009.** Plan 009 (ujian unit) mesti selesai dahulu sebagai "characterization tests" sebelum Plan 008 (refactor modular).
