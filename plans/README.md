@@ -104,7 +104,7 @@ Untuk mengelakkannya:
 | 014 | Editorial: profil, garis masa kerjaya, kemahiran dan sijil | P1 | S | 013 | DONE |
 | 015 | Kemahiran dan sijil | P2 | S | 012 | REJECTED: digabungkan ke dalam 014 (komponen yang sama) |
 | 016 | Pentas 3D berbingkai dengan pengenalan dan petunjuk interaksi | P1 | S | 014 | DONE (Langkah 1–4 oleh C9; C9 tertutup, Langkah 5–7 disahkan dan di-commit oleh perancang) |
-| 017 | Halaman utama padat: buang pertindihan dengan /cv, meja 3D penuh, hologram kad identiti | P1 | M | 016 | TODO |
+| 017 | Halaman utama padat: buang pertindihan dengan /cv, meja 3D penuh, hologram kad identiti | P1 | M | 016 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 

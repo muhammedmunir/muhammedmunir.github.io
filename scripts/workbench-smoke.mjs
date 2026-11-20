@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
 const url = process.env.WORKBENCH_URL || 'http://127.0.0.1:5173/';
+// WebGL perisian (swiftshader) hanya untuk pelayan dev tempatan; tolak URL lain sebelum pelayar dilancarkan.
+if (!['localhost', '127.0.0.1'].includes(new URL(url).hostname)) {
+	console.error(`SMOKE FAIL: hanya localhost dibenarkan, diterima ${url}`);
+	process.exit(1);
+}
 const browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 const errors = [];
 try {

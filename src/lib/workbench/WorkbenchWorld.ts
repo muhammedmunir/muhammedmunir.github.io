@@ -143,6 +143,7 @@ export class WorkbenchWorld {
 
   private state: BenchState = { connected: false, opened: false, identity: null, module: 0, inserted: false };
   private focus: FocusView = 'panoramic';
+  private panoramicFull = new THREE.Box3();
   private defaultCamPos = new THREE.Vector3(5.4, 8.2, 11.4);
   private defaultLookAt = new THREE.Vector3(0.55, 1.25, -0.35);
   private currentCamPos = new THREE.Vector3(5.4, 8.2, 11.4);
@@ -1087,7 +1088,7 @@ export class WorkbenchWorld {
       this.roundRect(ctx, ix - 2, iy - 2, w + 4, h + 4, 8);
       ctx.stroke();
     } else {
-      // Kad Spesifikasi Seni Bina Hologram (untuk sistem dalaman sulit seperti ADiMS / ONBOARDX)
+      // Kad identiti besar: boleh dibaca dari pandangan meja; butiran penuh dalam bahagian Sistem.
       ctx.fillStyle = 'rgba(17, 24, 39, 0.92)';
       this.roundRect(ctx, 64, 140, c.width - 128, 740, 22);
       ctx.fill();
@@ -1096,64 +1097,41 @@ export class WorkbenchWorld {
       ctx.stroke();
 
       ctx.fillStyle = '#f8fafc';
-      this.roundRect(ctx, 110, 210, 340, 340, 28);
+      this.roundRect(ctx, 120, 230, 440, 440, 36);
       ctx.fill();
-      this.drawProjectLogo(ctx, mod.id, 280, 380, 135, mod.accent);
+      this.drawProjectLogo(ctx, mod.id, 340, 450, 175, mod.accent);
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '700 18px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText(this.locale === 'en' ? mod.badgeEn : mod.badge, 280, 595);
-
-      const rx = 500;
+      const rx = 640;
       ctx.textAlign = 'left';
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = '700 20px monospace';
-      ctx.fillText(this.t("SPESIFIKASI SENI BINA & SKOP KERJA SEBENAR", "ARCHITECTURE & ROLE"), rx, 225);
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = mod.accent;
+      ctx.font = '700 30px sans-serif';
+      ctx.fillText(this.locale === 'en' ? mod.badgeEn : mod.badge, rx, 290, 860);
 
       ctx.fillStyle = '#f8fafc';
-      ctx.font = '800 38px sans-serif';
-      ctx.fillText(`${mod.name} · ${mod.company}`, rx, 278);
+      ctx.font = '800 112px sans-serif';
+      ctx.fillText(mod.name, rx, 410, 860);
 
       ctx.fillStyle = '#cbd5e1';
-      ctx.font = '600 24px sans-serif';
-      ctx.fillText(`${this.t('Jawatan & Skop', 'Role & Scope')}: ${this.locale === 'en' ? mod.roleEn : mod.role}`, rx, 332, 960);
-
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '500 23px sans-serif';
-      this.drawWrappedText(ctx, `${this.t('Seni Bina Data', 'Data Architecture')}: ${this.locale === 'en' ? mod.dataArchitectureEn : mod.dataArchitecture}`, rx, 395, 950, 34);
-      this.drawWrappedText(ctx, `${this.t('Kawalan Keselamatan', 'Security Controls')}: ${this.locale === 'en' ? mod.securityAccessEn : mod.securityAccess}`, rx, 515, 950, 34);
-
-      ctx.fillStyle = '#7dd3fc';
-      ctx.font = '700 19px monospace';
-      ctx.fillText(this.t("SUSUNAN TEKNOLOGI (TECH STACK):", "TECHNOLOGY STACK:"), rx, 645);
+      ctx.font = '600 38px sans-serif';
+      ctx.fillText(mod.company, rx, 475, 860);
 
       let tx = rx;
-      mod.stack.forEach(tech => {
-        ctx.font = '700 21px monospace';
-        const tw = ctx.measureText(tech).width + 36;
+      let ty = 560;
+      mod.stack.slice(0, 4).forEach(tech => {
+        ctx.font = '700 32px sans-serif';
+        const tw = ctx.measureText(tech).width + 48;
+        if (tx + tw > c.width - 110) { tx = rx; ty += 82; }
         ctx.fillStyle = '#1e293b';
-        this.roundRect(ctx, tx, 675, tw, 48, 10);
+        this.roundRect(ctx, tx, ty, tw, 64, 12);
         ctx.fill();
         ctx.strokeStyle = mod.accent;
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.fillStyle = '#f8fafc';
-        ctx.fillText(tech, tx + 18, 700);
-        tx += tw + 16;
+        ctx.fillText(tech, tx + 24, ty + 43);
+        tx += tw + 18;
       });
-
-      ctx.fillStyle = '#64748b';
-      ctx.font = '600 19px sans-serif';
-      ctx.fillText(
-        slide
-          ? this.failedImages.has(slide.src)
-            ? this.t("Gagal memuatkan imej sampel.", "Sample image could not load.")
-            : this.t("Memuatkan imej sampel UI…", "Loading UI sample…")
-          : (this.locale === 'en' ? media.unavailableEn : media.unavailable) ?? this.t('Sampel UI belum tersedia.', 'UI sample unavailable.'),
-        rx,
-        785
-      );
     }
 
     // Bar Bawah Hologram
@@ -1164,7 +1142,7 @@ export class WorkbenchWorld {
     ctx.fillStyle = '#cbd5e1';
     ctx.font = '600 20px sans-serif';
     ctx.fillText(
-      slide ? `${this.locale === 'en' ? slide.labelEn : slide.label} · ${this.locale === 'en' ? slide.sourceEn : slide.source}  |  Stack: ${mod.stack.join(' · ')}` : `Stack: ${mod.stack.join(' · ')}`,
+      slide ? `${this.locale === 'en' ? slide.labelEn : slide.label} · ${this.locale === 'en' ? slide.sourceEn : slide.source}  |  Stack: ${mod.stack.join(' · ')}` : mod.company,
       48,
       942
     );
@@ -2405,10 +2383,12 @@ export class WorkbenchWorld {
         this.consoleBounds.expandByObject(child);
       }
     }
-    // Paparan panoramik membingkai seluruh meja: konsol, hologram dan stesen dossier.
+    // Skrin lebar: bingkai konsol dan hologram sahaja supaya meja memenuhi pentas.
+    // Skrin sempit: termasuk stesen dossier supaya rak dan router kekal kelihatan.
     const deskBounds = new THREE.Box3().setFromObject(this.dossier.group);
     const panoramic = this.consoleBounds.clone().union(this.screenBounds);
-    if (!deskBounds.isEmpty()) panoramic.union(deskBounds);
+    this.panoramicFull.copy(panoramic);
+    if (!deskBounds.isEmpty()) this.panoramicFull.union(deskBounds);
     this.consoleBounds.set(new THREE.Vector3(-2.5, 0.92, -1.9), new THREE.Vector3(2.8, 3.2, 3.1));
     this.focusBounds.set('console', this.consoleBounds);
     this.focusBounds.set('screen', this.screenBounds);
@@ -2495,6 +2475,7 @@ export class WorkbenchWorld {
     }
 
     let bounds = this.focusBounds.get(this.focus);
+    if (this.focus === 'panoramic' && this.camera.aspect < 1.2 && !this.panoramicFull.isEmpty()) bounds = this.panoramicFull;
     if (this.focus === 'console' && activeProjector) {
       bounds = this.scratchUnionBounds.copy(this.consoleBounds).union(this.screenBounds);
     }

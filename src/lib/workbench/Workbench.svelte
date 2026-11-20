@@ -5,7 +5,7 @@
   import { PROJECT_MEDIA } from './project-media';
   import { PROFILE, TECHNICAL_SKILLS, CERTIFICATIONS } from '$lib/content/portfolio-data';
   import { JOURNEY_STEPS } from './journey-data';
-  import EditorialSummary from './EditorialSummary.svelte';
+  import ResumeBand from './ResumeBand.svelte';
   import HeroIdentity from './HeroIdentity.svelte';
   import ContactModal from './ContactModal.svelte';
 import SystemsSection from './SystemsSection.svelte';
@@ -163,7 +163,6 @@ import SystemsSection from './SystemsSection.svelte';
 
   onMount(() => {
     initPreferences();
-    if (matchMedia('(max-width: 639px)').matches) focus = 'console';
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
     const updateMotion = () => { reduced = motion.matches; if (reduced) playing = false; };
     updateMotion(); motion.addEventListener('change', updateMotion);
@@ -211,15 +210,10 @@ import SystemsSection from './SystemsSection.svelte';
     <nav id="portfolio-links" class:expanded={menuOpen} aria-label={t('Navigasi portfolio', 'Portfolio navigation')}>
       <button type="button" onclick={changeLocale} lang={locale === 'ms' ? 'en' : 'ms'}>{locale === 'ms' ? 'English (EN)' : 'Bahasa Melayu (BM)'}</button>
       <button type="button" onclick={changeTheme}>{theme === 'dark' ? t('Tema cerah', 'Light theme') : t('Tema gelap', 'Dark theme')}</button>
-      <a href={`${base}/cv`}>{t('Resume & Profil Penuh', 'Resume & Full Profile')}</a>
+      <a href={`${base}/cv`}>{t('Resume', 'Resume')}</a>
       <button type="button" aria-haspopup="dialog" onclick={() => contact = true}>{t('Hubungi', 'Contact')}</button>
     </nav>
   </header>
-  <nav class="view-nav" aria-label={t('Bahagian dunia 3D', '3D world sections')}>
-    {#each [{ id: 'desk', ms: 'Meja Projek', en: 'Project Desk' }, { id: 'profile', ms: 'Profil', en: 'Profile' }, { id: 'journey', ms: 'Perjalanan', en: 'Journey' }, { id: 'skills', ms: 'Kemahiran', en: 'Skills' }] as item}
-      <button type="button" aria-pressed={view === item.id} onclick={() => selectView(item.id as typeof view)}>{item[locale]}</button>
-    {/each}
-  </nav>
   <main id="workbench-main" tabindex="-1">
     <HeroIdentity {locale} oncontact={() => contact = true} />
     <div class="scene-heading">
@@ -238,13 +232,23 @@ import SystemsSection from './SystemsSection.svelte';
     </div>
     {#if view === 'desk'}
       <div class="scene-intro">
-        <p>{t('Setiap kaset di rak ialah satu projek. Pilih projek, atau tekan kaset, dan konsol memaparkannya sebagai hologram.', 'Each cartridge on the rack is a project. Pick a project, or select a cartridge, and the console projects it as a hologram.')}</p>
-        <p class="scene-hints">
-          <span class="hint-pointer">{t('Seret untuk memutar · Roda tetikus untuk zum · Klik objek untuk menggunakannya', 'Drag to rotate · Scroll to zoom · Click an object to use it')}</span>
-          <span class="hint-touch">{t('Seret untuk memutar · Cubit untuk zum · Ketik objek untuk menggunakannya', 'Drag to rotate · Pinch to zoom · Tap an object to use it')}</span>
-        </p>
+        <p>{t('Setiap kaset di rak ialah satu sistem yang saya bina atau senggara. Tekan kaset untuk memaparkannya.', 'Each cartridge on the rack is a system I built or maintain. Select one to project it.')}</p>
       </div>
     {/if}
+    <div class="scene-area">
+      <canvas bind:this={canvas} tabindex="0" onkeydown={handleCanvasKeydown} aria-label={t('Dunia portfolio 3D. Gunakan butang fokus dan zum di atas, atau kawalan alternatif di bawah. Fokus pada kanvas dan gunakan anak panah untuk memutar, + atau − untuk zum.', '3D portfolio world. Use the focus and zoom buttons above, or alternative controls below. Focus the canvas and use arrow keys to rotate, + or − to zoom.')}></canvas>
+      <p class="scene-hints" aria-hidden="true">
+        <span class="hint-pointer">{t('Seret untuk memutar · Roda tetikus untuk zum · Klik objek untuk menggunakannya', 'Drag to rotate · Scroll to zoom · Click an object to use it')}</span>
+        <span class="hint-touch">{t('Seret untuk memutar · Cubit untuk zum · Ketik objek untuk menggunakannya', 'Drag to rotate · Pinch to zoom · Tap an object to use it')}</span>
+      </p>
+      <p class="render-status" role="status" hidden={ready}>{failed ? (webglMissing
+    ? t('WebGL tidak tersedia. Gunakan kawalan dan versi teks di bawah.', 'WebGL unavailable. Use the controls and text version below.')
+    : t('Dunia 3D gagal dimuatkan. Kandungan di bawah tetap lengkap.', 'The 3D world failed to load. The content below is complete.'))
+  : !ready ? t('Menyediakan dunia 3D…', 'Preparing the 3D world…') : ''}</p>
+      {#if ready && view === 'desk' && !inspection && hoverLabel && hover && anchors[hover]}
+        <span class="object-hint" style:left={`clamp(80px, ${anchors[hover].x}px, calc(100% - 80px))`} style:top={`${Math.max(22, anchors[hover].y - 34)}px`}>{hoverLabel}</span>
+      {/if}
+    </div>
     <details class="camera-disclosure">
       <summary>{t('Kamera & sudut pandang', 'Camera & viewpoints')}</summary>
     <div class="scene-toolbar">
@@ -267,16 +271,6 @@ import SystemsSection from './SystemsSection.svelte';
       </div>
     </div>
     </details>
-    <div class="scene-area">
-      <canvas bind:this={canvas} tabindex="0" onkeydown={handleCanvasKeydown} aria-label={t('Dunia portfolio 3D. Gunakan butang fokus dan zum di atas, atau kawalan alternatif di bawah. Fokus pada kanvas dan gunakan anak panah untuk memutar, + atau − untuk zum.', '3D portfolio world. Use the focus and zoom buttons above, or alternative controls below. Focus the canvas and use arrow keys to rotate, + or − to zoom.')}></canvas>
-      <p class="render-status" role="status" hidden={ready}>{failed ? (webglMissing
-    ? t('WebGL tidak tersedia. Gunakan kawalan dan versi teks di bawah.', 'WebGL unavailable. Use the controls and text version below.')
-    : t('Dunia 3D gagal dimuatkan. Kandungan di bawah tetap lengkap.', 'The 3D world failed to load. The content below is complete.'))
-  : !ready ? t('Menyediakan dunia 3D…', 'Preparing the 3D world…') : ''}</p>
-      {#if ready && view === 'desk' && !inspection && hoverLabel && hover && anchors[hover]}
-        <span class="object-hint" style:left={`clamp(80px, ${anchors[hover].x}px, calc(100% - 80px))`} style:top={`${Math.max(22, anchors[hover].y - 34)}px`}>{hoverLabel}</span>
-      {/if}
-    </div>
 
     {#if view !== 'desk'}
       <section class="dossier-controls" aria-label={t('Kawalan stesen profil', 'Profile station controls')}>
@@ -302,12 +296,12 @@ import SystemsSection from './SystemsSection.svelte';
           {:else}<h2>{skill.category[locale]}</h2><p>{skill.skills.join(' · ')}</p><h3>{t('Pensijilan', 'Certifications')}</h3><ul>{#each CERTIFICATIONS as cert}<li>{cert.title}</li>{/each}</ul>{/if}
         </details>
       </section>
-    {:else if projecting || inspection === 'router'}
+    {:else if inspection}
       <section class="inspection-tools" aria-label={t('Kawalan hologram', 'Hologram controls')}>
         {#if inspection}<button type="button" bind:this={returnButton} onclick={() => setInspection(null)}>{t('Pandangan meja penuh', 'Full desk view')}</button>
         {:else}<button type="button" onclick={() => setInspection('data')}>{t('Zum penuh hologram', 'Zoom into hologram')}</button>{/if}
         {#if projecting && inspection !== 'router'}
-          <p role="status"><strong>{module.name}</strong> · {locale === 'en' ? sample?.labelEn ?? media.unavailableEn : sample?.label ?? media.unavailable}</p>
+          <p role="status"><strong>{module.name}</strong> · {module.company}</p>
           {#if media.slides.length > 1}<button type="button" onclick={nextSample}>{t('Slaid seterusnya', 'Next slide')} ({sampleIndex + 1}/{media.slides.length})</button>{/if}
           {#if sample}<a href={`${base}${sample.src}`} target="_blank" rel="noreferrer">{t('Buka imej penuh', 'Open full image')}</a>{/if}
           {#if failed && sample}<img class="fallback-image" src={`${base}${sample.src}`} alt={`${module.name}: ${locale === 'en' ? sample.labelEn : sample.label}`} />{/if}
@@ -316,7 +310,7 @@ import SystemsSection from './SystemsSection.svelte';
     {/if}
   </main>
   <SystemsSection {locale} />
-  <EditorialSummary {locale} />
+  <ResumeBand {locale} oncontact={() => contact = true} />
   <footer>
     {#if simulation}<p class="telemetry">SOC TELEMETRY: {benchState.connected ? 'ONLINE' : 'OFFLINE'} · {t('SIMULASI TEMPATAN', 'LOCAL SIMULATION')}</p>{/if}
     <p role="status">{#if view !== 'desk'}{t('Profil awam · Tidak memerlukan kad akses', 'Public profile · No access card required')}
@@ -363,8 +357,6 @@ import SystemsSection from './SystemsSection.svelte';
   #portfolio-links { display: none; flex-basis: 100%; min-width: 0; gap: 4px 12px; }
   #portfolio-links.expanded { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   #portfolio-links a, #portfolio-links button { display: inline-flex; align-items: center; justify-content: flex-start; min-height: 44px; padding: 8px; font-size: .8125rem; }
-  .view-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 6px var(--gutter); gap: 4px; border-bottom: 1px solid var(--work-line); }
-  .view-nav button { min-width: 0; padding: 8px 4px; font-size: .75rem; font-weight: 600; }
   main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
   .scene-heading { padding: 14px var(--gutter) 8px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 24px; }
   .scene-heading h2 { flex-shrink: 0; max-width: 100%; font-family: var(--font-heading); font-size: clamp(24px, 2.6vw, 34px); line-height: 1.15; letter-spacing: -.04em; margin: 0; color: inherit; overflow-wrap: anywhere; }
@@ -375,7 +367,7 @@ import SystemsSection from './SystemsSection.svelte';
   .camera-controls { margin-left: auto; }
   .camera-controls button { border-color: var(--work-muted); }
   .zoom-button { font-size: 22px; padding: 0; }
-  .scene-area { flex: 0 0 auto; height: min(64svh, 620px); min-height: 22rem; position: relative; margin-inline: var(--gutter); border: 1px solid var(--work-line); border-radius: 8px; overflow: hidden; }
+  .scene-area { flex: 0 0 auto; height: min(46vw, 78svh, 760px); min-height: 22rem; position: relative; margin-inline: var(--gutter); border: 1px solid var(--work-line); border-radius: 8px; overflow: hidden; }
   @media (max-width: 639px) {
     .scene-heading { padding-top: 10px; }
     .scene-toolbar { gap: 6px; }
@@ -414,7 +406,7 @@ import SystemsSection from './SystemsSection.svelte';
   .controls { display: flex; flex-wrap: wrap; gap: 8px; }
   .controls button { border-color: var(--work-muted); }
   button[aria-pressed='true'] { background: var(--work-active-bg); color: var(--work-active-ink); font-weight: 700; }
-  .view-nav button[aria-pressed='true'], .focus-controls button[aria-pressed='true'] { text-decoration: underline; text-underline-offset: 4px; }
+  .focus-controls button[aria-pressed='true'] { text-decoration: underline; text-underline-offset: 4px; }
   button:disabled { opacity: .55; cursor: not-allowed; }
   button:not(:disabled):hover, a:hover { text-decoration: underline; }
   button:not(:disabled):active { text-decoration: underline; text-underline-offset: 3px; }
@@ -425,8 +417,6 @@ import SystemsSection from './SystemsSection.svelte';
   @media (min-width: 640px) {
     .workbench { --gutter: 24px; }
     .byline span { display: inline; }
-    .view-nav { display: flex; flex-wrap: wrap; }
-    .view-nav button { padding-inline: 20px; font-size: .8125rem; }
     .focus-controls { flex: 0 1 auto; }
     .focus-controls button { flex: initial; padding-inline: 12px; font-size: .8125rem; }
   }
@@ -435,10 +425,10 @@ import SystemsSection from './SystemsSection.svelte';
     .menu-toggle { display: none; }
     #portfolio-links, #portfolio-links.expanded { display: flex; flex: 0 1 auto; flex-wrap: wrap; }
   }
-  .camera-disclosure { padding-inline: var(--gutter); }
+  .camera-disclosure { padding-inline: var(--gutter); margin-top: 4px; }
   .scene-intro { padding: 0 var(--gutter) 10px; max-width: 72ch; }
   .scene-intro p { margin: 0; color: var(--work-ink); line-height: 1.55; }
-  .scene-intro .scene-hints { margin-top: 4px; color: var(--work-muted); font-size: .875rem; }
+  .scene-hints { position: absolute; left: 12px; bottom: 12px; margin: 0; padding: 6px 10px; background: color-mix(in srgb, var(--work-paper) 82%, transparent); color: var(--work-muted); font-size: .8125rem; border-radius: 4px; pointer-events: none; }
   .hint-touch { display: none; }
   @media (pointer: coarse) { .hint-pointer { display: none; } .hint-touch { display: inline; } }
   .camera-disclosure > summary { width: fit-content; color: var(--work-muted); }
@@ -448,7 +438,7 @@ import SystemsSection from './SystemsSection.svelte';
   select:focus-visible { outline: 3px solid var(--work-accent); outline-offset: 3px; }
   .telemetry { margin-block: 12px; color: var(--work-muted); font-size: .75rem; }
   @media (max-width: 639px) {
-    .scene-area { height: 56svh; min-height: 18rem; }
+    .scene-area { height: min(110vw, 62svh); min-height: 18rem; }
     .scene-heading { gap: 12px; }
     .project-picker { width: 100%; margin: 0; }
     .project-picker select { flex: 1; }

@@ -18,7 +18,9 @@ try {
     const resume = page.locator('.hero-identity .primary');
     const box = await resume.boundingBox();
     assert(await resume.isVisible() && box && box.y >= 0 && box.y + box.height < height && box.x >= 0 && box.x + box.width <= width, `Resume di luar viewport ${width}`);
-    for (const id of ['profil', 'perjalanan', 'kemahiran', 'sijil']) assert.equal(await page.locator(`section#${id}`).count(), 1);
+    for (const id of ['profil', 'perjalanan', 'kemahiran', 'sijil']) assert.equal(await page.locator(`section#${id}`).count(), 0, `#${id} sepatutnya hanya di /cv`);
+    assert.equal(await page.locator('section#sistem').count(), 1);
+    assert.equal(await page.locator('#band-h').count(), 1);
     assert(await page.evaluate(w => document.documentElement.scrollWidth <= Math.min(innerWidth, w), width), `Limpahan pada ${width}px`);
     assert.equal(await page.locator('.render-status').evaluate(el => el.hidden), true);
     await page.screenshot({ path: `${dir}/${width}.png`, fullPage: true });

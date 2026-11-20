@@ -27,7 +27,7 @@ Selepas pelan ini halaman utama hanya: Hero → Meja projek (3D) → Sistem → 
 
 ## Skop
 
-**Dalam skop**: `src/lib/workbench/Workbench.svelte`, `src/lib/workbench/WorkbenchWorld.ts`, `src/lib/workbench/project-media.ts` (tulis semula), `src/lib/workbench/ResumeBand.svelte` (baharu), `src/lib/workbench/EditorialSummary.svelte` (dibuang), `scripts/home-visual.mjs`, `DESIGN.md`, `plans/README.md`.
+**Dalam skop**: `src/lib/workbench/Workbench.svelte`, `src/lib/workbench/WorkbenchWorld.ts`, `src/lib/workbench/project-media.ts` (tulis semula), `src/lib/workbench/ResumeBand.svelte` (baharu), `src/lib/workbench/EditorialSummary.svelte` (dibuang), `scripts/home-visual.mjs`, `scripts/workbench-smoke.mjs` (pengawal localhost sahaja, Langkah 31a), `DESIGN.md`, `plans/README.md`.
 **Luar skop**: `/cv`, `SystemsSection.svelte`, `HeroIdentity.svelte`, data kandungan, imej dalam `static/`. Jangan ubah fail lain.
 
 ## Aliran kerja git
@@ -720,7 +720,33 @@ npm run test:contrast
 
 ### Langkah 31: Ujian pelayar dan tangkapan skrin
 
-Ikut peraturan 11 dalam `plans/README.md` untuk pelayan dev (port 5199). Kemudian:
+> Kemas kini 2026-11-20: `scripts/workbench-smoke.mjs` melancarkan Chromium dengan `--enable-unsafe-swiftshader` tanpa menolak URL bukan tempatan (peraturan 12), jadi auto mode menyekatnya. Langkah 31a menambah pengawal yang sama seperti `scripts/workbench-orbit-a11y.mjs`. Diuji oleh perancang: URL `https://example.com/` → `SMOKE FAIL: hanya localhost dibenarkan…` exit 1 tanpa melancarkan pelayar; localhost → `SMOKE OK`; `npm test` pass 50 fail 0.
+
+**31a.** Fail: `scripts/workbench-smoke.mjs`. Guna alat **Edit**. Gantikan teks ini (tepat, muncul sekali):
+
+````
+const url = process.env.WORKBENCH_URL || 'http://127.0.0.1:5173/';
+````
+
+dengan (dua baris di dalam blok `if` diinden dengan satu TAB, sama seperti fail itu):
+
+````
+const url = process.env.WORKBENCH_URL || 'http://127.0.0.1:5173/';
+// WebGL perisian (swiftshader) hanya untuk pelayan dev tempatan; tolak URL lain sebelum pelayar dilancarkan.
+if (!['localhost', '127.0.0.1'].includes(new URL(url).hostname)) {
+	console.error(`SMOKE FAIL: hanya localhost dibenarkan, diterima ${url}`);
+	process.exit(1);
+}
+````
+
+**Verify 31a**:
+```bash
+git hash-object scripts/workbench-smoke.mjs
+git hash-object src/lib/workbench/Workbench.svelte src/lib/workbench/WorkbenchWorld.ts src/lib/workbench/project-media.ts src/lib/workbench/ResumeBand.svelte scripts/home-visual.mjs DESIGN.md
+```
+→ `f3b913e00751651027325045a9face9b56033e5d`, kemudian 6 hash Langkah 29 tidak berubah. Jangan ulang suntingan Langkah 1–28 yang hashnya sudah sepadan.
+
+**31b.** Ikut peraturan 11 dalam `plans/README.md` untuk pelayan dev (port 5199). Kemudian:
 
 ```bash
 WORKBENCH_URL=http://localhost:5199/ node scripts/workbench-smoke.mjs
@@ -735,15 +761,15 @@ ls -la .crew/artifacts/home/
 Tukar baris 017 dalam `plans/README.md` kepada `DONE`, kemudian:
 
 ```bash
-git add src/lib/workbench/Workbench.svelte src/lib/workbench/WorkbenchWorld.ts src/lib/workbench/project-media.ts src/lib/workbench/ResumeBand.svelte scripts/home-visual.mjs DESIGN.md plans/README.md
+git add src/lib/workbench/Workbench.svelte src/lib/workbench/WorkbenchWorld.ts src/lib/workbench/project-media.ts src/lib/workbench/ResumeBand.svelte scripts/home-visual.mjs scripts/workbench-smoke.mjs DESIGN.md plans/README.md plans/017-halaman-utama-padat.md
 git status --short
 git commit -m "feat(utama): halaman padat, meja 3D penuh dan hologram kad identiti"
 ```
-**Verify**: sebelum commit, `git status --short` menunjukkan `D  src/lib/workbench/EditorialSummary.svelte`, `A  src/lib/workbench/ResumeBand.svelte` dan 6 fail `M`. Selepas commit: `git branch --show-current` → `main`; `git status --short` kosong. BERHENTI (peraturan 13).
+**Verify**: sebelum commit, `git status --short` menunjukkan `D  src/lib/workbench/EditorialSummary.svelte`, `A  src/lib/workbench/ResumeBand.svelte` dan 8 fail `M` (termasuk `scripts/workbench-smoke.mjs` dan fail pelan ini, yang dipinda oleh perancang). Selepas commit: `git branch --show-current` → `main`; `git status --short` kosong. BERHENTI (peraturan 13).
 
 ## Kriteria siap
 
-- [ ] 6 hash `git hash-object` sepadan; `EditorialSummary.svelte` dibuang
+- [ ] 6 hash `git hash-object` sepadan, dan hash `scripts/workbench-smoke.mjs` = `f3b913e…`; `EditorialSummary.svelte` dibuang
 - [ ] `check` 0 ralat 0 amaran; `npm test` fail 0; build exit 0; kontras 314/314
 - [ ] `SMOKE OK`, `HOME OK`, `ORBIT OK` (output disertakan)
 - [ ] Pada `main`; baris 017 = `DONE`; satu commit; tiada push

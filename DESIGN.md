@@ -13,9 +13,9 @@ Pengambil pekerja, ketua teknikal dan pengurus kejuruteraan. Dalam 10 saat perta
 
 ## Konsep: "Meja Jurutera Sistem"
 
-1. **Hero berbingkai (Arah A).** Identiti dalam HTML di atas, kemudian dunia 3D Workbench sebagai pentas terhad ketinggian (desktop `min(64svh, 620px)` dalam bingkai 1px `--work-line` berjejari 8px, mudah alih `56svh`), dengan satu ayat pengenalan dan petunjuk interaksi (tetikus atau sentuhan) di atasnya. Dunia 3D ialah identiti visual dan alat penerokaan, BUKAN satu-satunya cara membaca kandungan.
+1. **Hero berbingkai (Arah A).** Identiti dalam HTML di atas, kemudian dunia 3D Workbench sebagai pentas terhad ketinggian (desktop `min(46vw, 78svh, 760px)` dalam bingkai 1px `--work-line` berjejari 8px, mudah alih `min(110vw, 62svh)`), dengan satu ayat pengenalan di atasnya dan label petunjuk interaksi (tetikus atau sentuhan) di sudut kiri bawah pentas. Hologram memaparkan kad identiti (logo, kategori, nama, organisasi, stack), BUKAN tangkapan skrin UI. Dunia 3D ialah identiti visual dan alat penerokaan, BUKAN satu-satunya cara membaca kandungan.
 2. **Sistem (Arah B).** Setiap projek dipaparkan sebagai rajah seni bina interaktif (nod komponen dan aliran data), bukan kad biasa.
-3. **Editorial.** Profil, Perjalanan kerjaya, Kemahiran dan Sijil dalam HTML penuh di bawah hero. Versi penuh di `/cv`.
+3. **Resume.** Halaman utama tamat dengan satu jalur "Rekod penuh ada dalam resume." (Baca resume, Muat turun PDF, Hubungi). Profil, Perjalanan kerjaya, Kemahiran dan Sijil HANYA di `/cv`; jangan ulang di halaman utama.
 
 ## Token (dari `src/routes/layout.css`; jangan tambah palet baharu)
 
