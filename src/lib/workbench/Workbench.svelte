@@ -128,6 +128,20 @@ import SystemsSection from './SystemsSection.svelte';
     else if (menuOpen) { menuOpen = false; menuButton?.focus(); }
     else if (inspection) setInspection(null);
   }
+  function handleCanvasKeydown(e: KeyboardEvent) {
+    if (!ready || !world) return;
+    const keys: Record<string, () => void> = {
+      ArrowLeft: () => world?.orbitBy(-0.15),
+      ArrowRight: () => world?.orbitBy(0.15),
+      ArrowUp: () => world?.orbitBy(0, 0.1),
+      ArrowDown: () => world?.orbitBy(0, -0.1),
+      '+': () => world?.zoomBy(-0.12),
+      '=': () => world?.zoomBy(-0.12),
+      '-': () => world?.zoomBy(0.12)
+    };
+    const run = keys[e.key];
+    if (run) { e.preventDefault(); run(); }
+  }
   function changeTheme() { world?.setTheme(toggleTheme()); }
   function changeLocale() { world?.setLocale(toggleLocale()); }
 
@@ -189,6 +203,7 @@ import SystemsSection from './SystemsSection.svelte';
 <div class="workbench">
   <a class="skip-link" href="#workbench-main">{t('Langkau ke kandungan', 'Skip to content')}</a>
   <a class="skip-link" href="#bench-controls" onclick={() => { help = true; requestAnimationFrame(() => document.getElementById('bench-controls')?.focus()); }}>{t('Langkau ke kawalan instrumen', 'Skip to instrument controls')}</a>
+  <a class="skip-link" href="#sistem">{t('Langkau ke sistem yang dibina', 'Skip to systems built')}</a>
   <header>
     <a class="identity" href={`${base}/`}>munir<span>.</span></a>
     <p class="byline">Muhammed Munir <span> / Full-Stack Developer</span></p>
@@ -235,12 +250,16 @@ import SystemsSection from './SystemsSection.svelte';
       <div class="camera-controls" role="group" aria-label={t('Kawalan kamera', 'Camera controls')}>
         <button type="button" class="zoom-button" disabled={!ready} aria-label={t('Zum dekat', 'Zoom in')} title={t('Zum dekat', 'Zoom in')} onclick={() => world?.zoomBy(-0.12)}><span aria-hidden="true">+</span></button>
         <button type="button" class="zoom-button" disabled={!ready} aria-label={t('Zum jauh', 'Zoom out')} title={t('Zum jauh', 'Zoom out')} onclick={() => world?.zoomBy(0.12)}><span aria-hidden="true">−</span></button>
+        <button type="button" class="zoom-button" disabled={!ready} aria-label={t('Putar ke kiri', 'Rotate left')} title={t('Putar ke kiri', 'Rotate left')} onclick={() => world?.orbitBy(-0.15)}><span aria-hidden="true">←</span></button>
+        <button type="button" class="zoom-button" disabled={!ready} aria-label={t('Putar ke kanan', 'Rotate right')} title={t('Putar ke kanan', 'Rotate right')} onclick={() => world?.orbitBy(0.15)}><span aria-hidden="true">→</span></button>
+        <button type="button" class="zoom-button" disabled={!ready} aria-label={t('Condong ke atas', 'Tilt up')} title={t('Condong ke atas', 'Tilt up')} onclick={() => world?.orbitBy(0, 0.1)}><span aria-hidden="true">↑</span></button>
+        <button type="button" class="zoom-button" disabled={!ready} aria-label={t('Condong ke bawah', 'Tilt down')} title={t('Condong ke bawah', 'Tilt down')} onclick={() => world?.orbitBy(0, -0.1)}><span aria-hidden="true">↓</span></button>
         <button type="button" disabled={!ready} onclick={resetCamera}>{t('Set semula kamera', 'Reset camera')}</button>
       </div>
     </div>
     </details>
     <div class="scene-area">
-      <canvas bind:this={canvas} aria-label={t('Dunia portfolio 3D. Gunakan butang fokus dan zum di atas, atau kawalan alternatif di bawah.', '3D portfolio world. Use the focus and zoom buttons above, or alternative controls below.')}></canvas>
+      <canvas bind:this={canvas} tabindex="0" onkeydown={handleCanvasKeydown} aria-label={t('Dunia portfolio 3D. Gunakan butang fokus dan zum di atas, atau kawalan alternatif di bawah. Fokus pada kanvas dan gunakan anak panah untuk memutar, + atau − untuk zum.', '3D portfolio world. Use the focus and zoom buttons above, or alternative controls below. Focus the canvas and use arrow keys to rotate, + or − to zoom.')}></canvas>
       <p class="render-status" role="status" hidden={ready}>{failed ? (webglMissing
     ? t('WebGL tidak tersedia. Gunakan kawalan dan versi teks di bawah.', 'WebGL unavailable. Use the controls and text version below.')
     : t('Dunia 3D gagal dimuatkan. Kandungan di bawah tetap lengkap.', 'The 3D world failed to load. The content below is complete.'))
@@ -354,8 +373,9 @@ import SystemsSection from './SystemsSection.svelte';
     .focus-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); flex-basis: 100%; }
     .focus-controls button { white-space: nowrap; }
     .camera-controls { width: 100%; }
-    .camera-controls button:last-child { flex: 1; }
+    .camera-controls button:last-child { flex: 1 1 100%; }
   }
+  canvas:focus-visible { outline: 3px solid var(--work-active-bg); outline-offset: -3px; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
   .render-status { position: absolute; top: 35%; left: var(--gutter); right: var(--gutter); padding: 16px; margin: 0; background: var(--work-surface); color: var(--work-ink); font-size: .875rem; border: 1px solid var(--work-muted); }
   .render-status[hidden] { display: none; }

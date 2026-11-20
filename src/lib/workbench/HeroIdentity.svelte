@@ -17,7 +17,7 @@
 
 <style>
   section { padding: clamp(20px, 3vw, 42px) var(--gutter); border-bottom: 1px solid var(--work-line); }
-  h1 { margin: 0; font: 800 clamp(40px, 6vw, 84px)/1 var(--font-heading); letter-spacing: -.04em; white-space: normal; overflow-wrap: anywhere; }
+  h1 { margin: 0; font: 800 clamp(30px, 8.5vw, 84px)/1 var(--font-heading); letter-spacing: -.04em; white-space: normal; overflow-wrap: anywhere; }
   .headline { margin: 12px 0 4px; font-size: 1.25rem; color: var(--work-ink); }
   .tagline { margin: 0; color: var(--work-muted); }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }

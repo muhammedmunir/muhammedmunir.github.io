@@ -220,7 +220,9 @@ Akhir sekali, tukar baris 011 dalam `plans/README.md` kepada `DONE`, kemudian co
 - [ ] `npm run check` 0 ralat; `npm test` 0 gagal; `npm run build` exit 0
 - [ ] `SMOKE OK` dan `ORBIT OK` (output disertakan dalam laporan)
 - [ ] `ls -la .crew/artifacts/011/` menunjukkan kedua-dua imej
-- [ ] `git status --short` kosong selepas commit; baris 011 = `DONE`
+- [ ] Selepas commit, output `git status --short` sama dengan keadaan awal: hanya `?? plans/010-konsolidasi-data-portfolio.md`; baris 011 = `DONE`.
+
+Kemas kini 2026-11-20: Dengan kelulusan pemilik, Verify akhir membandingkan status git dengan keadaan awal kerana fail 010 sudah tidak dijejak sebelum pelaksanaan. Fail 010 kekal di luar skop.
 
 ## Syarat STOP
 

@@ -2074,6 +2074,13 @@ export class WorkbenchWorld {
     this.targetZoom = THREE.MathUtils.clamp(this.targetZoom + delta, 0.48, 1.65);
   }
 
+  /** Putar kamera tanpa seret (WCAG 2.5.7). Had sama dengan seretan tetikus. */
+  orbitBy(dYaw: number, dPitch = 0) {
+    this.renderDirty = true;
+    this.targetOrbitYaw = THREE.MathUtils.clamp(this.targetOrbitYaw + dYaw, -0.75, 0.75);
+    this.targetOrbitPitch = THREE.MathUtils.clamp(this.targetOrbitPitch + dPitch, -0.28, 0.38);
+  }
+
   resetCamera() {
     this.renderDirty = true;
     this.targetZoom = 1;

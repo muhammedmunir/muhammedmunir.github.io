@@ -81,7 +81,7 @@ Untuk mengelakkannya:
 | 008 | Pecah WorkbenchWorld.ts kepada modul berasingan | P1 | L | 006, 007 | REJECTED: premis salah (fail 2,758 baris, bukan 111K); risiko tinggi tanpa nilai kepada pelawat. Draf diarkib di `.crew/artifacts/008-draf-modul/`. |
 | 009 | Ujian unit untuk WorkbenchWorld (characterization tests) | P0 | M | 006, 007 | DONE |
 | 010 | Konsolidasi data portfolio (system-state.mjs + portfolio-data.ts) | P1 | M | 006, 007 | TODO (semak premis dahulu: pelan ditulis model sandaran) |
-| 011 | Putaran kamera tanpa seret (WCAG 2.5.7), pautan langkau ke Sistem, pembetulan telefon | P1 | S | 006, 007 | TODO (ditulis semula dan diuji oleh perancang 2026-11-20) |
+| 011 | Putaran kamera tanpa seret (WCAG 2.5.7), pautan langkau ke Sistem, pembetulan telefon | P1 | S | 006, 007 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
