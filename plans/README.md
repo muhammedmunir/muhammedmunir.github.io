@@ -75,6 +75,14 @@ Untuk mengelakkannya:
 12. **Skrip Playwright dengan `--enable-unsafe-swiftshader`** (WebGL perisian untuk
    ujian 3D) mesti menolak URL selain `localhost`/`127.0.0.1` sebelum pelayar
    dilancarkan. Contoh: `scripts/workbench-orbit-a11y.mjs`.
+13. **C9 TIDAK menulis atau melaksanakan pelan reka bentuk (UI/visual) sendiri.**
+   Pelan reka bentuk ditulis dan diuji oleh perancang (Claude). Selepas satu pelan
+   DONE, jika pelan seterusnya berstatus `Belum ditulis`, atau fail pelannya tiada,
+   BERHENTI. Laporan akhir mesti berbunyi: "Pelan 0NN siap. Hantar laporan ini
+   kepada Claude untuk semakan dan pelan seterusnya." JANGAN menulis pelan itu
+   atau mengubah kod untuknya. (Sebab: 2026-11-20 C9 menulis sendiri pelan 013
+   dengan model sandaran; hasilnya 6 ralat jenis dan tajuk halaman rosak. Draf
+   diarkib di `.crew/artifacts/013-draf-c9/`.)
 
 ## Turutan pelaksanaan & status
 
