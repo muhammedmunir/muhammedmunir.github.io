@@ -66,6 +66,15 @@ Untuk mengelakkannya:
 10. **Jika auto mode menyekat arahan pemadaman** (`git rm`, `rm`), jangan cari
    jalan lain. Senaraikan arahan tepat (satu baris setiap satu) supaya pemilik
    boleh menjalankannya dengan awalan `!`, kemudian tunggu `sambung`.
+11. **Pelayan dev (port 5199).** Mulakan dengan `npx vite dev --port 5199 --strictPort`
+   sebagai tugas latar C9 sendiri, dan hentikan dengan **Stop Task** pada tugas
+   itu. JANGAN guna `Stop-Process`/`taskkill` (auto mode menyekatnya). Jika port
+   sudah digunakan dan `curl -s -o /dev/null -w "%{http_code}" http://localhost:5199/`
+   memberi `200`, guna pelayan itu terus dan biarkan ia berjalan selepas ujian;
+   nyatakan dalam laporan bahawa pelayan itu bukan milik sesi ini.
+12. **Skrip Playwright dengan `--enable-unsafe-swiftshader`** (WebGL perisian untuk
+   ujian 3D) mesti menolak URL selain `localhost`/`127.0.0.1` sebelum pelayar
+   dilancarkan. Contoh: `scripts/workbench-orbit-a11y.mjs`.
 
 ## Turutan pelaksanaan & status
 
