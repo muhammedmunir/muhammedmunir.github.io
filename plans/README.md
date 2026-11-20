@@ -91,6 +91,10 @@ Untuk mengelakkannya:
 | 009 | Ujian unit untuk WorkbenchWorld (characterization tests) | P0 | M | 006, 007 | DONE |
 | 010 | Buang data mati dalam portfolio-data.ts (STATIONS, OCEAN_WEATHER_PRESETS) | P1 | S | 004 | DONE (premis asal salah; lihat fail pelan) |
 | 011 | Putaran kamera tanpa seret (WCAG 2.5.7), pautan langkau ke Sistem, pembetulan telefon | P1 | S | 006, 007 | DONE |
+| 012 | Hero: gambar diri, kenyataan nilai, fakta daripada data sebenar | P1 | S | 011 | TODO (ditulis dan diuji oleh perancang 2026-11-20) |
+| 013 | Projek sebagai kajian kes dengan tangkapan skrin sebenar | P1 | M | 012 | Belum ditulis |
+| 014 | Garis masa kerjaya visual | P2 | S | 012 | Belum ditulis |
+| 015 | Kemahiran dan sijil dikaitkan dengan projek | P2 | S | 012 | Belum ditulis |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
