@@ -1,0 +1,240 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 8466,
+      "normalized": false,
+      "byteOffset": 0,
+      "bufferView": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5120,
+      "count": 2518,
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 1
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 2518,
+      "max": [
+        7820,
+        32767,
+        22694
+      ],
+      "min": [
+        -7820,
+        -32767,
+        -22694
+      ],
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 2
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5123,
+      "count": 2518,
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 3
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 1,
+      "byteOffset": 0,
+      "byteLength": 16932,
+      "target": 34963,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 0,
+          "byteLength": 3032,
+          "mode": "TRIANGLES",
+          "byteStride": 2,
+          "count": 8466
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 16932,
+      "byteLength": 10072,
+      "target": 34962,
+      "byteStride": 4,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 3032,
+          "byteLength": 4734,
+          "mode": "ATTRIBUTES",
+          "filter": "OCTAHEDRAL",
+          "byteStride": 4,
+          "count": 2518
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 27004,
+      "byteLength": 20144,
+      "target": 34962,
+      "byteStride": 8,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 7768,
+          "byteLength": 10271,
+          "mode": "ATTRIBUTES",
+          "byteStride": 8,
+          "count": 2518
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 47148,
+      "byteLength": 10072,
+      "target": 34962,
+      "byteStride": 4,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 18040,
+          "byteLength": 7133,
+          "mode": "ATTRIBUTES",
+          "byteStride": 4,
+          "count": 2518
+        }
+      }
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "wooden_display_shelves_01_nor_gl",
+      "mimeType": "image/jpeg",
+      "uri": "textures/wooden_display_shelves_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "wooden_display_shelves_01_diff",
+      "mimeType": "image/jpeg",
+      "uri": "textures/wooden_display_shelves_01_diff_1k.jpg"
+    },
+    {
+      "name": "wooden_display_shelves_01_metal-wooden_display_shelves_01_rough",
+      "mimeType": "image/jpeg",
+      "uri": "textures/wooden_display_shelves_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "wooden_display_shelves_01.bin",
+      "byteLength": 25176
+    },
+    {
+      "byteLength": 57220,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "fallback": true
+        }
+      }
+    }
+  ],
+  "materials": [
+    {
+      "name": "wooden_display_shelves_01",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.026",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 2,
+            "TEXCOORD_0": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "wooden_display_shelves_01",
+      "translation": [
+        0,
+        0.7785282135009766,
+        0
+      ],
+      "scale": [
+        0.7780919075012207,
+        0.7780919075012207,
+        0.7780919075012207
+      ],
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "EXT_meshopt_compression",
+    "KHR_mesh_quantization"
+  ],
+  "extensionsRequired": [
+    "EXT_meshopt_compression",
+    "KHR_mesh_quantization"
+  ]
+}

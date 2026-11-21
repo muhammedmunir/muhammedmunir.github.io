@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Workbench from '$lib/workbench/Workbench.svelte';
+  import RoomPage from '$lib/room/RoomPage.svelte';
 </script>
 
 <svelte:head>
@@ -10,4 +10,4 @@
   <link rel="canonical" href="https://muhammedmunir.github.io/" />
 </svelte:head>
 
-<Workbench />
+<RoomPage />

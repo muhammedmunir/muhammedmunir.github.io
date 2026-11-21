@@ -1,0 +1,218 @@
+[
+ {
+  "category": "frontend-mobile",
+  "name": "Vue.js 3",
+  "slug": "vuedotjs",
+  "hex": "#4FC08D"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "SvelteKit",
+  "slug": "svelte",
+  "hex": "#FF3E00"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "Flutter",
+  "slug": "flutter",
+  "hex": "#02569B"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "React",
+  "slug": "react",
+  "hex": "#61DAFB"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "Tailwind CSS",
+  "slug": "tailwindcss",
+  "hex": "#06B6D4"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "HTML5",
+  "slug": "html5",
+  "hex": "#E34F26"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "CSS3",
+  "slug": "css3",
+  "hex": "#1572B6"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "JavaScript",
+  "slug": "javascript",
+  "hex": "#F7DF1E"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "TypeScript",
+  "slug": "typescript",
+  "hex": "#3178C6"
+ },
+ {
+  "category": "frontend-mobile",
+  "name": "Three.js",
+  "slug": "threedotjs",
+  "hex": "#000000"
+ },
+ {
+  "category": "backend-apis",
+  "name": "Laravel",
+  "slug": "laravel",
+  "hex": "#FF2D20"
+ },
+ {
+  "category": "backend-apis",
+  "name": "Node.js",
+  "slug": "nodedotjs",
+  "hex": "#5FA04E"
+ },
+ {
+  "category": "backend-apis",
+  "name": "Python",
+  "slug": "python",
+  "hex": "#3776AB"
+ },
+ {
+  "category": "backend-apis",
+  "name": "C# / .NET",
+  "slug": "dotnet",
+  "hex": "#512BD4"
+ },
+ {
+  "category": "backend-apis",
+  "name": "C++",
+  "slug": "cplusplus",
+  "hex": "#00599C"
+ },
+ {
+  "category": "backend-apis",
+  "name": "Java",
+  "slug": "openjdk",
+  "hex": "#000000"
+ },
+ {
+  "category": "databases-cloud",
+  "name": "PostgreSQL",
+  "slug": "postgresql",
+  "hex": "#4169E1"
+ },
+ {
+  "category": "databases-cloud",
+  "name": "MySQL",
+  "slug": "mysql",
+  "hex": "#4479A1"
+ },
+ {
+  "category": "databases-cloud",
+  "name": "MariaDB",
+  "slug": "mariadb",
+  "hex": "#003545"
+ },
+ {
+  "category": "databases-cloud",
+  "name": "Supabase",
+  "slug": "supabase",
+  "hex": "#3FCF8E"
+ },
+ {
+  "category": "databases-cloud",
+  "name": "Firebase",
+  "slug": "firebase",
+  "hex": "#DD2C00"
+ },
+ {
+  "category": "databases-cloud",
+  "name": "MongoDB",
+  "slug": "mongodb",
+  "hex": "#47A248"
+ },
+ {
+  "category": "databases-cloud",
+  "name": "Redis",
+  "slug": "redis",
+  "hex": "#FF4438"
+ },
+ {
+  "category": "databases-cloud",
+  "name": "Vercel",
+  "slug": "vercel",
+  "hex": "#000000"
+ },
+ {
+  "category": "devops-security",
+  "name": "Docker",
+  "slug": "docker",
+  "hex": "#2496ED"
+ },
+ {
+  "category": "devops-security",
+  "name": "Jenkins",
+  "slug": "jenkins",
+  "hex": "#D24939"
+ },
+ {
+  "category": "devops-security",
+  "name": "Kubernetes",
+  "slug": "kubernetes",
+  "hex": "#326CE5"
+ },
+ {
+  "category": "devops-security",
+  "name": "GitHub",
+  "slug": "github",
+  "hex": "#181717"
+ },
+ {
+  "category": "devops-security",
+  "name": "Cloudflare",
+  "slug": "cloudflare",
+  "hex": "#F38020"
+ },
+ {
+  "category": "devops-security",
+  "name": "Splunk",
+  "slug": "splunk",
+  "hex": "#000000"
+ },
+ {
+  "category": "devops-security",
+  "name": "Wireshark",
+  "slug": "wireshark",
+  "hex": "#1679A7"
+ },
+ {
+  "category": "ai-automation-tools",
+  "name": "OpenCV",
+  "slug": "opencv",
+  "hex": "#5C3EE8"
+ },
+ {
+  "category": "ai-automation-tools",
+  "name": "Gemini",
+  "slug": "googlegemini",
+  "hex": "#8E75B2"
+ },
+ {
+  "category": "ai-automation-tools",
+  "name": "Ubuntu",
+  "slug": "ubuntu",
+  "hex": "#E95420"
+ },
+ {
+  "category": "ai-automation-tools",
+  "name": "Kali Linux",
+  "slug": "kalilinux",
+  "hex": "#557C94"
+ },
+ {
+  "category": "ai-automation-tools",
+  "name": "Figma",
+  "slug": "figma",
+  "hex": "#F24E1E"
+ }
+]

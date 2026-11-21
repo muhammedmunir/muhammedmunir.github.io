@@ -1,0 +1,364 @@
+{
+  "asset": {
+    "generator": "glTF-Transform v4.5.1",
+    "version": "2.0"
+  },
+  "accessors": [
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 912,
+      "normalized": false,
+      "byteOffset": 0,
+      "bufferView": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5120,
+      "count": 182,
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 1
+    },
+    {
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 15423,
+      "normalized": false,
+      "byteOffset": 1824,
+      "bufferView": 0
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5120,
+      "count": 3273,
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 2
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 182,
+      "max": [
+        2448,
+        -16137,
+        2448
+      ],
+      "min": [
+        -2448,
+        -22034,
+        -2448
+      ],
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 3
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5123,
+      "count": 182,
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 4
+    },
+    {
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 3273,
+      "max": [
+        14865,
+        32767,
+        14865
+      ],
+      "min": [
+        -14865,
+        -32767,
+        -14865
+      ],
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 5
+    },
+    {
+      "type": "VEC2",
+      "componentType": 5123,
+      "count": 3273,
+      "normalized": true,
+      "byteOffset": 0,
+      "bufferView": 6
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 1,
+      "byteOffset": 0,
+      "byteLength": 32670,
+      "target": 34963,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 0,
+          "byteLength": 5980,
+          "mode": "TRIANGLES",
+          "byteStride": 2,
+          "count": 16335
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 32672,
+      "byteLength": 728,
+      "target": 34962,
+      "byteStride": 4,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 5980,
+          "byteLength": 417,
+          "mode": "ATTRIBUTES",
+          "filter": "OCTAHEDRAL",
+          "byteStride": 4,
+          "count": 182
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 33400,
+      "byteLength": 13092,
+      "target": 34962,
+      "byteStride": 4,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 6400,
+          "byteLength": 5926,
+          "mode": "ATTRIBUTES",
+          "filter": "OCTAHEDRAL",
+          "byteStride": 4,
+          "count": 3273
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 46492,
+      "byteLength": 1456,
+      "target": 34962,
+      "byteStride": 8,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 12328,
+          "byteLength": 875,
+          "mode": "ATTRIBUTES",
+          "byteStride": 8,
+          "count": 182
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 47948,
+      "byteLength": 728,
+      "target": 34962,
+      "byteStride": 4,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 13204,
+          "byteLength": 601,
+          "mode": "ATTRIBUTES",
+          "byteStride": 4,
+          "count": 182
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 48676,
+      "byteLength": 26184,
+      "target": 34962,
+      "byteStride": 8,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 13808,
+          "byteLength": 14133,
+          "mode": "ATTRIBUTES",
+          "byteStride": 8,
+          "count": 3273
+        }
+      }
+    },
+    {
+      "buffer": 1,
+      "byteOffset": 74860,
+      "byteLength": 13092,
+      "target": 34962,
+      "byteStride": 4,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "buffer": 0,
+          "byteOffset": 27944,
+          "byteLength": 9353,
+          "mode": "ATTRIBUTES",
+          "byteStride": 4,
+          "count": 3273
+        }
+      }
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 1,
+      "sampler": 0
+    },
+    {
+      "source": 0,
+      "sampler": 0
+    },
+    {
+      "source": 2,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "modern_ceiling_lamp_01_gl_normal",
+      "mimeType": "image/jpeg",
+      "uri": "textures/modern_ceiling_lamp_01_nor_gl_1k.jpg"
+    },
+    {
+      "name": "modern_ceiling_lamp_01_basecolor",
+      "mimeType": "image/jpeg",
+      "uri": "textures/modern_ceiling_lamp_01_diff_1k.jpg"
+    },
+    {
+      "name": "modern_ceiling_lamp_01_metallic-modern_ceiling_lamp_01_roughness",
+      "mimeType": "image/jpeg",
+      "uri": "textures/modern_ceiling_lamp_01_arm_1k.jpg"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "modern_ceiling_lamp_01.bin",
+      "byteLength": 37300
+    },
+    {
+      "byteLength": 87952,
+      "extensions": {
+        "EXT_meshopt_compression": {
+          "fallback": true
+        }
+      }
+    }
+  ],
+  "materials": [
+    {
+      "name": "modern_ceiling_lamp_01_glass",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "normalTexture": {
+        "index": 1
+      }
+    },
+    {
+      "name": "modern_ceiling_globe",
+      "doubleSided": true,
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 2
+        }
+      },
+      "emissiveFactor": [
+        0.6229580640792847,
+        0.5416215658187866,
+        0.4745504856109619
+      ],
+      "normalTexture": {
+        "index": 1
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cylinder.003",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 4,
+            "TEXCOORD_0": 5
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 0
+        },
+        {
+          "attributes": {
+            "NORMAL": 3,
+            "POSITION": 6,
+            "TEXCOORD_0": 7
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 2
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "modern_ceiling_lamp_01",
+      "translation": [
+        0.000028252601623535156,
+        0.6968679130077362,
+        0.0015027299523353577
+      ],
+      "scale": [
+        0.47577574849128723,
+        0.47577574849128723,
+        0.47577574849128723
+      ],
+      "mesh": 0
+    }
+  ],
+  "scenes": [
+    {
+      "name": "Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "scene": 0,
+  "extensionsUsed": [
+    "EXT_meshopt_compression",
+    "KHR_mesh_quantization"
+  ],
+  "extensionsRequired": [
+    "EXT_meshopt_compression",
+    "KHR_mesh_quantization"
+  ]
+}
