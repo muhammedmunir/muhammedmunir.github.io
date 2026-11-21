@@ -178,6 +178,21 @@
 		<link rel="apple-touch-icon" type="image/png" sizes="180x180" href="/apple-touch-icon.png" />
 		<link rel="manifest" href="/site.webmanifest" />
 
+		<script>
+			// Selepas deploy baharu, HTML lama dalam cache boleh merujuk fail JS yang sudah dibuang: muat semula sekali.
+			addEventListener('unhandledrejection', function (e) {
+				var m = String((e.reason && e.reason.message) || e.reason);
+				if (!/dynamically imported module|Importing a module script failed/.test(m)) return;
+				try {
+					if (sessionStorage.getItem('chunk-reload')) return;
+					sessionStorage.setItem('chunk-reload', '1');
+				} catch (_) {
+					return;
+				}
+				location.reload();
+			});
+		</script>
+
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

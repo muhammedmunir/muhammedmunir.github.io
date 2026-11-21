@@ -8,7 +8,7 @@
   let { kind, index, locale, onclose, onselect }: { kind: 'project' | 'skills' | 'about' | 'resume'; index: number; locale: 'ms' | 'en'; onclose: () => void; onselect?: (index: number) => void } = $props();
   const en = $derived(locale === 'en');
   const mod = $derived(MODULES[index] as Module);
-  const SHARP_LOGOS = new Set(['emesys', 'sutera', 'adims', 'onboardx', 'babykick']);
+  const SHARP_LOGOS = new Set(['emesys', 'sutera', 'adims', 'onboardx', 'babykick', '9router']);
   const logo = $derived(SHARP_LOGOS.has(mod.id) ? PROJECT_MEDIA[mod.id]?.logo : undefined);
   let closeButton = $state<HTMLButtonElement>();
   $effect(() => { void kind; void index; closeButton?.focus({ preventScroll: true }); });

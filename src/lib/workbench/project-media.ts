@@ -41,6 +41,8 @@ export const PROJECT_MEDIA: Record<string, ProjectMedia> = {
     slides: []
   },
   '9router': {
+    logo: '/images/9router-logo.png',
+    logoSource: 'Ikon aplikasi 9Router Control (projek pemilik sendiri)',
     slides: []
   },
   babykick: {
