@@ -13,14 +13,16 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 
 /** Setiap objek dalam bilik mempunyai satu tugas. */
-export type RoomKind = 'computer' | 'launcher' | 'projection' | 'server' | 'skill' | 'badge' | 'book' | 'profile' | 'phone';
-export type RoomView = 'overview' | 'computer' | 'screen' | 'profile' | 'server' | 'work' | 'learning';
+export type RoomKind = 'computer' | 'launcher' | 'projection' | 'server' | 'skill' | 'badge' | 'book' | 'profile' | 'phone' | 'window';
+export type RoomView = 'overview' | 'computer' | 'screen' | 'profile' | 'server' | 'work' | 'learning' | 'phone';
 
-export interface ProjectCard { name: string; company: string; badge: string; accent: string; stack: string[]; logo?: string; mono?: string }
+export interface ProjectSlide { label: string; body: string }
+export interface ProjectCard { name: string; company: string; badge: string; accent: string; stack: string[]; logo?: string; mono?: string; slides: ProjectSlide[]; note?: string }
 export interface SkillIcon { name: string; category: string; hex: string; svg: string }
 export interface CareerBadge { short: string; company: string; year: string; role: string; period: string; color: string }
 export interface StudyBook { title: string; issuer: string; period: string; kind: 'degree' | 'cert'; color: string }
-export interface RoomData { projects: ProjectCard[]; skills: SkillIcon[]; career: CareerBadge[]; study: StudyBook[]; name: string; role: string; code: string[]; locale: 'ms' | 'en' }
+export interface RoomContact { phone: string; email: string; location: string }
+export interface RoomData { projects: ProjectCard[]; skills: SkillIcon[]; career: CareerBadge[]; study: StudyBook[]; name: string; role: string; code: string[]; locale: 'ms' | 'en'; contact: RoomContact }
 
 export interface RoomOptions {
   base: string;
@@ -29,6 +31,8 @@ export interface RoomOptions {
   onHover: (info: { text: string; x: number; y: number } | null) => void;
   onView: (view: RoomView) => void;
   onProject: (index: number) => void;
+  onSlide?: (slide: number, total: number) => void;
+  onDay?: (day: boolean) => void;
   onReady: () => void;
 }
 
@@ -39,19 +43,24 @@ const VIEWS: Record<RoomView, { pos: [number, number, number]; target: [number, 
   profile: { pos: [-0.47, 1.2, -1.36], target: [-0.27, 1.13, -2.24], fit: 0.4 },
   server: { pos: [0.15, 1.3, 0.75], target: [1.45, 1.12, -1.7], fit: 0.36 },
   work: { pos: [-0.6, 1.84, -1.4], target: [-0.6, 1.84, -2.5], fit: 0.72 },
-  learning: { pos: [-2.08, 1.36, -1.0], target: [-2.3, 1.14, -2.3], fit: 0.36 }
+  learning: { pos: [-2.08, 1.36, -1.0], target: [-2.3, 1.14, -2.3], fit: 0.36 },
+  phone: { pos: [0.1, 1.42, -1.12], target: [-0.08, 0.78, -1.92] }
 };
 
 /** Teks dalam kanvas dan tooltip 3D, ikut bahasa pelawat. */
 const TEXT = {
   ms: {
-    computer: 'Komputer · Projek', rack: 'Rak server · Kemahiran', projection: 'Butiran projek', phone: 'Telefon · Hubungi',
+    computer: 'Komputer · Projek', rack: 'Rak server · Kemahiran', projection: 'Slaid seterusnya', watch: 'Projektor · Tonton projek', phone: 'Telefon · Hubungi',
+    window: 'Tingkap · Tukar siang / malam', role: 'PERANAN SAYA', data: 'SENI BINA DATA', security: 'KESELAMATAN & AKSES', tech: 'TEKNOLOGI', project: 'PROJEK',
+    open: 'Sedia untuk peluang baharu', mail: 'E-mel',
     launcher: 'Pilih projek', profile: 'Monitor · Tentang saya', head: 'Projektor  ·  pilih projek untuk ditayangkan', show: 'Tayang',
     flip: 'Klik untuk pusing semula', close: 'Klik untuk tutup buku', degree: 'ANUGERAH AKADEMIK', cert: 'SIJIL PROFESIONAL',
     issuer: 'Dikeluarkan oleh', awarded: 'Dianugerahkan kepada'
   },
   en: {
-    computer: 'Computer · Projects', rack: 'Server rack · Skills', projection: 'Project details', phone: 'Phone · Contact',
+    computer: 'Computer · Projects', rack: 'Server rack · Skills', projection: 'Next slide', watch: 'Projector · Watch projects', phone: 'Phone · Contact',
+    window: 'Window · Switch day / night', role: 'MY ROLE', data: 'DATA ARCHITECTURE', security: 'SECURITY & ACCESS', tech: 'TECHNOLOGY', project: 'PROJECT',
+    open: 'Open to new opportunities', mail: 'Email',
     launcher: 'Choose a project', profile: 'Monitor · About me', head: 'Projector  ·  choose a project to screen', show: 'Show',
     flip: 'Click to flip back', close: 'Click to close the book', degree: 'ACADEMIC AWARD', cert: 'PROFESSIONAL CERTIFICATE',
     issuer: 'Issued by', awarded: 'Awarded to'
@@ -92,6 +101,7 @@ export class RoomWorld {
   private projFade = 1;
   private reelClock = 0;
   private lastPick = -100;
+  private slide = 0;
 
   // Kemahiran
   private door!: THREE.Group;
@@ -105,15 +115,27 @@ export class RoomWorld {
   private books: { mesh: THREE.Mesh; home: THREE.Vector3; homeRot: number; out: number; target: number }[] = [];
   private bookData: StudyBook[] = [];
   private reader?: {
-    group: THREE.Group; pivot: THREE.Group; cover: THREE.MeshStandardMaterial; left: THREE.MeshStandardMaterial; right: THREE.MeshStandardMaterial;
-    t: number; target: number; index: number; from: THREE.Vector3; spot: THREE.Vector3;
+    group: THREE.Group; pivot: THREE.Group; spine: THREE.Mesh;
+    cover: THREE.MeshStandardMaterial; left: THREE.MeshStandardMaterial; right: THREE.MeshStandardMaterial; board: THREE.MeshStandardMaterial; spineFace: THREE.MeshStandardMaterial;
+    t: number; target: number; index: number; pending: number;
+    /** Pose dalam rak (sama dengan buku rak), pose ditarik keluar dan pose membaca di hadapan kamera. */
+    shelf: THREE.Vector3; out: THREE.Vector3; spot: THREE.Vector3; qShelf: THREE.Quaternion; qRead: THREE.Quaternion; sShelf: number;
   };
   private beam?: THREE.MeshBasicMaterial;
   private noAo: THREE.Object3D[] = [];
   private get L() { return TEXT[this.opts.data.locale]; }
   private shelves?: THREE.Object3D;
   private phoneMat!: THREE.MeshStandardMaterial;
-  private phonePulse = 0;
+  private phone?: {
+    group: THREE.Group; t: number; idle: THREE.Texture; card: THREE.Texture;
+    home: THREE.Vector3; qHome: THREE.Quaternion; held: THREE.Vector3; qHeld: THREE.Quaternion;
+  };
+  // Siang / malam
+  private day = false;
+  private dayT = 0;
+  private lights = {} as Record<'hemi' | 'key' | 'desk' | 'wash' | 'sun' | 'sky', THREE.Light>;
+  private vignette!: ShaderPass;
+  private outside?: { mat: THREE.MeshBasicMaterial; dayTex: THREE.Texture; nightTex: THREE.Texture; shown: boolean };
 
   constructor(private canvas: HTMLCanvasElement, private opts: RoomOptions) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -160,6 +182,10 @@ export class RoomWorld {
     const vignette = new ShaderPass(VignetteShader);
     vignette.uniforms.offset.value = 0.92; vignette.uniforms.darkness.value = 1.12;
     this.composer.addPass(vignette);
+    this.vignette = vignette;
+    // Siang atau malam mengikut jam pelawat; boleh ditukar dengan tingkap atau butang header.
+    const hour = new Date().getHours();
+    this.day = hour >= 7 && hour < 19; this.dayT = this.day ? 1 : 0;
     this.composer.addPass(new OutputPass());
 
     this.launcherCanvas.width = 1024; this.launcherCanvas.height = 576;
@@ -262,7 +288,7 @@ export class RoomWorld {
     const floor = this.pbr('dark_wooden_planks', [3, 3], 0xb9b2a8);
     this.add(new THREE.PlaneGeometry(6, 5), floor, [0, 0, 0], this.scene, false).rotation.x = -Math.PI / 2;
     const wall = this.pbr('plastered_wall_04', [3, 1.4], 0x4a4f57);
-    this.add(new THREE.PlaneGeometry(6, 2.8), wall, [0, 1.4, -2.5], this.scene, false);
+    this.buildWindowWall();
     this.add(new THREE.PlaneGeometry(5, 2.8), wall, [-3, 1.4, 0], this.scene, false).rotation.y = Math.PI / 2;
     this.add(new THREE.PlaneGeometry(6, 5), this.std(0x1a1c20, 0.95), [0, 2.8, 0], this.scene, false).rotation.x = Math.PI / 2;
     const trim = this.std(0x15171b, 0.6);
@@ -286,6 +312,8 @@ export class RoomWorld {
     ceilingLamp.position.set(0.35, 1.9, 0.0); this.scene.add(ceilingLamp);
 
     await Promise.all([this.buildBooks(), this.buildSkills(), this.selectProject(0), this.buildNeon()]);
+    // Semua model sudah dimuat: kira semula cahaya dan bayang matahari sekali.
+    this.dayApplied = false;
   }
 
   private buildDesk() {
@@ -468,21 +496,79 @@ export class RoomWorld {
     const warm = new THREE.PointLight(0xffc98a, 1.4, 1.6, 2); warm.position.set(-2.25, 2.1, -2.2); this.scene.add(warm);
   }
 
-  private buildPhone() {
-    const c = document.createElement('canvas'); c.width = 256; c.height = 512;
+  private phoneCanvas(card: boolean) {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 1024;
     const x = c.getContext('2d')!;
-    const g = x.createLinearGradient(0, 0, 256, 512); g.addColorStop(0, '#1e3a5f'); g.addColorStop(1, '#0b1220');
-    x.fillStyle = g; x.fillRect(0, 0, 256, 512);
-    x.fillStyle = '#e8eef7'; x.textAlign = 'center'; x.font = '300 72px sans-serif'; x.fillText('09:41', 128, 150);
-    x.fillStyle = '#22c55e'; x.beginPath(); x.arc(128, 400, 34, 0, Math.PI * 2); x.fill();
-    x.strokeStyle = '#ffffff'; x.lineWidth = 7; x.beginPath(); x.arc(128, 400, 15, 0.6, 2.5); x.stroke();
-    const phone = new THREE.Group();
-    this.add(new RoundedBoxGeometry(0.075, 0.008, 0.155, 3, 0.004), this.std(0x101114, 0.3, 0.7), [0, 0, 0], phone);
-    this.phoneMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: this.canvasTex(c), emissiveIntensity: 0.35 });
-    this.add(new THREE.PlaneGeometry(0.068, 0.146), this.phoneMat, [0, 0.0045, 0], phone, false).rotation.x = -Math.PI / 2;
-    phone.position.set(0.0, 0.762, -1.86); phone.rotation.y = -0.35;
-    this.scene.add(phone);
-    this.tag(phone, 'phone', 0, this.L.phone);
+    const g = x.createLinearGradient(0, 0, 512, 1024); g.addColorStop(0, '#1b2b44'); g.addColorStop(1, '#090d16');
+    x.fillStyle = g; x.fillRect(0, 0, 512, 1024);
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    if (!card) {
+      x.fillStyle = '#e8eef7'; x.font = '200 150px sans-serif'; x.fillText(time, 256, 300);
+      x.fillStyle = '#22c55e'; x.beginPath(); x.arc(256, 820, 64, 0, Math.PI * 2); x.fill();
+      x.strokeStyle = '#ffffff'; x.lineWidth = 12; x.beginPath(); x.arc(256, 820, 28, 0.6, 2.5); x.stroke();
+      return c;
+    }
+    // Kad hubungan: seperti skrin kenalan, nilai sebenar daripada data profil.
+    const d = this.opts.data, k = d.contact;
+    x.fillStyle = '#94a3b8'; x.font = '600 30px sans-serif'; x.fillText(time, 256, 52);
+    const av = x.createLinearGradient(176, 130, 336, 290); av.addColorStop(0, '#e5b580'); av.addColorStop(1, '#a8743f');
+    x.fillStyle = av; x.beginPath(); x.arc(256, 210, 86, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#1b1208'; x.font = '800 54px Syne, sans-serif';
+    x.fillText(d.name.split(' ').map(w => w[0]).slice(0, 2).join(''), 256, 214);
+    x.fillStyle = '#f8fafc'; x.font = '800 46px Syne, sans-serif'; x.fillText(d.name, 256, 356, 460);
+    x.fillStyle = '#94a3b8'; x.font = '500 30px sans-serif'; x.fillText(d.role, 256, 404, 460);
+    // Lencana status
+    x.font = '600 26px sans-serif';
+    const w = x.measureText(this.L.open).width + 70;
+    x.fillStyle = 'rgba(34,197,94,.14)'; this.rr(x, 256 - w / 2, 440, w, 50, 25); x.fill();
+    x.fillStyle = '#22c55e'; x.beginPath(); x.arc(256 - w / 2 + 28, 465, 8, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#bbf7d0'; x.fillText(this.L.open, 256 + 14, 466);
+    // Baris hubungan
+    const rows: [string, string, string][] = [['WhatsApp', k.phone, '#22c55e'], [this.L.mail, k.email, '#60a5fa'], ['', k.location, '#e5b580']];
+    rows.forEach(([label, value, color], i) => {
+      const y = 560 + i * 130;
+      x.fillStyle = 'rgba(255,255,255,.06)'; this.rr(x, 36, y, 440, 108, 22); x.fill();
+      x.fillStyle = color; x.beginPath(); x.arc(86, y + 54, 22, 0, Math.PI * 2); x.fill();
+      x.textAlign = 'left';
+      if (label) {
+        x.fillStyle = '#94a3b8'; x.font = '600 24px sans-serif'; x.fillText(label, 128, y + 36);
+        x.fillStyle = '#f1f5f9'; x.font = '600 30px sans-serif'; x.fillText(value, 128, y + 74, 330);
+      } else { x.fillStyle = '#f1f5f9'; x.font = '600 30px sans-serif'; x.fillText(value, 128, y + 56, 330); }
+      x.textAlign = 'center';
+    });
+    return c;
+  }
+
+  private buildPhone() {
+    const group = new THREE.Group();
+    this.add(new RoundedBoxGeometry(0.075, 0.008, 0.155, 3, 0.004), this.std(0x101114, 0.3, 0.7), [0, 0, 0], group);
+    const idle = this.canvasTex(this.phoneCanvas(false)), card = this.canvasTex(this.phoneCanvas(true));
+    this.phoneMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: idle, emissiveIntensity: 0.35 });
+    this.add(new THREE.PlaneGeometry(0.068, 0.146), this.phoneMat, [0, 0.0045, 0], group, false).rotation.x = -Math.PI / 2;
+    group.position.set(0.0, 0.762, -1.86); group.rotation.y = -0.35;
+    this.scene.add(group);
+    this.tag(group, 'phone', 0, this.L.phone);
+    this.phone = { group, t: 0, idle, card, home: group.position.clone(), qHome: group.quaternion.clone(), held: new THREE.Vector3(), qHeld: new THREE.Quaternion() };
+  }
+
+  /** Kedudukan telefon semasa dipegang: berdiri menghadap kamera, ke kiri (desktop) atau ke atas (telefon) supaya kad HTML muat di sebelah. */
+  private aimPhone() {
+    const p = this.phone; if (!p) return;
+    const v = VIEWS.phone, cam = this.fitPos(v), at = new THREE.Vector3(...v.target);
+    const fwd = at.clone().sub(cam).normalize();
+    const right = fwd.clone().cross(new THREE.Vector3(0, 1, 0)).normalize();
+    const up = right.clone().cross(fwd);
+    const tanV = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
+    const narrow = this.camera.aspect < 1;
+    const d = 0.155 / ((narrow ? 0.3 : 0.5) * 2 * tanV);
+    p.held.copy(cam).addScaledVector(fwd, d)
+      .addScaledVector(right, narrow ? 0 : -0.2 * d * tanV * this.camera.aspect * 2)
+      .addScaledVector(up, narrow ? 0.17 * d * tanV * 2 : 0);
+    // Selari dengan satah kamera (bukan menghala ke kedudukannya) supaya telefon tegak dalam gambar, tanpa senget perspektif.
+    const face = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(cam, at, new THREE.Vector3(0, 1, 0)));
+    // Kumpulan telefon berbaring (skrin +y); putar 90° pada x supaya skrin menghadap +z tempatan, iaitu ke arah kamera.
+    p.qHeld.copy(face).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));
   }
 
   private buildBadges() {
@@ -586,6 +672,7 @@ export class RoomWorld {
     const pw = 0.2, ph = 0.27, pt = 0.014, bt = 0.006;
     const group = new THREE.Group(), pivot = new THREE.Group();
     const board = this.std(0x2b2b2b, 0.65);
+    const spineFace = new THREE.MeshStandardMaterial({ roughness: 0.6 });
     const paper = this.std(0xf1ead9, 0.92);
     const cover = new THREE.MeshStandardMaterial({ roughness: 0.55 });
     const left = new THREE.MeshStandardMaterial({ roughness: 0.92 });
@@ -599,31 +686,50 @@ export class RoomWorld {
     this.add(new THREE.BoxGeometry(pw + 0.008, ph + 0.01, bt), [board, board, board, board, cover, board], [pw / 2, 0, 0.007 + pt / 2 + bt / 2], pivot);
     // Tulang buku
     this.add(new THREE.CylinderGeometry(0.012, 0.012, ph + 0.01, 16, 1, false, 0, Math.PI), board, [0, 0, 0.004], group).rotation.y = Math.PI / 2;
+    // Muka tulang buku bertulis, sama seperti buku di rak; disembunyikan bila buku mula terbuka.
+    const spine = this.add(new THREE.PlaneGeometry(0.047, ph + 0.01), spineFace, [-0.0125, 0, 0.011], group, false);
+    spine.rotation.y = -Math.PI / 2;
     group.visible = false;
     this.scene.add(group);
     this.tag(group, 'book', 0, this.L.close);
-    this.reader = { group, pivot, cover, left, right, t: 0, target: 0, index: -1, from: new THREE.Vector3(), spot: new THREE.Vector3() };
+    const v = () => new THREE.Vector3(), q = () => new THREE.Quaternion();
+    this.reader = {
+      group, pivot, spine, cover, left, right, board, spineFace, t: 0, target: 0, index: -1, pending: -1,
+      shelf: v(), out: v(), spot: v(), qShelf: q(), qRead: q(), sShelf: 1
+    };
   }
 
+  /** Klik buku: buka; klik buku yang sama: tutup dan letak semula; klik buku lain: tutup dahulu, kemudian buka yang baharu. */
   private openBook(i: number) {
-    const r = this.reader, b = this.bookData[i];
-    if (!r || !b) return;
-    if (r.index === i && r.target === 1) { r.target = 0; return; }
-    if (r.index !== i) {
-      r.t = 0; r.index = i;
-      for (const [m, c] of [[r.cover, this.coverFace(b)], [r.left, this.leftPage(b)], [r.right, this.rightPage(b)]] as const) {
-        m.map?.dispose(); m.map = this.canvasTex(c); m.needsUpdate = true;
-      }
-      r.group.traverse(o => { if (o.userData.kind) o.userData.index = i; });
-    }
+    const r = this.reader;
+    if (!r || !this.bookData[i]) return;
+    if (r.target === 1 && r.index === i) { r.target = 0; r.pending = -1; return; }
+    if (r.t > 0 && r.index !== i) { r.target = 0; r.pending = i; return; }
+    this.prepareBook(i);
     r.target = 1;
+  }
+
+  private prepareBook(i: number) {
+    const r = this.reader!, b = this.bookData[i], shelfBook = this.books[i];
+    r.index = i; r.pending = -1;
+    for (const [m, c] of [[r.cover, this.coverFace(b)], [r.left, this.leftPage(b)], [r.right, this.rightPage(b)], [r.spineFace, this.spineFace(b)]] as const) {
+      m.map?.dispose(); m.map = this.canvasTex(c); m.needsUpdate = true;
+    }
+    r.board.color.set(b.color);
+    r.group.traverse(o => { if (o.userData.kind) o.userData.index = i; });
+    // Pose rak: tulang buku (x tempatan = 0) menghadap pelawat (+z dunia), kulit depan ke +x, ketinggian sama dengan buku rak.
+    const g = shelfBook.mesh.geometry as THREE.BoxGeometry, { height, depth } = g.parameters;
+    r.sShelf = height / 0.28;
+    r.qShelf.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+    r.shelf.copy(shelfBook.home).add(new THREE.Vector3(-0.011 * r.sShelf, 0, depth / 2 - 0.012 * r.sShelf));
+    r.out.copy(r.shelf).add(new THREE.Vector3(0, 0.01, depth * 1.1));
     // Titik baca di hadapan kamera paparan pembelajaran; lebih jauh pada skrin sempit supaya buku terbuka muat.
     const cam = this.fitPos(VIEWS.learning), at = new THREE.Vector3(...VIEWS.learning.target);
     const half = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * this.camera.aspect;
     const d = Math.max(0.72, 0.25 / half);
     r.spot.copy(cam).addScaledVector(at.sub(cam).normalize(), d);
-    r.from.copy(this.books[i].mesh.position);
-    r.group.position.copy(r.spot); r.group.lookAt(cam);
+    const look = new THREE.Object3D(); look.position.copy(r.spot); look.lookAt(cam);
+    r.qRead.copy(look.quaternion);
   }
 
   private leftPage(b: StudyBook) {
@@ -716,8 +822,106 @@ export class RoomWorld {
     }));
   }
 
+  /** Dinding belakang dengan bukaan tingkap sebenar (bentuk berlubang) supaya cahaya matahari masuk melaluinya. */
+  private buildWindowWall() {
+    const W = { x0: 0.32, x1: 1.04, y0: 1.2, y1: 2.3 }, cx = (W.x0 + W.x1) / 2, cy = (W.y0 + W.y1) / 2, ww = W.x1 - W.x0, wh = W.y1 - W.y0;
+    const shape = new THREE.Shape([new THREE.Vector2(-3, 0), new THREE.Vector2(3, 0), new THREE.Vector2(3, 2.8), new THREE.Vector2(-3, 2.8)]);
+    shape.holes.push(new THREE.Path([new THREE.Vector2(W.x0, W.y0), new THREE.Vector2(W.x0, W.y1), new THREE.Vector2(W.x1, W.y1), new THREE.Vector2(W.x1, W.y0)]));
+    // UV bentuk dalam meter: ulangan 0.5 / m sama dengan dinding kiri (3 ulangan bagi 6 m).
+    const wall = this.add(new THREE.ShapeGeometry(shape), this.pbr('plastered_wall_04', [0.5, 0.5], 0x4a4f57), [0, 0, -2.5]);
+    wall.castShadow = true;
+    const win = new THREE.Group(); win.position.set(cx, cy, -2.5); this.scene.add(win);
+    // Ketebalan dinding (bendul dalam)
+    const reveal = this.std(0x3d4148, 0.9), depth = 0.16;
+    for (const [w, h, x, y] of [[ww, 0.02, 0, wh / 2 + 0.01], [ww, 0.02, 0, -wh / 2 - 0.01], [0.02, wh + 0.04, -ww / 2 - 0.01, 0], [0.02, wh + 0.04, ww / 2 + 0.01, 0]] as const)
+      this.add(new THREE.BoxGeometry(w, h, depth), reveal, [x, y, -depth / 2], win);
+    // Bingkai aluminium, tiang tengah dan palang melintang
+    const frame = this.std(0x1c1e22, 0.4, 0.7), fz = -0.1;
+    for (const [w, h, x, y] of [[ww, 0.04, 0, wh / 2 - 0.02], [ww, 0.04, 0, -wh / 2 + 0.02], [0.04, wh, -ww / 2 + 0.02, 0], [0.04, wh, ww / 2 - 0.02, 0], [0.03, wh, 0, 0], [ww, 0.03, 0, wh * 0.22]] as const)
+      this.add(new THREE.BoxGeometry(w, h, 0.05), frame, [x, y, fz], win);
+    const glass = new THREE.MeshPhysicalMaterial({ color: 0xdfe8f2, roughness: 0.04, metalness: 0, transparent: true, opacity: 0.12, depthWrite: false });
+    const pane = this.add(new THREE.PlaneGeometry(ww - 0.06, wh - 0.06), glass, [0, 0, fz - 0.005], win, false);
+    this.noAo.push(pane);
+    // Ambang tingkap
+    this.add(new RoundedBoxGeometry(ww + 0.14, 0.03, 0.2, 2, 0.008), this.std(0xcfc8bc, 0.6), [0, -wh / 2 - 0.015, 0.02], win);
+    this.tag(win, 'window', 0, this.L.window);
+    // Pemandangan luar: langit dan bangunan bandar, siang dan malam.
+    const dayTex = this.canvasTex(this.skyline(true)), nightTex = this.canvasTex(this.skyline(false));
+    const mat = new THREE.MeshBasicMaterial({ map: this.day ? dayTex : nightTex, toneMapped: false });
+    this.add(new THREE.PlaneGeometry(6, 3.75), mat, [cx, cy + 0.2, -3.9], this.scene, false).receiveShadow = false;
+    this.outside = { mat, dayTex, nightTex, shown: this.day };
+  }
+
+  private skyline(day: boolean) {
+    const c = document.createElement('canvas'); c.width = 1536; c.height = 960;
+    const x = c.getContext('2d')!, W = c.width, H = c.height;
+    let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const sky = x.createLinearGradient(0, 0, 0, H);
+    if (day) { sky.addColorStop(0, '#5d97cf'); sky.addColorStop(0.62, '#b9d6ec'); sky.addColorStop(1, '#e8eef2'); }
+    else { sky.addColorStop(0, '#03060f'); sky.addColorStop(0.6, '#0d1630'); sky.addColorStop(1, '#2a2338'); }
+    x.fillStyle = sky; x.fillRect(0, 0, W, H);
+    if (day) {
+      // Awan nipis
+      x.fillStyle = 'rgba(255,255,255,.55)';
+      for (let k = 0; k < 9; k++) { const cx = rnd() * W, cy = 80 + rnd() * 260; for (let j = 0; j < 6; j++) { x.beginPath(); x.ellipse(cx + j * 34 - 90, cy + rnd() * 14, 60 + rnd() * 40, 16 + rnd() * 8, 0, 0, Math.PI * 2); x.fill(); } }
+    } else {
+      x.fillStyle = '#ffffff';
+      for (let k = 0; k < 160; k++) { x.globalAlpha = 0.3 + rnd() * 0.7; x.fillRect(rnd() * W, rnd() * H * 0.55, 2, 2); }
+      x.globalAlpha = 1;
+      x.fillStyle = '#f4efe2'; x.beginPath(); x.arc(W * 0.7, 150, 34, 0, Math.PI * 2); x.fill();
+    }
+    // Dua lapis bangunan: jauh (kabur) dan dekat (dengan tingkap)
+    const layers: [number, string, number][] = day ? [[0.5, '#9db2c6', 0], [0.62, '#6c7f93', 0.08]] : [[0.5, '#151b2b', 0.5], [0.62, '#0a0e18', 0.75]];
+    for (const [top, color, lit] of layers) {
+      let bx = -20;
+      while (bx < W) {
+        const bw = 60 + rnd() * 120, bh = H * (1 - top) * (0.45 + rnd() * 0.75);
+        const by = H - bh;
+        x.fillStyle = color; x.fillRect(bx, by, bw, bh);
+        if (lit) for (let wy = by + 14; wy < H - 10; wy += 22) for (let wx = bx + 10; wx < bx + bw - 12; wx += 18)
+          if (rnd() < lit * 0.5) { x.fillStyle = day ? 'rgba(255,255,255,.25)' : rnd() < 0.8 ? '#ffd58a' : '#cfe6ff'; x.globalAlpha = day ? 1 : 0.55 + rnd() * 0.45; x.fillRect(wx, wy, 8, 11); x.globalAlpha = 1; }
+        bx += bw + 4 + rnd() * 14;
+      }
+    }
+    if (!day) { const glow = x.createLinearGradient(0, H * 0.7, 0, H); glow.addColorStop(0, 'rgba(255,150,80,0)'); glow.addColorStop(1, 'rgba(255,150,80,.18)'); x.fillStyle = glow; x.fillRect(0, 0, W, H); }
+    return c;
+  }
+
+  get isDay() { return this.day; }
+  setDay(on: boolean) {
+    this.day = on;
+    this.opts.onDay?.(on);
+  }
+  /** Cahaya bilik: malam = lampu hangat dan bayang dalam; siang = matahari melalui tingkap dan langit terang. */
+  private lightDay(dt: number) {
+    const want = this.day ? 1 : 0, L = this.lights;
+    if (!L.sun || (this.dayT === want && this.dayApplied)) return;
+    this.dayT = this.reduced ? want : want > this.dayT ? Math.min(1, this.dayT + dt / 1.4) : Math.max(0, this.dayT - dt / 1.4);
+    this.dayApplied = true;
+    const d = ease(this.dayT), mix = (a: number, b: number) => a + (b - a) * d;
+    L.hemi.intensity = mix(0.25, 1.05);
+    L.key.intensity = mix(9, 2.2);
+    L.desk.intensity = mix(11, 4);
+    L.wash.intensity = mix(2.2, 0.6);
+    L.sun.intensity = mix(0, 3.6);
+    L.sky.intensity = mix(0, 3.2);
+    this.scene.environmentIntensity = mix(0.32, 0.85);
+    this.renderer.toneMappingExposure = mix(1, 1.06);
+    this.vignette.uniforms.darkness.value = mix(1.12, 0.8);
+    (this.scene.background as THREE.Color).setHex(0x0b0c0f).lerp(new THREE.Color(0x1b1f25), d);
+    if (this.outside && this.outside.shown !== this.dayT > 0.5) {
+      this.outside.shown = this.dayT > 0.5;
+      this.outside.mat.map = this.outside.shown ? this.outside.dayTex : this.outside.nightTex; this.outside.mat.needsUpdate = true;
+    }
+    // Peta bayang matahari dikemas kini setiap bingkai hanya pada desktop; telefon mengemas kini semasa peralihan sahaja.
+    (L.sun as THREE.DirectionalLight).shadow.needsUpdate = true;
+  }
+  private dayApplied = false;
+
   private buildLights() {
-    this.scene.add(new THREE.HemisphereLight(0x8899aa, 0x1a1410, 0.25));
+    const touch = matchMedia('(hover: none)').matches;
+    const hemi = new THREE.HemisphereLight(0x8899aa, 0x1a1410, 0.25);
+    this.scene.add(hemi);
     const key = new THREE.PointLight(0xffd8a8, 9, 6.5, 2); key.position.set(0.35, 1.78, 0.0);
     key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0015; key.shadow.normalBias = 0.02; key.shadow.radius = 5;
     this.scene.add(key);
@@ -726,6 +930,17 @@ export class RoomWorld {
     this.scene.add(desk, desk.target);
     const wallWash = new THREE.SpotLight(0xffe2c0, 2.2, 3, 0.6, 0.8, 2); wallWash.position.set(-0.6, 2.7, -1.6);
     wallWash.target.position.set(-0.6, 1.8, -2.5); this.scene.add(wallWash, wallWash.target);
+    // Matahari: dari belakang dinding, hanya masuk melalui tingkap (dinding belakang menghasilkan bayang).
+    const sun = new THREE.DirectionalLight(0xfff0d8, 0); sun.position.set(2.6, 4.2, -6); sun.target.position.set(0.2, 0.6, -1.0);
+    sun.castShadow = true; sun.shadow.mapSize.setScalar(touch ? 1024 : 2048);
+    Object.assign(sun.shadow.camera, { left: -3.5, right: 3.5, top: 3.5, bottom: -3.5, near: 1, far: 14 });
+    sun.shadow.camera.updateProjectionMatrix();
+    sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.03; sun.shadow.radius = 3;
+    sun.shadow.autoUpdate = !touch;
+    this.scene.add(sun, sun.target);
+    // Cahaya langit sejuk dari arah tingkap
+    const sky = new THREE.PointLight(0xcfe0ff, 0, 4.5, 2); sky.position.set(0.68, 1.75, -2.15); this.scene.add(sky);
+    this.lights = { hemi, key, desk, wash: wallWash, sun, sky };
     const monitor = new THREE.PointLight(0x6fb8ff, 0.9, 2.2, 2); monitor.position.set(-0.6, 0.95, -1.75); this.scene.add(monitor);
     const rackGlow = new THREE.PointLight(0x2bd38a, 1.2, 1.8, 2); rackGlow.position.set(1.45, 1.1, -1.5); this.scene.add(rackGlow);
   }
@@ -796,20 +1011,40 @@ export class RoomWorld {
   /** Slaid tayangan: latar gelap sinematik, titik panas di tengah dan bucu malap seperti imej projektor sebenar. */
   private async drawProjection() {
     const card = this.opts.data.projects[this.active];
+    const slide = this.slide, active = this.active;
     const img = card.logo ? await this.image(card.logo) : undefined;
+    // Lukisan lain mungkin bermula semasa imej dimuat; hanya yang terkini dilukis.
+    if (slide !== this.slide || active !== this.active) return;
     const c = this.projCanvas, x = c.getContext('2d')!, W = c.width, H = c.height;
     const bg = x.createRadialGradient(W * 0.42, H * 0.46, 60, W * 0.5, H * 0.5, W * 0.72);
     bg.addColorStop(0, '#1d2533'); bg.addColorStop(0.55, '#121721'); bg.addColorStop(1, '#06080c');
     x.fillStyle = bg; x.fillRect(0, 0, W, H);
+    if (slide === 0) this.titleSlide(x, card, img);
+    else this.detailSlide(x, card, img, slide);
+    // Kaki slaid: kedudukan slaid dalam projek ini.
+    const n = this.slideCount;
+    x.textAlign = 'right'; x.textBaseline = 'alphabetic';
+    x.fillStyle = '#64748b'; x.font = '600 26px sans-serif';
+    x.fillText(`${String(slide + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`, W - 70, H - 60);
+    x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(70, H - 72, W - 260, 2);
+    x.fillStyle = this.alpha(card.accent, 1); x.fillRect(70, H - 72, ((W - 260) * (slide + 1)) / n, 2);
+    // Kejatuhan cahaya di bucu (vignet projektor)
+    const v = x.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, W * 0.62);
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.55)');
+    x.fillStyle = v; x.fillRect(0, 0, W, H);
+    this.projTex.needsUpdate = true;
+  }
+
+  private titleSlide(x: CanvasRenderingContext2D, card: ProjectCard, img?: HTMLImageElement) {
+    const W = this.projCanvas.width;
     // Cahaya aksen projek yang lembut di belakang logo.
     const glow = x.createRadialGradient(330, 450, 20, 330, 450, 420);
     glow.addColorStop(0, this.alpha(card.accent, 0.42)); glow.addColorStop(1, this.alpha(card.accent, 0));
-    x.fillStyle = glow; x.fillRect(0, 0, W, H);
+    x.fillStyle = glow; x.fillRect(0, 0, W, this.projCanvas.height);
     // Jubin logo: kertas putih lembut kerana kebanyakan logo berlatar cerah.
     x.save(); x.shadowColor = 'rgba(0,0,0,.55)'; x.shadowBlur = 60; x.shadowOffsetY = 18;
     x.fillStyle = '#f3f4f6'; this.rr(x, 150, 270, 360, 360, 44); x.fill(); x.restore();
     this.drawLogo(x, img, card.mono ?? card.name.slice(0, 1), card.accent, 330, 450, 270);
-    // Teks
     x.textAlign = 'left'; x.textBaseline = 'alphabetic';
     x.fillStyle = this.alpha(card.accent, 1); x.fillRect(620, 286, 64, 6);
     x.fillStyle = '#9fb0c6'; x.font = '700 30px sans-serif';
@@ -817,25 +1052,50 @@ export class RoomWorld {
     x.fillStyle = '#f8fafc'; x.font = `800 ${card.name.length > 14 ? 92 : 118}px Syne, sans-serif`;
     x.fillText(card.name, 612, 430, 900);
     x.fillStyle = '#b8c4d4'; x.font = '500 42px sans-serif'; x.fillText(card.company, 618, 500, 860);
-    let sx = 618, sy = 560;
-    for (const t of card.stack.slice(0, 5)) {
-      x.font = '600 30px sans-serif'; const w = x.measureText(t).width + 44;
-      if (sx + w > W - 90) { sx = 618; sy += 72; }
-      x.fillStyle = 'rgba(255,255,255,.06)'; x.strokeStyle = 'rgba(255,255,255,.28)'; x.lineWidth = 2;
-      this.rr(x, sx, sy, w, 56, 28); x.fill(); x.stroke();
-      x.fillStyle = '#e2e8f0'; x.fillText(t, sx + 22, sy + 38); sx += w + 14;
-    }
-    // Nombor slaid
+    this.pills(x, card.stack.slice(0, 5), 618, 560, W - 90, 30);
+    // Kedudukan projek dalam koleksi
     const n = this.opts.data.projects.length;
-    x.fillStyle = '#64748b'; x.font = '600 26px sans-serif'; x.textAlign = 'right';
-    x.fillText(`${String(this.active + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`, W - 70, H - 60);
-    x.fillStyle = 'rgba(255,255,255,.08)'; x.fillRect(70, H - 72, W - 260, 2);
-    x.fillStyle = this.alpha(card.accent, 1); x.fillRect(70, H - 72, ((W - 260) * (this.active + 1)) / n, 2);
-    // Kejatuhan cahaya di bucu (vignet projektor)
-    const v = x.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, W * 0.62);
-    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.55)');
-    x.fillStyle = v; x.fillRect(0, 0, W, H);
-    this.projTex.needsUpdate = true;
+    x.textAlign = 'right'; x.fillStyle = '#64748b'; x.font = '700 24px sans-serif';
+    x.fillText(`${this.L.project} ${String(this.active + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`, W - 70, 92);
+  }
+
+  /** Slaid butiran: kepala kecil (logo + nama), label bahagian dan satu kenyataan besar. */
+  private detailSlide(x: CanvasRenderingContext2D, card: ProjectCard, img: HTMLImageElement | undefined, slide: number) {
+    const W = this.projCanvas.width;
+    const glow = x.createRadialGradient(W * 0.2, 120, 10, W * 0.2, 120, 700);
+    glow.addColorStop(0, this.alpha(card.accent, 0.28)); glow.addColorStop(1, this.alpha(card.accent, 0));
+    x.fillStyle = glow; x.fillRect(0, 0, W, this.projCanvas.height);
+    x.fillStyle = '#f3f4f6'; this.rr(x, 90, 70, 116, 116, 22); x.fill();
+    this.drawLogo(x, img, card.mono ?? card.name.slice(0, 1), card.accent, 148, 128, 88);
+    x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+    x.fillStyle = '#f8fafc'; x.font = '800 46px Syne, sans-serif'; x.fillText(card.name, 236, 124, 1100);
+    x.fillStyle = '#94a3b8'; x.font = '500 28px sans-serif'; x.fillText(card.company, 238, 166, 1100);
+    const s = card.slides[slide - 1];
+    x.fillStyle = this.alpha(card.accent, 1); x.fillRect(96, 292, 64, 6);
+    x.fillStyle = '#9fb0c6'; x.font = '700 30px sans-serif'; x.fillText(s.label, 184, 306, 1200);
+    if (!s.body) {
+      this.pills(x, card.stack, 96, 370, W - 96, 40);
+      if (card.note) { x.fillStyle = '#94a3b8'; x.font = '500 32px sans-serif'; x.fillText(card.note, 96, 740, W - 200); }
+      return;
+    }
+    // Saiz huruf menyusut untuk kenyataan panjang supaya kekal dalam 4 baris.
+    let size = 64, lines: string[] = [];
+    for (; size >= 44; size -= 4) { x.font = `700 ${size}px sans-serif`; lines = this.wrap(x, s.body, 1360); if (lines.length <= 4) break; }
+    x.fillStyle = '#f1f5f9';
+    lines.slice(0, 5).forEach((l, k) => x.fillText(l, 96, 420 + k * size * 1.3, 1400));
+  }
+
+  private pills(x: CanvasRenderingContext2D, tags: string[], left: number, top: number, right: number, size: number) {
+    let sx = left, sy = top;
+    const h = size * 1.9;
+    x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+    for (const t of tags) {
+      x.font = `600 ${size}px sans-serif`; const w = x.measureText(t).width + size * 1.5;
+      if (sx + w > right) { sx = left; sy += h + 16; }
+      x.fillStyle = 'rgba(255,255,255,.06)'; x.strokeStyle = 'rgba(255,255,255,.28)'; x.lineWidth = 2;
+      this.rr(x, sx, sy, w, h, h / 2); x.fill(); x.stroke();
+      x.fillStyle = '#e2e8f0'; x.fillText(t, sx + size * 0.75, sy + h * 0.68); sx += w + 14;
+    }
   }
   private alpha(hex: string, a: number) {
     const v = parseInt(hex.replace('#', ''), 16);
@@ -846,9 +1106,22 @@ export class RoomWorld {
 
   async selectProject(i: number) {
     this.active = i;
+    this.slide = 0;
     this.opts.onProject(i);
+    this.opts.onSlide?.(0, this.slideCount);
     this.projFade = 0;
     await Promise.all([this.drawLauncher(), this.drawProjection()]);
+  }
+  /** Slaid 1 ialah tajuk; selebihnya butiran projek (peranan, data, keselamatan, teknologi). */
+  get slideCount() { return 1 + (this.opts.data.projects[this.active]?.slides.length ?? 0); }
+  /** Tukar slaid tayangan projek semasa; berpusing semula ke slaid pertama selepas yang terakhir. */
+  nextSlide(step = 1) {
+    const n = this.slideCount;
+    this.slide = (this.slide + step + n) % n;
+    this.lastPick = this.clock.elapsedTime;
+    this.projFade = 0.25;
+    this.opts.onSlide?.(this.slide, n);
+    void this.drawProjection();
   }
 
   // ================= paparan & kamera =================
@@ -861,8 +1134,9 @@ export class RoomWorld {
     };
     this.controls.enabled = view === 'overview';
     if (view === 'profile') this.typed = 0;
+    if (view === 'phone') this.aimPhone();
     if (view !== 'work') this.badges.forEach(b => (b.target = 0));
-    if (view !== 'learning' && this.reader) this.reader.target = 0;
+    if (view !== 'learning' && this.reader) { this.reader.target = 0; this.reader.pending = -1; }
     this.opts.onView(view);
   }
   /** Kedudukan kamera untuk paparan, diundur pada skrin sempit supaya objek muat; kekal dalam bilik. */
@@ -918,6 +1192,7 @@ export class RoomWorld {
     }
     if (d?.kind === 'badge' && this.badges[d.index ?? 0]?.target) label = this.L.flip;
     if (d?.kind === 'book' && this.reader && this.reader.target && d.index === this.reader.index) label = this.L.close;
+    if (d?.kind === 'projection' && this.view !== 'screen') label = this.L.watch;
     const r = this.canvas.getBoundingClientRect();
     this.canvas.style.cursor = label ? 'pointer' : this.view === 'overview' ? 'grab' : 'default';
     this.opts.onHover(label ? { text: label, x: e.clientX - r.left, y: e.clientY - r.top } : null);
@@ -944,7 +1219,11 @@ export class RoomWorld {
         this.openBook(index);
         break;
       case 'profile': this.setView('profile'); break;
-      case 'phone': this.phonePulse = 1; this.opts.onPick('phone', 0); break;
+      case 'projection':
+        if (this.view !== 'screen') this.setView('screen'); else this.nextSlide();
+        break;
+      case 'phone': this.setView('phone'); break;
+      case 'window': this.setDay(!this.day); break;
       default: this.opts.onPick(kind, index);
     }
   };
@@ -958,6 +1237,7 @@ export class RoomWorld {
     this.camera.aspect = w / h;
     this.camera.fov = w / h < 1 ? 70 : 42;
     this.camera.updateProjectionMatrix();
+    if (this.view === 'phone') this.aimPhone();
     if (this.view !== 'overview' && !this.tween) this.camera.position.copy(this.fitPos(VIEWS[this.view]));
   };
 
@@ -1006,20 +1286,22 @@ export class RoomWorld {
       b.group.position.set(THREE.MathUtils.lerp(b.x, -0.6, f), 2.17 + 0.3 * f, -2.43 + 0.3 * f);
       b.group.scale.setScalar(1 + 0.9 * f);
     });
-    // Pembelajaran: buku ditarik dari rak, terbang ke hadapan kamera dan terbuka seperti buku sebenar.
+    // Pembelajaran: buku ditarik keluar dari rak, terbang sambil berpusing ke hadapan kamera, kemudian terbuka.
+    // Menutup ialah laluan yang sama secara terbalik, jadi buku kembali tepat ke slotnya.
     const r = this.reader;
     if (r) {
-      r.t += (r.target - r.t) * (this.reduced ? 1 : 1 - Math.exp(-3.2 * dt));
-      const fly = ease(THREE.MathUtils.clamp(r.t * 1.6, 0, 1));
-      r.group.position.lerpVectors(r.from, r.spot, fly);
-      r.group.scale.setScalar(0.45 + 0.55 * fly);
-      r.pivot.rotation.y = -Math.PI * ease(THREE.MathUtils.clamp((r.t - 0.45) / 0.55, 0, 1));
-      r.group.visible = r.t > 0.02;
-      this.books.forEach((b, i) => {
-        const mine = i === r.index;
-        b.mesh.visible = !(mine && r.t > 0.12);
-        b.mesh.position.set(b.home.x, b.home.y, b.home.z + (mine ? 0.06 * Math.min(1, r.t * 6) : 0));
-      });
+      r.t = this.reduced ? r.target : r.target > r.t ? Math.min(r.target, r.t + dt / 1.7) : Math.max(r.target, r.t - dt / 1.4);
+      if (r.t === 0 && r.pending >= 0) { this.prepareBook(r.pending); r.target = 1; }
+      const seg = (a: number, b: number) => ease(THREE.MathUtils.clamp((r.t - a) / (b - a), 0, 1));
+      const pull = seg(0, 0.2), fly = seg(0.18, 0.62), open = seg(0.64, 1);
+      r.group.position.lerpVectors(r.shelf, r.out, pull).lerp(r.spot, fly);
+      r.group.position.y += Math.sin(Math.PI * fly) * 0.06;
+      r.group.quaternion.slerpQuaternions(r.qShelf, r.qRead, fly);
+      r.group.scale.setScalar(THREE.MathUtils.lerp(r.sShelf, 1, fly));
+      r.pivot.rotation.y = -Math.PI * open;
+      r.spine.visible = open < 0.02;
+      r.group.visible = r.t > 0;
+      this.books.forEach((b, i) => (b.mesh.visible = !(i === r.index && r.t > 0)));
     }
     // Monitor profil: taip semasa dibuka; kursor berkelip.
     this.typed = this.view === 'profile' && !this.reduced ? this.typed + dt * 42 : Infinity;
@@ -1033,9 +1315,21 @@ export class RoomWorld {
     this.projFade = Math.min(1, this.projFade + (this.reduced ? 1 : dt * 2.2));
     if (this.projMat) this.projMat.emissiveIntensity = 0.85 * this.projFade;
     // Pancaran kelihatan dari jauh; dimalapkan bila pelawat menonton supaya slaid kekal kontras.
-    if (this.beam) this.beam.opacity = (this.view === 'screen' ? 0.35 : 1) * this.projFade;
-    this.phonePulse = Math.max(0, this.phonePulse - dt * 0.8);
-    if (this.phoneMat) this.phoneMat.emissiveIntensity = 0.35 + 0.9 * this.phonePulse;
+    if (this.beam) this.beam.opacity = (this.view === 'screen' ? 0.35 : 1) * this.projFade * (1 - 0.7 * this.dayT);
+    // Telefon: diangkat dari meja, berdiri menghadap kamera dan memaparkan kad hubungan.
+    const p = this.phone;
+    if (p) {
+      const want = this.view === 'phone' ? 1 : 0;
+      p.t = this.reduced ? want : want > p.t ? Math.min(1, p.t + dt / 1.1) : Math.max(0, p.t - dt / 0.9);
+      const e = ease(p.t);
+      p.group.position.lerpVectors(p.home, p.held, e);
+      p.group.position.y += Math.sin(Math.PI * e) * 0.05;
+      p.group.quaternion.slerpQuaternions(p.qHome, p.qHeld, e);
+      const map = p.t > 0.35 ? p.card : p.idle;
+      if (this.phoneMat.emissiveMap !== map) { this.phoneMat.emissiveMap = map; this.phoneMat.needsUpdate = true; }
+      this.phoneMat.emissiveIntensity = 0.35 + 0.55 * e;
+    }
+    this.lightDay(dt);
 
     this.composer.render();
   };

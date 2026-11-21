@@ -8,7 +8,7 @@ if (!['localhost', '127.0.0.1'].includes(new URL(url).hostname)) {
 	console.error(`ROOM FAIL: hanya localhost dibenarkan, diterima ${url}`);
 	process.exit(1);
 }
-const VIEWS = { computer: 'Projek', profile: 'Tentang saya', server: 'Kemahiran', work: 'Perjalanan kerja', learning: 'Pembelajaran & sijil' };
+const VIEWS = { computer: 'Projek', profile: 'Tentang saya', server: 'Kemahiran', work: 'Perjalanan kerja', learning: 'Pembelajaran & sijil', phone: 'Hubungi saya' };
 const browser = await chromium.launch({ headless: true, args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
 try {
 	// Pemanasan: muatan pertama pelayan dev boleh mencetuskan pengoptimuman semula modul Vite (504 Outdated Optimize Dep).
@@ -35,10 +35,25 @@ try {
 			const scrollW = await page.evaluate(() => document.documentElement.scrollWidth);
 			assert.ok(scrollW <= width, `${tag}: skrol mendatar dalam ${view} (${scrollW})`);
 		}
+		// Tayangan: butang › menukar slaid butiran projek.
+		await page.evaluate(() => window.__room.setView('screen'));
+		await page.waitForTimeout(800);
+		assert.equal((await page.textContent('.focus-bar .count'))?.trim(), '1 / 5', `${tag}: slaid pertama`);
+		await page.click('.focus-bar button[aria-label="Slaid seterusnya"]');
+		await page.waitForTimeout(500);
+		assert.equal((await page.textContent('.focus-bar .count'))?.trim(), '2 / 5', `${tag}: slaid seterusnya`);
 		await page.click('.focus-bar .back');
 		await page.waitForTimeout(800);
 		assert.equal(await page.locator('.focus-bar').count(), 0, `${tag}: Kembali tidak pulang ke paparan keseluruhan`);
+		// Siang / malam: butang header menukar keadaan bilik.
+		const before = await page.evaluate(() => window.__room.isDay);
+		await page.click('header .pill >> nth=0');
+		await page.waitForTimeout(500);
+		assert.equal(await page.evaluate(() => window.__room.isDay), !before, `${tag}: tukar siang/malam`);
+		// Hubungi: telefon diangkat dengan kad tindakan; "Semua pilihan hubungan" membuka dialog penuh.
 		await page.click('header >> text=Hubungi');
+		await page.waitForSelector('.dial a[href^="https://wa.me/"]', { timeout: 10000 });
+		await page.click('.dial .more');
 		await page.waitForSelector('dialog[open]', { timeout: 10000 });
 		assert.equal(errors.length, 0, `${tag}: ralat ${errors.join(' | ')}`);
 		console.log(`ROOM ${tag} OK`);
