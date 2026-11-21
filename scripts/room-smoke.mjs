@@ -50,10 +50,13 @@ try {
 		await page.click('header .pill >> nth=0');
 		await page.waitForTimeout(500);
 		assert.equal(await page.evaluate(() => window.__room.isDay), !before, `${tag}: tukar siang/malam`);
-		// Hubungi: telefon diangkat dengan kad tindakan; "Semua pilihan hubungan" membuka dialog penuh.
+		// Hubungi: telefon diangkat (butang pada skrinnya); pautan yang sama wujud untuk papan kekunci dan muncul bila difokus.
 		await page.click('header >> text=Hubungi');
-		await page.waitForSelector('.dial a[href^="https://wa.me/"]', { timeout: 10000 });
-		await page.click('.dial .more');
+		await page.waitForTimeout(800);
+		assert.equal((await page.textContent('.focus-bar strong'))?.trim(), 'Hubungi saya', `${tag}: paparan telefon`);
+		assert.equal(await page.locator('.dial a[href^="https://wa.me/"]').count(), 1, `${tag}: pautan WhatsApp`);
+		await page.focus('.dial .more');
+		await page.keyboard.press('Enter');
 		await page.waitForSelector('dialog[open]', { timeout: 10000 });
 		assert.equal(errors.length, 0, `${tag}: ralat ${errors.join(' | ')}`);
 		console.log(`ROOM ${tag} OK`);

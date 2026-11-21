@@ -30,7 +30,7 @@
       hint: {
         overview: 'Klik objek dalam bilik untuk meneroka', computer: 'Klik ikon pada monitor untuk menayangkan projek ke dinding',
         screen: 'Klik tayangan untuk slaid seterusnya', profile: 'Profil saya, ditulis sebagai kod', server: 'Halakan pada logo untuk namanya',
-        work: 'Klik pas untuk melihat jawatan', learning: 'Klik buku untuk membukanya', phone: 'Pilih cara untuk menghubungi saya'
+        work: 'Klik pas untuk melihat jawatan', learning: 'Klik buku untuk membukanya', phone: 'Klik butang pada skrin telefon untuk menghubungi saya'
       },
       tap: (h: string) => h.replace(/^Klik/, 'Ketik').replace(/^Halakan pada/, 'Ketik'),
       links: 'Pautan', resume: 'Resume', contact: 'Hubungi', lang: 'EN', langLabel: 'Switch to English',
@@ -49,7 +49,7 @@
       hint: {
         overview: 'Click objects in the room to explore', computer: 'Click an icon on the monitor to project it onto the wall',
         screen: 'Click the projection for the next slide', profile: 'My profile, written as code', server: 'Point at a logo to see its name',
-        work: 'Click a pass to see the role', learning: 'Click a book to open it', phone: 'Choose how to reach me'
+        work: 'Click a pass to see the role', learning: 'Click a book to open it', phone: 'Click a button on the phone screen to reach me'
       },
       tap: (h: string) => h.replace(/^Click/, 'Tap').replace(/^Point at/, 'Tap'),
       links: 'Links', resume: 'Resume', contact: 'Contact', lang: 'BM', langLabel: 'Tukar ke Bahasa Melayu',
@@ -103,10 +103,37 @@
          `  experience: ${list},`, "  education: 'Computer Science (Network Security), UTM',", `  location: '${PROFILE.location}',`, '  openToWork: true,', '};']
       : ['// munir.ts', 'export const munir = {', `  nama: '${PROFILE.shortName}',`, "  peranan: 'Full-Stack Developer',", "  fokus: ['Sistem sektor awam', 'Keselamatan rangkaian'],",
          `  pengalaman: ${list},`, "  pendidikan: 'Sains Komputer (Keselamatan Rangkaian), UTM',", `  lokasi: '${PROFILE.location}',`, '  sediaUntukPeluang: true,', '};'];
-    const contact = { phone: PROFILE.phone, email: PROFILE.email, location: PROFILE.location };
+    // Butang pada skrin telefon 3D; susunan sama dengan ACTIONS di bawah.
+    const u = UI[loc];
+    const actions = [
+      { label: 'WhatsApp', value: PROFILE.phone, color: '#22c55e' },
+      { label: u.call, value: PROFILE.phone, color: '#38bdf8' },
+      { label: u.mail, value: PROFILE.email, color: '#60a5fa' },
+      { label: 'LinkedIn', value: 'Muhammed Munir', color: '#0a66c2' },
+      { label: 'GitHub', value: 'muhammedmunir', color: '#e5e7eb' },
+      { label: u.pdf, value: 'PDF', color: '#e5b580' }
+    ];
+    const contact = { phone: PROFILE.phone, email: PROFILE.email, location: PROFILE.location, actions };
     return { projects, career, study, code, skills, locale: loc, name: PROFILE.shortName, role: 'Full-Stack Developer', contact };
   }
   const projectNames = MODULES.map(m => m.name);
+  const ACTIONS: { href: string; external?: boolean; download?: boolean }[] = [
+    { href: PROFILE.whatsappUrl, external: true },
+    { href: `tel:${PROFILE.phone.replace(/[^+\d]/g, '')}` },
+    { href: `mailto:${PROFILE.email}` },
+    { href: PROFILE.linkedinUrl, external: true },
+    { href: PROFILE.githubUrl, external: true },
+    { href: `${base}${PROFILE.resumeUrl}`, download: true }
+  ];
+  /** Ketikan pada butang skrin telefon: dilaksanakan dalam acara klik supaya pelayar membenarkan tab baharu. */
+  function onAction(i: number) {
+    const a = ACTIONS[i]; if (!a) return;
+    const link = document.createElement('a');
+    link.href = a.href;
+    if (a.external) { link.target = '_blank'; link.rel = 'noopener'; }
+    if (a.download) link.download = '';
+    link.click();
+  }
 
   function onPick(kind: RoomKind, index: number) {
     explored = true;
@@ -130,6 +157,7 @@
       onProject: i => (project = i),
       onSlide: (at, total) => (slide = { at, total }),
       onDay: d => (day = d),
+      onAction,
       onReady: () => { ready = true; if (keep !== 'overview') w.setView(keep); }
     });
     // Kekalkan pilihan siang/malam pelawat bila bilik dibina semula (tukar bahasa).
@@ -231,6 +259,7 @@
   {/if}
 
   {#if view === 'phone' && !panel}
+    <!-- Butang yang sama seperti skrin telefon 3D, untuk papan kekunci dan pembaca skrin; kelihatan bila difokus. -->
     <section class="dial" aria-labelledby="dial-name">
       <h2 id="dial-name">{PROFILE.shortName}</h2>
       <p>Full-Stack Developer · {PROFILE.location}</p>
@@ -246,7 +275,7 @@
     </section>
   {/if}
 
-  {#if ready && !panel && view !== 'phone'}
+  {#if ready && !panel}
     <p class="hint" class:fade={explored && view === 'overview'} aria-live="polite">{touch ? ui.tap(ui.hint[view]) : ui.hint[view]}</p>
   {/if}
 
@@ -284,7 +313,8 @@
   .back.icon { justify-content: center; width: 44px; padding: 0; font-size: 1.4rem; line-height: 1; }
   .slides { display: inline-flex; align-items: center; gap: 8px; }
   .count { min-width: 3.2em; text-align: center; font-variant-numeric: tabular-nums; font-size: .9rem; text-shadow: 0 1px 12px rgba(0,0,0,.9); }
-  .dial { position: absolute; z-index: 4; right: max(var(--gutter), 6vw); top: 50%; transform: translateY(-50%); width: min(360px, calc(100% - 2 * var(--gutter))); padding: 24px; border-radius: 16px; background: rgba(12,13,16,.9); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(10px); animation: dial-in .45s .35s cubic-bezier(.2,.7,.2,1) both; }
+  .dial:not(:focus-within) { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .dial:focus-within { position: absolute; z-index: 4; right: max(var(--gutter), 6vw); top: 50%; transform: translateY(-50%); width: min(360px, calc(100% - 2 * var(--gutter))); padding: 24px; border-radius: 16px; background: rgba(12,13,16,.9); border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(10px); animation: dial-in .45s .35s cubic-bezier(.2,.7,.2,1) both; }
   @keyframes dial-in { from { opacity: 0; transform: translateY(calc(-50% + 16px)); } }
   .dial h2 { margin: 0; font: 800 1.6rem/1.1 var(--font-heading); letter-spacing: -.03em; }
   .dial p { margin: 6px 0 18px; color: #a1a1aa; font-size: .875rem; }
@@ -305,7 +335,7 @@
     .focus-bar { top: 64px; right: var(--gutter); flex-wrap: wrap; gap: 8px 12px; }
     .focus-bar .back { white-space: nowrap; }
     .who { bottom: 96px; }
-    .dial { top: auto; bottom: 16px; right: var(--gutter); left: var(--gutter); width: auto; transform: none; padding: 18px; animation-name: dial-up; }
+    .dial:focus-within { top: auto; bottom: 16px; right: var(--gutter); left: var(--gutter); width: auto; transform: none; padding: 18px; animation-name: dial-up; }
     @keyframes dial-up { from { opacity: 0; transform: translateY(16px); } }
     .dial p { margin-bottom: 12px; }
     header nav { gap: 12px; }

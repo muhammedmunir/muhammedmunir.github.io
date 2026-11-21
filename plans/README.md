@@ -108,6 +108,7 @@ Untuk mengelakkannya:
 | 018 | Bilik kerja 3D sebagai halaman utama (aset dimampatkan, /cv kekal versi teks) | P1 | S | 017 | DONE |
 | 019 | Bilik 3D: buku terbuka, projektor sinematik, BM/EN, pautan resume, kualiti render | P1 | S | 018 | DONE |
 | 020 | Bilik 3D: telefon diangkat, slaid butiran projek, siang/malam, animasi buku | P1 | S | 019 | DONE |
+| 021 | Bilik 3D: siang tanpa silau, butang dalam skrin telefon, tingkap di sebelah rak | P1 | S | 020 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
