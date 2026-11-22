@@ -111,6 +111,7 @@ Untuk mengelakkannya:
 | 021 | Bilik 3D: siang tanpa silau, butang dalam skrin telefon, tingkap di sebelah rak | P1 | S | 020 | DONE |
 | 022 | Bilik 3D: model sebenar (Sketchfab CC BY, Poly Haven CC0) dengan kredit | P1 | S | 021 | DONE |
 | 023 | Bilik 3D: betulkan monitor, logo kemahiran, pintu rak, rak buku, tingkap dan cahaya siang | P1 | S | 022 | DONE |
+| 024 | Bilik 3D: kualiti grafik adaptif untuk GPU lemah | P1 | S | 023 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 

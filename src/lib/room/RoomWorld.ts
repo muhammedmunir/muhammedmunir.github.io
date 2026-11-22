@@ -126,6 +126,9 @@ export class RoomWorld {
   };
   private beam?: THREE.MeshBasicMaterial;
   private noAo: THREE.Object3D[] = [];
+  private ao?: GTAOPass;
+  /** Pengawal prestasi: purata masa bingkai diukur setiap 90 bingkai; kualiti diturunkan berperingkat pada GPU lemah. */
+  private perf = { n: 0, sum: 0, level: 0, wait: 4 };
   private get L() { return TEXT[this.opts.data.locale]; }
   private shelves?: THREE.Object3D;
   private phoneMat!: THREE.MeshStandardMaterial;
@@ -174,7 +177,7 @@ export class RoomWorld {
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     // Oklusi ambien (bayang sentuhan di sudut & bawah objek): desktop sahaja kerana kosnya pada GPU telefon.
     if (!matchMedia('(hover: none)').matches) {
-      const ao = new GTAOPass(this.scene, this.camera, 1, 1);
+      const ao = this.ao = new GTAOPass(this.scene, this.camera, 1, 1);
       ao.blendIntensity = 0.85;
       ao.updateGtaoMaterial({ radius: 0.28, distanceExponent: 1.2, thickness: 1, scale: 1 });
       // Objek lutsinar (pancaran projektor, neon, logo kemahiran) tidak boleh menghasilkan AO.
@@ -1372,11 +1375,33 @@ export class RoomWorld {
     if (this.view !== 'overview' && !this.tween) this.camera.position.copy(this.fitPos(VIEWS[this.view]));
   };
 
+  /**
+   * Bawah ~40 fps secara purata: tahap 1 matikan AO (pas paling mahal); masih bawah ~30 fps: tahap 2 kurangkan resolusi render.
+   * Tidak pernah naik semula (elak berkelip). Bingkai > 250 ms diabaikan: itu tab yang diperlahankan pelayar, bukan GPU.
+   */
+  private govern(raw: number) {
+    const p = this.perf;
+    if (p.level >= 2 || document.hidden) return;
+    if (p.wait > 0) { p.wait -= Math.min(raw, 0.1); return; }
+    if (raw > 0.25) return;
+    p.n++; p.sum += raw;
+    if (p.n < 90) return;
+    const avg = p.sum / p.n; p.n = 0; p.sum = 0;
+    // Tahap 1 bila bawah 40 fps; tahap 2 hanya bawah 30 fps (selepas AO dimatikan, atau terus pada telefon yang tiada AO).
+    if (avg < (p.level === 0 && this.ao?.enabled ? 1 / 40 : 1 / 30)) return;
+    p.wait = 1.5;
+    if (p.level === 0 && this.ao?.enabled) { p.level = 1; this.ao.enabled = false; return; }
+    p.level = 2;
+    const r = Math.max(0.75, Math.min(devicePixelRatio, 2) * 0.6);
+    this.renderer.setPixelRatio(r); this.composer.setPixelRatio(r); this.resize();
+  }
+
   private loop = () => {
     if (this.dead) return;
     this.frame = requestAnimationFrame(this.loop);
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+    const raw = this.clock.getDelta(), dt = Math.min(raw, 0.05);
     const t = this.clock.elapsedTime;
+    this.govern(raw);
     const k = this.reduced ? 1 : 1 - Math.exp(-7 * dt);
 
     if (this.tween) {
