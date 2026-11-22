@@ -38,7 +38,7 @@
       prev: 'Slaid sebelumnya', next: 'Slaid seterusnya', slideOf: (a: number, n: number) => `Slaid ${a} daripada ${n}`,
       toDay: 'Tukar ke siang', toNight: 'Tukar ke malam',
       slides: { role: 'PERANAN SAYA', data: 'SENI BINA DATA', security: 'KESELAMATAN & AKSES', tech: 'TEKNOLOGI', doc: 'Kajian kes (PDF) tersedia dalam Butiran', live: 'Laman sebenar tersedia dalam Butiran' },
-      call: 'Telefon', mail: 'E-mel', more: 'Semua pilihan hubungan', pdf: 'Resume (PDF)',
+      credits: 'Kredit model 3D', by: 'oleh', call: 'Telefon', mail: 'E-mel', more: 'Semua pilihan hubungan', pdf: 'Resume (PDF)',
       objects: 'Objek dalam bilik', full: 'Versi teks penuh',
       keys: ['Komputer: projek', 'Rak server: kemahiran', 'Pas ID: perjalanan kerja', 'Buku: pembelajaran dan sijil', 'Monitor kod: tentang saya', 'Telefon: hubungi'],
       canvas: 'Bilik kerja 3D Muhammed Munir. Gunakan butang navigasi objek untuk papan kekunci.',
@@ -57,7 +57,7 @@
       prev: 'Previous slide', next: 'Next slide', slideOf: (a: number, n: number) => `Slide ${a} of ${n}`,
       toDay: 'Switch to day', toNight: 'Switch to night',
       slides: { role: 'MY ROLE', data: 'DATA ARCHITECTURE', security: 'SECURITY & ACCESS', tech: 'TECHNOLOGY', doc: 'Case study (PDF) available under Details', live: 'Live site available under Details' },
-      call: 'Call', mail: 'Email', more: 'All contact options', pdf: 'Resume (PDF)',
+      credits: '3D model credits', by: 'by', call: 'Call', mail: 'Email', more: 'All contact options', pdf: 'Resume (PDF)',
       objects: 'Objects in the room', full: 'Full text version',
       keys: ['Computer: projects', 'Server rack: skills', 'ID passes: work journey', 'Books: education and certificates', 'Code monitor: about me', 'Phone: contact'],
       canvas: '3D workspace of Muhammed Munir. Use the object navigation buttons with a keyboard.',
@@ -117,6 +117,16 @@
     return { projects, career, study, code, skills, locale: loc, name: PROFILE.shortName, role: 'Full-Stack Developer', contact };
   }
   const projectNames = MODULES.map(m => m.name);
+  // Model Sketchfab berlesen CC BY 4.0: kredit kepada pembuat diwajibkan oleh lesen.
+  const CREDITS = [
+    { title: 'High-Poly PBR Office Chair', author: 'kilicarslan', url: 'https://sketchfab.com/3d-models/high-poly-pbr-office-chair-fa2d5243f916407a93db7efcaae75e0d' },
+    { title: 'PC Monitor 27 inch', author: 'Annelida', url: 'https://sketchfab.com/3d-models/pc-monitor-27-inch-06fb18eec19245d4811c4c3c8c7ea567' },
+    { title: 'Mouse and Keyboard', author: 'gorzi', url: 'https://sketchfab.com/3d-models/mouse-and-keyboard-c63ee81b71ff45b68a778101b4df3d46' },
+    { title: 'Data Center Server Rack', author: 'EntropyNine', url: 'https://sketchfab.com/3d-models/data-center-server-rack-01b49d9d1f694ba5b41e4b2b0e10d16e' },
+    { title: 'Office PC', author: 'fluffyw0lf', url: 'https://sketchfab.com/3d-models/office-pc-69188a48a0b04b18aa015719b0551eaa' },
+    { title: 'Projector', author: 'GokouFG', url: 'https://sketchfab.com/3d-models/projector-0f1c6b1fa0bd4d5bbe5ac10e9eee31de' },
+    { title: 'Book Stack', author: 'Visthétique', url: 'https://sketchfab.com/3d-models/book-stack-198d3bdc5384426b9695394a82bc3825' }
+  ];
   const ACTIONS: { href: string; external?: boolean; download?: boolean }[] = [
     { href: PROFILE.whatsappUrl, external: true },
     { href: `tel:${PROFILE.phone.replace(/[^+\d]/g, '')}` },
@@ -232,6 +242,16 @@
     {#if !ready}<p class="loading">{ui.loading}</p>{/if}
   </div>
 
+  {#if view === 'overview' && !panel && ready}
+    <details class="credits">
+      <summary>{ui.credits}</summary>
+      <ul>
+        {#each CREDITS as c (c.url)}<li><a href={c.url} target="_blank" rel="noopener">{c.title}</a> {ui.by} {c.author}</li>{/each}
+        <li><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · Poly Haven (CC0)</li>
+      </ul>
+    </details>
+  {/if}
+
   {#if view === 'overview' && !panel}
     <section class="who" aria-labelledby="who-name">
       <h1 id="who-name">{PROFILE.shortName}</h1>
@@ -326,6 +346,12 @@
   @media (prefers-reduced-motion: reduce) { .dial { animation: none; } }
   .hint { position: absolute; z-index: 3; left: 50%; bottom: 28px; transform: translateX(-50%); margin: 0; padding: 9px 16px; border-radius: 999px; background: rgba(12,13,16,.72); border: 1px solid rgba(255,255,255,.12); color: #d4d4d8; font-size: .8125rem; white-space: nowrap; pointer-events: none; transition: opacity .6s; }
   .hint.fade { opacity: 0; }
+  .credits { position: absolute; z-index: 3; right: var(--gutter); bottom: 30px; max-width: min(360px, calc(100% - 2 * var(--gutter))); color: #a1a1aa; font-size: .75rem; }
+  .credits summary { display: inline-flex; align-items: center; min-height: 32px; padding: 0 10px; border-radius: 999px; background: rgba(12,13,16,.6); cursor: pointer; list-style: none; float: right; }
+  .credits summary::-webkit-details-marker { display: none; }
+  .credits[open] summary { color: #f4f4f5; }
+  .credits ul { clear: both; margin: 0; padding: 12px 14px; list-style: none; display: grid; gap: 6px; border-radius: 10px; background: rgba(12,13,16,.92); border: 1px solid rgba(255,255,255,.12); position: absolute; right: 0; bottom: 40px; width: max-content; max-width: min(360px, calc(100vw - 32px)); }
+  .credits a { color: #e4e4e7; }
   :is(a, button):focus-visible { outline: 3px solid var(--work-accent); outline-offset: 3px; }
   @media (max-width: 999px) {
     .room { --gutter: 16px; }
@@ -335,6 +361,8 @@
     .focus-bar { top: 64px; right: var(--gutter); flex-wrap: wrap; gap: 8px 12px; }
     .focus-bar .back { white-space: nowrap; }
     .who { bottom: 96px; }
+    .credits { bottom: auto; top: 64px; }
+    .credits ul { bottom: auto; top: 40px; }
     .dial:focus-within { top: auto; bottom: 16px; right: var(--gutter); left: var(--gutter); width: auto; transform: none; padding: 18px; animation-name: dial-up; }
     @keyframes dial-up { from { opacity: 0; transform: translateY(16px); } }
     .dial p { margin-bottom: 12px; }

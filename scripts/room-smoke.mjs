@@ -23,7 +23,7 @@ try {
 		page.on('pageerror', (error) => errors.push(error.message));
 		page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
 		await page.goto(url, { waitUntil: 'networkidle', timeout: 120000 });
-		await page.waitForFunction(() => !document.querySelector('.loading') && '__room' in window, null, { timeout: 120000 });
+		await page.waitForFunction(() => !document.querySelector('.loading') && '__room' in window, null, { timeout: 300000 });
 		const tag = `${width}px`;
 		assert.equal(await page.title(), 'Muhammed Munir | Full-Stack Developer', `${tag}: tajuk`);
 		assert.equal((await page.textContent('h1'))?.trim(), 'Muhammed Munir', `${tag}: h1`);

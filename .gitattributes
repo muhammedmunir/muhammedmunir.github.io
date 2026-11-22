@@ -1,3 +1,4 @@
 # Aset 3D binari: jangan tukar hujung baris. Fail HDR tiada bait NUL, jadi Git menyangkanya teks dan autocrlf boleh merosakkannya.
 *.hdr binary
 *.bin binary
+*.glb binary

@@ -107,7 +107,7 @@ export class RoomWorld {
   private slide = 0;
 
   // Kemahiran
-  private door!: THREE.Group;
+  private door?: THREE.Group;
   private doorOpen = 0;
   private icons: { sprite: THREE.Sprite; home: THREE.Vector3; delay: number }[] = [];
   private iconsOut = 0;
@@ -129,6 +129,8 @@ export class RoomWorld {
   private get L() { return TEXT[this.opts.data.locale]; }
   private shelves?: THREE.Object3D;
   private phoneMat!: THREE.MeshStandardMaterial;
+  private pc?: THREE.Group;
+  private monitors: { mon: THREE.Group; scr: THREE.Mesh }[] = [];
   private phone?: {
     group: THREE.Group; screen: THREE.Mesh; t: number; idle: THREE.Texture; card: THREE.CanvasTexture; canvas: HTMLCanvasElement; hover: number;
     home: THREE.Vector3; qHome: THREE.Quaternion; held: THREE.Vector3; qHeld: THREE.Quaternion;
@@ -247,6 +249,22 @@ export class RoomWorld {
     g.scene.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     return g.scene;
   }
+  /** Model Sketchfab (CC BY): dimuat, berbayang, kemudian dinormalkan supaya tapak di y = 0 dan berpusat pada x/z. */
+  private async sketch(name: string, size: { height?: number; width?: number }) {
+    const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${this.opts.base}/room/sketchfab/${name}.glb`);
+    const obj = g.scene;
+    obj.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    obj.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(obj), dim = box.getSize(new THREE.Vector3());
+    // Muat dalam had yang diberi (tinggi dan/atau lebar), ikut had yang paling ketat.
+    const k = Math.min(size.height ? size.height / dim.y : Infinity, size.width ? size.width / dim.x : Infinity);
+    obj.scale.multiplyScalar(k);
+    obj.position.multiplyScalar(k).sub(new THREE.Vector3((box.min.x + box.max.x) / 2, box.min.y, (box.min.z + box.max.z) / 2).multiplyScalar(k));
+    const wrap = new THREE.Group(); wrap.add(obj);
+    wrap.updateMatrixWorld(true);
+    return wrap;
+  }
+
   private async image(src: string) {
     let job = this.images.get(src);
     if (!job) {
@@ -302,15 +320,14 @@ export class RoomWorld {
 
     this.buildDesk();
     this.buildComputer();
-    this.buildChair();
-    this.buildServer();
     this.buildProjector();
     this.buildPhone();
     this.buildBadges();
     this.buildLights();
 
     const [plant, shelves, ceilingLamp] = await Promise.all([
-      this.gltf('potted_plant_02'), this.gltf('wooden_display_shelves_01'), this.gltf('modern_ceiling_lamp_01')
+      this.gltf('potted_plant_02'), this.gltf('wooden_display_shelves_01'), this.gltf('modern_ceiling_lamp_01'),
+      this.fitComputer(), this.buildChair(), this.buildServer()
     ]);
     plant.position.set(2.35, 0, -1.95); plant.scale.setScalar(1.15); this.scene.add(plant);
     shelves.position.set(-2.3, 0, -2.3); shelves.rotation.y = Math.PI / 2; this.scene.add(shelves); this.shelves = shelves;
@@ -343,108 +360,107 @@ export class RoomWorld {
     const shell = this.std(0x111214, 0.35, 0.6);
     const pc = new THREE.Group();
     const screens: [number, number, THREE.Texture, boolean][] = [[-0.95, 0.24, this.launcherTex, true], [-0.27, -0.22, this.codeTex, false]];
-    let launcher: THREE.Mesh | undefined;
-    let codeScreen: THREE.Mesh | undefined;
     for (const [x, ry, map, isLauncher] of screens) {
       const mon = new THREE.Group();
-      this.add(new RoundedBoxGeometry(0.64, 0.38, 0.025, 2, 0.008), shell, [0, 0, 0], mon);
       const mat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: map, emissiveIntensity: 0.8, roughness: 0.7 });
-      const scr = this.add(new THREE.PlaneGeometry(0.615, 0.352), mat, [0, 0.004, 0.0135], mon, false);
-      this.add(new THREE.BoxGeometry(0.045, 0.24, 0.03), shell, [0, -0.25, -0.05], mon);
-      this.add(new RoundedBoxGeometry(0.24, 0.012, 0.17, 2, 0.005), shell, [0, -0.37, -0.03], mon);
-      // Lampu bar monitor: badan nipis di tepi atas, jalur hangat menghala ke meja.
-      this.add(new THREE.CylinderGeometry(0.011, 0.011, 0.46, 16), this.std(0x16171a, 0.35, 0.8), [0, 0.205, 0.03], mon).rotation.z = Math.PI / 2;
+      const scr = this.add(new THREE.PlaneGeometry(1, 1), mat, [0, 0, 0], mon, false);
+      scr.userData = isLauncher ? { kind: 'launcher', index: 0, label: this.L.launcher } : { kind: 'profile', index: 0, label: this.L.profile };
+      mon.position.set(x, 1.1, -2.24); mon.rotation.y = ry;
+      pc.add(mon);
+      this.monitors.push({ mon, scr });
+    }
+    // Menara PC dan jalur cahayanya
+    void shell;
+    this.scene.add(pc);
+    this.pc = pc;
+  }
+
+  /** Monitor, papan kekunci dan tetikus sebenar (Sketchfab); skrin projek/profil kekal kanvas kita di atas panel model. */
+  private async fitComputer() {
+    const pc = this.pc!;
+    const deskTop = 0.7575;
+    const model = await this.sketch('monitor', { width: 0.66 });
+    for (const { mon, scr } of this.monitors) {
+      const m = model.clone(true);
+      mon.add(m);
+      // Panel paparan (nod "Screen_Display"): pusat dan muka hadapannya menentukan kedudukan kanvas.
+      let panel: THREE.Object3D | undefined;
+      m.traverse(o => { if (/Display/i.test(o.name) && (o as THREE.Mesh).isMesh) panel = o; });
+      m.updateMatrixWorld(true);
+      const inv = new THREE.Matrix4().copy(mon.matrixWorld).invert();
+      const pb = new THREE.Box3().setFromObject(panel ?? m).applyMatrix4(inv), all = new THREE.Box3().setFromObject(m).applyMatrix4(inv);
+      const c = pb.getCenter(new THREE.Vector3()), size = pb.getSize(new THREE.Vector3());
+      // Anjak model supaya pusat panel di asal kumpulan monitor, dan tapak di atas meja.
+      m.position.sub(new THREE.Vector3(c.x, c.y, pb.max.z));
+      mon.position.y = deskTop - (all.min.y - c.y);
+      scr.scale.set(size.x * 0.955, size.y * 0.92, 1);
+      scr.position.set(0, size.y * 0.02, 0.0015);
+      // Lampu bar monitor di tepi atas panel
+      const top = size.y / 2;
+      this.add(new THREE.CylinderGeometry(0.011, 0.011, 0.46, 16), this.std(0x16171a, 0.35, 0.8), [0, top + 0.016, -0.005], mon).rotation.z = Math.PI / 2;
       const stripMat = this.glow(0xffd3a1, 2.6);
       this.lamps.push({ mat: stripMat, base: 2.6 });
-      const strip = this.add(new THREE.PlaneGeometry(0.42, 0.008), stripMat, [0, 0.194, 0.04], mon, false);
+      const strip = this.add(new THREE.PlaneGeometry(0.42, 0.008), stripMat, [0, top + 0.005, 0.006], mon, false);
       strip.rotation.x = Math.PI / 2 + 0.5;
-      this.add(new THREE.BoxGeometry(0.03, 0.02, 0.05), this.std(0x16171a, 0.35, 0.8), [0, 0.196, 0.0], mon);
-      mon.position.set(x, 1.13, -2.24); mon.rotation.y = ry;
-      pc.add(mon);
-      if (isLauncher) launcher = scr; else codeScreen = scr;
+      this.add(new THREE.BoxGeometry(0.03, 0.02, 0.05), this.std(0x16171a, 0.35, 0.8), [0, top + 0.012, -0.03], mon);
+      // Panel model tidak bercahaya (kanvas kita yang menyala).
+      m.traverse(o => { const mm = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (mm?.emissive) { mm.emissiveIntensity = 0; } });
     }
-    const keyMat = this.std(0x2a2c31, 0.7, 0.1);
-    this.add(new RoundedBoxGeometry(0.44, 0.018, 0.14, 2, 0.006), keyMat, [-0.6, 0.77, -1.88], pc);
-    this.add(new RoundedBoxGeometry(0.065, 0.025, 0.11, 3, 0.012), keyMat, [-0.24, 0.772, -1.86], pc);
-    this.add(new RoundedBoxGeometry(0.21, 0.46, 0.45, 2, 0.01), shell, [0.0, 0.24, -2.1], pc);
-    this.add(new THREE.BoxGeometry(0.004, 0.36, 0.006), this.glow(0x39d0ff, 2.2), [-0.106, 0.26, -1.88], pc, false);
-    this.scene.add(pc);
+    const tower = await this.sketch('pc', { height: 0.46 });
+    tower.position.set(0.0, 0, -2.1); tower.rotation.y = this.turn.pc;
+    pc.add(tower);
+    // Timbunan buku di sudut belakang kiri meja, di luar bingkai paparan komputer.
+    const pile = await this.sketch('books', { width: 0.2 });
+    pile.position.set(-1.37, deskTop, -2.36); pile.rotation.y = this.turn.books;
+    this.scene.add(pile);
+    const keys = await this.sketch('keyboard', { width: 0.6 });
+    keys.position.set(-0.6, deskTop + 0.004, -1.86);
+    pc.add(keys);
     this.tag(pc, 'computer', 0, this.L.computer);
-    if (launcher) launcher.userData = { kind: 'launcher', index: 0, label: this.L.launcher };
-    if (codeScreen) codeScreen.userData = { kind: 'profile', index: 0, label: this.L.profile };
+    // tag(pc) menimpa data skrin; pulihkan peranan setiap skrin.
+    this.monitors.forEach(({ scr }, i) => (scr.userData = i === 0 ? { kind: 'launcher', index: 0, label: this.L.launcher } : { kind: 'profile', index: 0, label: this.L.profile }));
   }
 
-  private buildChair() {
-    const fabric = this.std(0x1d2025, 0.92);
-    const chrome = this.std(0xb8bcc4, 0.22, 1);
-    const black = this.std(0x0f1012, 0.5, 0.3);
-    const chair = new THREE.Group();
-    for (let i = 0; i < 5; i++) {
-      const a = (i / 5) * Math.PI * 2;
-      this.add(new THREE.BoxGeometry(0.035, 0.03, 0.3), black, [Math.sin(a) * 0.15, 0.07, Math.cos(a) * 0.15], chair).rotation.y = a;
-      this.add(new THREE.SphereGeometry(0.026, 12, 8), black, [Math.sin(a) * 0.3, 0.028, Math.cos(a) * 0.3], chair);
-    }
-    this.add(new THREE.CylinderGeometry(0.024, 0.024, 0.3, 16), chrome, [0, 0.24, 0], chair);
-    this.add(new RoundedBoxGeometry(0.5, 0.08, 0.48, 4, 0.035), fabric, [0, 0.46, 0], chair);
-    this.add(new RoundedBoxGeometry(0.46, 0.62, 0.07, 4, 0.03), fabric, [0, 0.86, -0.24], chair).rotation.x = -0.12;
-    this.add(new THREE.BoxGeometry(0.04, 0.3, 0.04), black, [0, 0.62, -0.25], chair);
-    for (const s of [-1, 1]) {
-      this.add(new THREE.BoxGeometry(0.03, 0.2, 0.03), black, [s * 0.27, 0.56, -0.02], chair);
-      this.add(new RoundedBoxGeometry(0.07, 0.025, 0.26, 2, 0.01), black, [s * 0.27, 0.67, 0.0], chair);
-    }
-    chair.position.set(0.12, 0, -1.3); chair.rotation.y = Math.PI + 1.1;
+  private async buildChair() {
+    const chair = await this.sketch('chair', { height: 1.02 });
+    chair.position.set(0.12, 0, -1.3); chair.rotation.y = Math.PI + 1.1 + this.chairTurn;
     this.scene.add(chair);
   }
+  /** Putaran tambahan supaya hadapan model kerusi menghala ke meja (paksi model berbeza daripada kerusi lama). */
+  private chairTurn = 0;
+  /** Orientasi model (radian) dan anjakan projektor; ditentukan dengan menyemak gambar. */
+  private projModel?: THREE.Object3D;
+  private turn = { pc: 0, books: 0.5, projector: Math.PI, projectorDrop: 0.08, ency: 0 };
 
-  private buildServer() {
-    const rack = new THREE.Group();
-    const body = this.std(0x0d0e10, 0.45, 0.7);
-    const w = 0.62, h = 2.0, d = 0.8;
-    this.add(new THREE.BoxGeometry(w, 0.05, d), body, [0, h - 0.025, 0], rack);
-    this.add(new THREE.BoxGeometry(w, 0.05, d), body, [0, 0.025, 0], rack);
-    for (const s of [-1, 1]) this.add(new THREE.BoxGeometry(0.03, h, d), body, [s * (w / 2 - 0.015), h / 2, 0], rack);
-    this.add(new THREE.BoxGeometry(w, h, 0.02), body, [0, h / 2, -d / 2 + 0.01], rack);
-    const unit = this.std(0x1b1d21, 0.5, 0.6);
-    const colors = [0x22e07a, 0x39d0ff, 0x22e07a, 0xffb020];
-    for (let i = 0; i < 12; i++) {
-      const y = 0.2 + i * 0.135;
-      this.add(new THREE.BoxGeometry(w - 0.08, i % 3 === 0 ? 0.11 : 0.08, d - 0.12), unit, [0, y, 0.02], rack);
-      for (let k = 0; k < 6; k++) {
-        const mat = this.glow(colors[(i + k) % colors.length], 2);
-        this.add(new THREE.BoxGeometry(0.012, 0.008, 0.004), mat, [-0.2 + k * 0.03, y + 0.015, d / 2 - 0.035], rack, false);
-        this.leds.push({ mat, phase: Math.random() * 6, speed: 1 + Math.random() * 5 });
-      }
-    }
-    // Pintu kaca berengsel di sisi kanan
+  private async buildServer() {
+    const rack = await this.sketch('rack', { height: 2.1 });
+    rack.position.set(1.45, 0, -2.06);
+    // Pintu kaca model dipindahkan ke engsel di tepi kanan hadapan supaya boleh dibuka.
+    let glass: THREE.Object3D | undefined;
+    rack.traverse(o => { if (/Door/i.test(o.name) && (o as THREE.Mesh).isMesh) glass = o; });
     this.door = new THREE.Group();
-    this.door.position.set(w / 2, 0, d / 2 + 0.004);
-    const glass = new THREE.MeshPhysicalMaterial({ color: 0x223040, roughness: 0.08, transparent: true, opacity: 0.25 });
-    this.add(new THREE.PlaneGeometry(w - 0.04, h - 0.08), glass, [-(w - 0.04) / 2, h / 2, 0], this.door, false);
-    this.add(new THREE.BoxGeometry(0.015, 0.3, 0.02), this.std(0x9aa0a8, 0.3, 1), [-(w - 0.04) + 0.03, h / 2, 0.012], this.door);
     rack.add(this.door);
-    rack.position.set(1.45, 0, -2.08);
+    if (glass) {
+      rack.updateMatrixWorld(true);
+      const inv = new THREE.Matrix4().copy(rack.matrixWorld).invert();
+      const b = new THREE.Box3().setFromObject(glass).applyMatrix4(inv);
+      this.door.position.set(b.max.x, 0, b.max.z);
+      this.door.updateMatrixWorld(true);
+      this.door.attach(glass);
+      this.noAo.push(glass);
+    }
     this.scene.add(rack);
     this.tag(rack, 'server', 0, this.L.rack);
   }
 
   private buildProjector() {
-    // Unit projektor siling, sebaris dengan tengah skrin supaya pancarannya simetri.
-    const proj = new THREE.Group();
-    const body = this.std(0x2a2c31, 0.42, 0.35);
-    this.add(new RoundedBoxGeometry(0.4, 0.13, 0.34, 4, 0.035), body, [0, 0, 0], proj);
-    this.add(new RoundedBoxGeometry(0.05, 0.1, 0.3, 2, 0.015), this.std(0x17181b, 0.6, 0.2), [0.2, 0, 0], proj);
-    for (let k = 0; k < 6; k++) this.add(new THREE.BoxGeometry(0.16, 0.004, 0.006), this.std(0x111214, 0.8), [0.06, 0.066, -0.12 + k * 0.022], proj, false);
-    const bezel = this.add(new THREE.CylinderGeometry(0.058, 0.062, 0.03, 32), this.std(0x0d0e10, 0.3, 0.7), [-0.205, -0.005, 0.07], proj);
-    bezel.rotation.z = Math.PI / 2;
-    const lens = this.add(new THREE.CylinderGeometry(0.042, 0.046, 0.04, 32), this.std(0x050506, 0.08, 0.9), [-0.215, -0.005, 0.07], proj);
-    lens.rotation.z = Math.PI / 2;
-    this.add(new THREE.CircleGeometry(0.034, 32), this.glow(0xe8f2ff, 4), [-0.236, -0.005, 0.07], proj, false).rotation.y = -Math.PI / 2;
-    this.add(new THREE.CircleGeometry(0.004, 12), this.glow(0x5cff9d, 2), [0.226, 0.03, 0.12], proj, false).rotation.y = Math.PI / 2;
-    // Pelekap siling
-    this.add(new THREE.CylinderGeometry(0.014, 0.014, 0.16, 12), this.std(0x1c1d20, 0.4, 0.8), [0, 0.14, 0], proj);
-    this.add(new THREE.CylinderGeometry(0.06, 0.06, 0.012, 24), this.std(0x1c1d20, 0.4, 0.8), [0, 0.215, 0], proj);
-    proj.position.set(-0.7, 2.575, 0.18);
-    this.scene.add(proj);
+    // Unit projektor siling sebenar (Sketchfab), sebaris dengan tengah skrin supaya pancarannya simetri.
+    void this.sketch('projector', { width: 0.42 }).then(proj => {
+      this.projModel = proj;
+      proj.rotation.y = this.turn.projector;
+      proj.position.set(-0.7, 2.575 - this.turn.projectorDrop, 0.18);
+      this.scene.add(proj);
+    });
 
     this.projMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0xffffff, emissiveMap: this.projTex, emissiveIntensity: 0.85, roughness: 0.95 });
     // Skrin projektor gantung: kotak penggulung, fabrik bersempadan hitam, palang pemberat.
@@ -685,15 +701,18 @@ export class RoomWorld {
       this.tag(mesh, 'book', i, b.kind === 'degree' ? `UTM · ${b.title}` : b.title);
       this.books.push({ mesh, home, homeRot: 0, out: 0, target: 0 });
     });
-    const deco = [0x2f3a4a, 0x7a5c3e, 0x44403c, 0x5b6b5d, 0x8c3b2f];
-    for (const [col, row] of [[0, 2], [2, 2], [1, 1]] as const) {
-      let x = box.min.x + cellW * col + 0.03;
-      for (let k = 0; k < 5; k++) {
-        const t = 0.03 + (k % 3) * 0.008, ht = cellH * (0.5 + ((k * 7) % 4) * 0.06);
-        this.add(new THREE.BoxGeometry(t, ht, 0.18), this.std(deco[(k + col) % deco.length], 0.8), [x + t / 2, box.min.y + cellH * row + ht / 2 + 0.02, front]);
-        x += t + 0.004;
-      }
-    }
+    // Set ensiklopedia (20 buku berasingan): setiap petak memaparkan sebahagian baris, dari buku yang berbeza.
+    const set = await this.sketch('ency', { height: cellH * 0.72 });
+    const meshes = (o: THREE.Object3D) => { const l: THREE.Object3D[] = []; o.traverse(m => { if ((m as THREE.Mesh).isMesh) l.push(m); }); return l; };
+    const spans = meshes(set).map(m => { const b = new THREE.Box3().setFromObject(m); return { x0: b.min.x, x1: b.max.x }; });
+    const order = spans.map((_, k) => k).sort((a, b) => spans[a].x0 - spans[b].x0);
+    ([[0, 2], [2, 2], [1, 1]] as const).forEach(([col, row], ci) => {
+      const g = set.clone(true), list = meshes(g);
+      const start = spans[order[(ci * 6) % order.length]].x0, room = cellW * 0.86;
+      list.forEach((m, k) => (m.visible = spans[k].x0 >= start - 1e-4 && spans[k].x1 <= start + room));
+      g.position.set(box.min.x + cellW * col + 0.025 - start, box.min.y + cellH * row + 0.02, front - 0.05);
+      this.scene.add(g);
+    });
     this.buildReader();
   }
 
