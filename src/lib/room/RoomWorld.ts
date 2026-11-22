@@ -250,8 +250,8 @@ export class RoomWorld {
     return g.scene;
   }
   /** Model Sketchfab (CC BY): dimuat, berbayang, kemudian dinormalkan supaya tapak di y = 0 dan berpusat pada x/z. */
-  private async sketch(name: string, size: { height?: number; width?: number }) {
-    const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${this.opts.base}/room/sketchfab/${name}.glb`);
+  private async sketch(name: string, size: { height?: number; width?: number }, dir = 'sketchfab') {
+    const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${this.opts.base}/room/${dir}/${name}.glb`);
     const obj = g.scene;
     obj.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     obj.updateMatrixWorld(true);
@@ -313,7 +313,13 @@ export class RoomWorld {
     const wall = this.pbr('plastered_wall_04', [3, 1.4], 0x4a4f57);
     this.buildWindowWall();
     this.add(new THREE.PlaneGeometry(5, 2.8), wall, [-3, 1.4, 0], this.scene, false).rotation.y = Math.PI / 2;
-    this.add(new THREE.PlaneGeometry(6, 5), this.std(0x1a1c20, 0.95), [0, 2.8, 0], this.scene, false).rotation.x = Math.PI / 2;
+    const ceiling = this.add(new THREE.PlaneGeometry(6, 5), this.std(0x1a1c20, 0.95), [0, 2.8, 0], this.scene, true);
+    ceiling.rotation.x = Math.PI / 2;
+    // Dinding kanan tidak dilukis (pandangan kamera), tetapi tetap menghalang matahari supaya lantai tidak bercahaya pelik.
+    const blocker = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide });
+    const right = this.add(new THREE.PlaneGeometry(5, 2.8), blocker, [3, 1.4, 0], this.scene, true);
+    right.rotation.y = -Math.PI / 2; right.receiveShadow = false;
+    this.noAo.push(right);
     const trim = this.std(0x15171b, 0.6);
     this.add(new THREE.BoxGeometry(6, 0.08, 0.02), trim, [0, 0.04, -2.49], this.scene, false);
     this.add(new THREE.BoxGeometry(0.02, 0.08, 5), trim, [-2.99, 0.04, 0], this.scene, false);
@@ -331,6 +337,7 @@ export class RoomWorld {
     ]);
     plant.position.set(2.35, 0, -1.95); plant.scale.setScalar(1.15); this.scene.add(plant);
     shelves.position.set(-2.3, 0, -2.3); shelves.rotation.y = Math.PI / 2; this.scene.add(shelves); this.shelves = shelves;
+    shelves.traverse(o => { const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (m?.color) m.color.setHex(0x8a6a52); });
     ceilingLamp.position.set(0.35, 1.9, 0.0); this.scene.add(ceilingLamp);
     ceilingLamp.traverse(o => {
       const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
@@ -382,13 +389,13 @@ export class RoomWorld {
     const model = await this.sketch('monitor', { width: 0.66 });
     for (const { mon, scr } of this.monitors) {
       const m = model.clone(true);
-      mon.add(m);
       // Panel paparan (nod "Screen_Display"): pusat dan muka hadapannya menentukan kedudukan kanvas.
+      // Diukur sebelum model dimasukkan ke kumpulan monitor yang condong: kotak dunia bagi objek berputar lebih besar daripada panel.
       let panel: THREE.Object3D | undefined;
       m.traverse(o => { if (/Display/i.test(o.name) && (o as THREE.Mesh).isMesh) panel = o; });
       m.updateMatrixWorld(true);
-      const inv = new THREE.Matrix4().copy(mon.matrixWorld).invert();
-      const pb = new THREE.Box3().setFromObject(panel ?? m).applyMatrix4(inv), all = new THREE.Box3().setFromObject(m).applyMatrix4(inv);
+      const pb = new THREE.Box3().setFromObject(panel ?? m), all = new THREE.Box3().setFromObject(m);
+      mon.add(m);
       const c = pb.getCenter(new THREE.Vector3()), size = pb.getSize(new THREE.Vector3());
       // Anjak model supaya pusat panel di asal kumpulan monitor, dan tapak di atas meja.
       m.position.sub(new THREE.Vector3(c.x, c.y, pb.max.z));
@@ -448,6 +455,15 @@ export class RoomWorld {
       this.door.updateMatrixWorld(true);
       this.door.attach(glass);
       this.noAo.push(glass);
+      const g = glass as THREE.Mesh;
+      g.material = new THREE.MeshPhysicalMaterial({ color: 0x9fb6c8, roughness: 0.06, metalness: 0.1, transparent: true, opacity: 0.12, depthWrite: false });
+      g.castShadow = false;
+      // Bingkai pintu dan pemegang (dalam ruang engsel; pintu memanjang ke -x dari engsel).
+      const dw = b.max.x - b.min.x, dh = b.max.y - b.min.y, cy = (b.min.y + b.max.y) / 2, z = (b.min.z - b.max.z) / 2;
+      const metal = this.std(0x1a1c20, 0.35, 0.8), t = 0.03;
+      for (const [w, h, x, y] of [[dw, t, -dw / 2, b.max.y - t / 2], [dw, t, -dw / 2, b.min.y + t / 2], [t, dh, -t / 2, cy], [t, dh, -dw + t / 2, cy]] as const)
+        this.add(new THREE.BoxGeometry(w, h, 0.02), metal, [x, y, z], this.door);
+      this.add(new THREE.BoxGeometry(0.018, 0.22, 0.03), this.std(0x9aa0a8, 0.25, 1), [-dw + 0.05, cy, z + 0.025], this.door);
     }
     this.scene.add(rack);
     this.tag(rack, 'server', 0, this.L.rack);
@@ -511,7 +527,7 @@ export class RoomWorld {
       x.shadowColor = '#e5b580'; x.fillStyle = '#e5b580'; x.fillText('.', left + w, 150);
     }
     const sign = new THREE.Group();
-    const glowMat = new THREE.MeshBasicMaterial({ map: this.canvasTex(c), transparent: true, toneMapped: false, depthWrite: false, color: new THREE.Color(2.2, 2.0, 1.8) });
+    const glowMat = this.neonMat = new THREE.MeshBasicMaterial({ map: this.canvasTex(c), transparent: true, toneMapped: false, depthWrite: false, color: new THREE.Color(2.2, 2.0, 1.8) });
     this.noAo.push(this.add(new THREE.PlaneGeometry(0.95, 0.28), glowMat, [0, 0, 0.03], sign, false));
     const acrylic = new THREE.MeshPhysicalMaterial({ color: 0xffffff, roughness: 0.15, transparent: true, opacity: 0.08 });
     this.noAo.push(this.add(new THREE.BoxGeometry(1.0, 0.32, 0.01), acrylic, [0, 0, 0.02], sign, false));
@@ -520,7 +536,8 @@ export class RoomWorld {
     }
     sign.position.set(-2.25, 2.12, -2.49);
     this.scene.add(sign);
-    const warm = new THREE.PointLight(0xffc98a, 1.4, 1.6, 2); warm.position.set(-2.25, 2.1, -2.2); this.scene.add(warm);
+    const warm = this.neonLight = new THREE.PointLight(0xffc98a, 1.4, 1.6, 2); warm.position.set(-2.25, 2.1, -2.2); this.scene.add(warm);
+    this.dayApplied = false;
   }
 
   private phoneCanvas(card: boolean) {
@@ -679,6 +696,12 @@ export class RoomWorld {
     const w = box.max.x - box.min.x, h = box.max.y - box.min.y;
     const cellW = w / 3, cellH = h / 4;
     const front = box.max.z - 0.17;
+    const boards: THREE.Object3D[] = []; this.shelves.traverse(o => { if ((o as THREE.Mesh).isMesh) boards.push(o); });
+    const floorOf = (row: number) => {
+      this.ray.set(new THREE.Vector3(box.min.x + cellW * 0.5, box.min.y + cellH * (row + 0.75), front), new THREE.Vector3(0, -1, 0));
+      const hit = this.ray.intersectObjects(boards, false)[0];
+      return hit ? hit.point.y + 0.002 : box.min.y + cellH * row + 0.02;
+    };
     const study = this.opts.data.study;
     const degrees = study.filter(s => s.kind === 'degree'), certs = study.filter(s => s.kind === 'cert');
     const ordered = [...degrees, ...certs];
@@ -696,7 +719,7 @@ export class RoomWorld {
       // Paksi: x = tebal, y = tinggi, z = dalam. +z ialah tulang buku (menghadap pelawat), +x ialah kulit depan.
       const mesh = this.add(new THREE.BoxGeometry(thick, tall, depth), [coverMat, base, pages, pages, spineMat, pages], [0, 0, 0]);
       const x = box.min.x + cellW * slot.col + 0.03 + n * (thick + 0.006) + thick / 2;
-      const home = new THREE.Vector3(x, box.min.y + cellH * slot.row + tall / 2 + 0.02, front);
+      const home = new THREE.Vector3(x, floorOf(slot.row) + tall / 2, front);
       mesh.position.copy(home);
       this.tag(mesh, 'book', i, b.kind === 'degree' ? `UTM · ${b.title}` : b.title);
       this.books.push({ mesh, home, homeRot: 0, out: 0, target: 0 });
@@ -710,9 +733,43 @@ export class RoomWorld {
       const g = set.clone(true), list = meshes(g);
       const start = spans[order[(ci * 6) % order.length]].x0, room = cellW * 0.86;
       list.forEach((m, k) => (m.visible = spans[k].x0 >= start - 1e-4 && spans[k].x1 <= start + room));
-      g.position.set(box.min.x + cellW * col + 0.025 - start, box.min.y + cellH * row + 0.02, front - 0.05);
+      g.position.set(box.min.x + cellW * col + 0.025 - start, floorOf(row), front - 0.05);
       this.scene.add(g);
     });
+    // Hiasan petak kosong (Poly Haven, CC0): pokok kecil, timbunan buku dengan pasu, dan bingkai gambar.
+    const cell = (col: number, row: number, dx: number) => new THREE.Vector3(box.min.x + cellW * (col + 0.5) + dx, floorOf(row), front - 0.04);
+    const [plant, vase, frame, pile] = await Promise.all([
+      this.sketch('potted_plant_04', { height: cellH * 0.62 }, 'decor'),
+      this.sketch('ceramic_vase_01', { height: cellH * 0.5 }, 'decor'),
+      this.sketch('standing_picture_frame_01', { height: cellH * 0.58 }, 'decor'),
+      this.sketch('books', { width: cellW * 0.5 })
+    ]);
+    plant.position.copy(cell(1, 2, 0));
+    pile.position.copy(cell(0, 1, -cellW * 0.18)); pile.rotation.y = 0.15;
+    vase.position.copy(cell(0, 1, cellW * 0.2));
+    frame.position.copy(cell(2, 1, 0)); frame.rotation.y = -Math.PI / 2 + 0.25;
+    // Karya seni bingkai: cetakan abstrak dalam palet bilik (bukit dan matahari hangat).
+    frame.traverse(o => {
+      const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+      // Kaca bingkai menjadi legap selepas tekstur dimampatkan: disembunyikan.
+      if (m && /glass/i.test(m.name)) { o.visible = false; return; }
+      // Kertas bingkai tidak terlalu putih (tanpa silau bloom).
+      if (m && !/artwork/i.test(m.name)) { m.color.setHex(0xa8a196); return; }
+      if (!m) return;
+      const c = document.createElement('canvas'); c.width = 256; c.height = 320;
+      const x = c.getContext('2d')!;
+      const sky = x.createLinearGradient(0, 0, 0, 320); sky.addColorStop(0, '#f3e6d3'); sky.addColorStop(1, '#e2b48a');
+      x.fillStyle = sky; x.fillRect(0, 0, 256, 320);
+      x.fillStyle = '#c8643c'; x.beginPath(); x.arc(170, 120, 42, 0, Math.PI * 2); x.fill();
+      for (const [y, col] of [[200, '#8a5a44'], [240, '#4b3b36'], [280, '#26252a']] as const) {
+        x.fillStyle = col; x.beginPath(); x.moveTo(0, 320); x.lineTo(0, y);
+        for (let k = 0; k <= 8; k++) x.lineTo(k * 32, y + Math.sin(k * 1.3 + y) * 18);
+        x.lineTo(256, 320); x.fill();
+      }
+      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.flipY = false;
+      m.map = t; m.color.setHex(0xcfc8c0); m.needsUpdate = true;
+    });
+    this.scene.add(plant, vase, frame, pile);
     this.buildReader();
   }
 
@@ -729,6 +786,7 @@ export class RoomWorld {
     const cover = new THREE.MeshStandardMaterial({ roughness: 0.55 });
     const left = new THREE.MeshStandardMaterial({ roughness: 0.92 });
     const right = new THREE.MeshStandardMaterial({ roughness: 0.92 });
+    this.pageMats = [left, right, cover];
     // Separuh kanan: papan belakang + blok halaman (muka +z = halaman kanan).
     this.add(new THREE.BoxGeometry(pw + 0.008, ph + 0.01, bt), board, [pw / 2, 0, -bt / 2 - pt / 2 + 0.004], group);
     this.add(new THREE.BoxGeometry(pw - 0.006, ph - 0.008, pt), [paper, paper, paper, paper, right, paper], [pw / 2 - 0.003, 0, 0.004], group);
@@ -869,14 +927,14 @@ export class RoomWorld {
       const home = new THREE.Vector3(1.25 - rowW / 2 + col * (size + gap) + size / 2, 1.72 - row * 0.27, -1.35);
       sprite.position.set(1.45, 1.0, -1.75); sprite.scale.setScalar(0.001);
       sprite.userData = { kind: 'skill', index: i, label: s.name };
-      this.scene.add(sprite); this.hits.push(sprite);
+      this.scene.add(sprite); this.hits.push(sprite); this.noAo.push(sprite);
       this.icons.push({ sprite, home, delay: row * 0.08 + col * 0.03 });
     }));
   }
 
   /** Dinding belakang dengan bukaan tingkap sebenar (bentuk berlubang) supaya cahaya matahari masuk melaluinya. */
   private buildWindowWall() {
-    const W = { x0: 2.08, x1: 2.8, y0: 1.2, y1: 2.3 }, cx = (W.x0 + W.x1) / 2, cy = (W.y0 + W.y1) / 2, ww = W.x1 - W.x0, wh = W.y1 - W.y0;
+    const W = { x0: 0.32, x1: 1.04, y0: 1.2, y1: 2.3 }, cx = (W.x0 + W.x1) / 2, cy = (W.y0 + W.y1) / 2, ww = W.x1 - W.x0, wh = W.y1 - W.y0;
     const shape = new THREE.Shape([new THREE.Vector2(-3, 0), new THREE.Vector2(3, 0), new THREE.Vector2(3, 2.8), new THREE.Vector2(-3, 2.8)]);
     shape.holes.push(new THREE.Path([new THREE.Vector2(W.x0, W.y0), new THREE.Vector2(W.x0, W.y1), new THREE.Vector2(W.x1, W.y1), new THREE.Vector2(W.x1, W.y0)]));
     // UV bentuk dalam meter: ulangan 0.5 / m sama dengan dinding kiri (3 ulangan bagi 6 m).
@@ -895,13 +953,13 @@ export class RoomWorld {
     const pane = this.add(new THREE.PlaneGeometry(ww - 0.06, wh - 0.06), glass, [0, 0, fz - 0.005], win, false);
     this.noAo.push(pane);
     // Ambang tingkap
-    this.add(new RoundedBoxGeometry(ww + 0.14, 0.03, 0.2, 2, 0.008), this.std(0xcfc8bc, 0.6), [0, -wh / 2 - 0.015, 0.02], win);
+    this.add(new RoundedBoxGeometry(ww + 0.14, 0.03, 0.2, 2, 0.008), this.std(0x9c968c, 0.7), [0, -wh / 2 - 0.015, 0.02], win);
     this.tag(win, 'window', 0, this.L.window);
     // Pemandangan luar: langit dan bangunan bandar, siang dan malam.
     const dayTex = this.canvasTex(this.skyline(true)), nightTex = this.canvasTex(this.skyline(false));
     const mat = new THREE.MeshBasicMaterial({ map: this.day ? dayTex : nightTex, toneMapped: false });
-    // Dekat dengan dinding dan tidak melepasi hujungnya (x = 3), supaya hanya kelihatan melalui tingkap.
-    this.add(new THREE.PlaneGeometry(1.4, 1.75), mat, [2.28, cy + 0.1, -2.76], this.scene, false).receiveShadow = false;
+    // Dekat dengan dinding, supaya hanya kelihatan melalui tingkap.
+    this.add(new THREE.PlaneGeometry(1.4, 1.75), mat, [cx, cy + 0.1, -2.76], this.scene, false).receiveShadow = false;
     this.outside = { mat, dayTex, nightTex, shown: this.day };
   }
 
@@ -953,14 +1011,18 @@ export class RoomWorld {
     this.dayApplied = true;
     const d = ease(this.dayT), mix = (a: number, b: number) => a + (b - a) * d;
     // Siang: semua lampu bilik dipadam (lampu siling, lampu monitor, sinaran dinding); cahaya datang dari tingkap dan langit.
-    L.hemi.intensity = mix(0.25, 0.85);
+    L.hemi.intensity = mix(0.25, 1.25);
     L.key.intensity = mix(9, 0);
     L.desk.intensity = mix(11, 0);
     L.wash.intensity = mix(2.2, 0);
-    L.sun.intensity = mix(0, 3.2);
+    L.sun.intensity = mix(0, 4.2);
     L.sky.intensity = mix(0, 2.6);
     for (const l of this.lamps) l.mat.emissiveIntensity = l.base * (1 - d);
-    this.scene.environmentIntensity = mix(0.32, 0.62);
+    // Neon padam: huruf kembali ke warna akrilik pudar, tanpa cahaya.
+    if (this.neonMat) { this.neonMat.color.setRGB(2.2, 2.0, 1.8).lerp(new THREE.Color(0.32, 0.31, 0.3), d); this.neonMat.opacity = 1 - 0.45 * d; }
+    if (this.neonLight) this.neonLight.intensity = 1.4 * (1 - d);
+    for (const m of this.pageMats) m.color.setScalar(1 - 0.42 * d);
+    this.scene.environmentIntensity = mix(0.32, 0.85);
     this.renderer.toneMappingExposure = mix(1, 0.95);
     this.bloom.strength = mix(0.3, 0.1);
     this.vignette.uniforms.darkness.value = mix(1.12, 0.8);
@@ -973,6 +1035,10 @@ export class RoomWorld {
     (L.sun as THREE.DirectionalLight).shadow.needsUpdate = true;
   }
   private dayApplied = false;
+  private neonMat?: THREE.MeshBasicMaterial;
+  /** Halaman buku pembaca: dimalapkan pada waktu siang supaya tidak silau dan teks kekal jelas. */
+  private pageMats: THREE.MeshStandardMaterial[] = [];
+  private neonLight?: THREE.PointLight;
 
   private buildLights() {
     const touch = matchMedia('(hover: none)').matches;
@@ -987,7 +1053,7 @@ export class RoomWorld {
     const wallWash = new THREE.SpotLight(0xffe2c0, 2.2, 3, 0.6, 0.8, 2); wallWash.position.set(-0.6, 2.7, -1.6);
     wallWash.target.position.set(-0.6, 1.8, -2.5); this.scene.add(wallWash, wallWash.target);
     // Matahari: dari belakang dinding, hanya masuk melalui tingkap (dinding belakang menghasilkan bayang).
-    const sun = new THREE.DirectionalLight(0xfff0d8, 0); sun.position.set(4.4, 4.2, -6); sun.target.position.set(2.0, 0.6, -1.0);
+    const sun = new THREE.DirectionalLight(0xfff0d8, 0); sun.position.set(2.6, 4.2, -6); sun.target.position.set(0.2, 0.6, -1.0);
     sun.castShadow = true; sun.shadow.mapSize.setScalar(touch ? 1024 : 2048);
     Object.assign(sun.shadow.camera, { left: -3.5, right: 3.5, top: 3.5, bottom: -3.5, near: 1, far: 14 });
     sun.shadow.camera.updateProjectionMatrix();
@@ -995,7 +1061,7 @@ export class RoomWorld {
     sun.shadow.autoUpdate = !touch;
     this.scene.add(sun, sun.target);
     // Cahaya langit sejuk dari arah tingkap
-    const sky = new THREE.PointLight(0xcfe0ff, 0, 4.5, 2); sky.position.set(2.44, 1.75, -2.15); this.scene.add(sky);
+    const sky = new THREE.PointLight(0xcfe0ff, 0, 4.5, 2); sky.position.set(0.68, 1.75, -2.15); this.scene.add(sky);
     this.lights = { hemi, key, desk, wash: wallWash, sun, sky };
     const monitor = new THREE.PointLight(0x6fb8ff, 0.9, 2.2, 2); monitor.position.set(-0.6, 0.95, -1.75); this.scene.add(monitor);
     const rackGlow = new THREE.PointLight(0x2bd38a, 1.2, 1.8, 2); rackGlow.position.set(1.45, 1.1, -1.5); this.scene.add(rackGlow);
@@ -1328,7 +1394,7 @@ export class RoomWorld {
     // Kemahiran: pintu terbuka, logo terapung keluar mengikut baris kategori
     const serverOn = this.view === 'server' ? 1 : 0;
     this.doorOpen += (serverOn - this.doorOpen) * k;
-    if (this.door) this.door.rotation.y = -1.9 * this.doorOpen;
+    if (this.door) this.door.rotation.y = 1.9 * this.doorOpen;
     this.iconsOut += (serverOn - this.iconsOut) * (this.reduced ? 1 : 1 - Math.exp(-3 * dt));
     for (const ic of this.icons) {
       const p = THREE.MathUtils.clamp((this.iconsOut - ic.delay) / Math.max(0.2, 1 - ic.delay), 0, 1);

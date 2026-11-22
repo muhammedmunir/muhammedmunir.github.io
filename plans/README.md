@@ -110,6 +110,7 @@ Untuk mengelakkannya:
 | 020 | Bilik 3D: telefon diangkat, slaid butiran projek, siang/malam, animasi buku | P1 | S | 019 | DONE |
 | 021 | Bilik 3D: siang tanpa silau, butang dalam skrin telefon, tingkap di sebelah rak | P1 | S | 020 | DONE |
 | 022 | Bilik 3D: model sebenar (Sketchfab CC BY, Poly Haven CC0) dengan kredit | P1 | S | 021 | DONE |
+| 023 | Bilik 3D: betulkan monitor, logo kemahiran, pintu rak, rak buku, tingkap dan cahaya siang | P1 | S | 022 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
