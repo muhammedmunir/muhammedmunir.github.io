@@ -129,6 +129,8 @@ export class RoomWorld {
   private ao?: GTAOPass;
   /** Pengawal prestasi: purata masa bingkai diukur setiap 90 bingkai; kualiti diturunkan berperingkat pada GPU lemah. */
   private perf = { n: 0, sum: 0, level: 0, wait: 4 };
+  /** Bilik hanya dirender selepas semua model dimuat dan shader dikompil (lihat build). */
+  private built = false;
   private get L() { return TEXT[this.opts.data.locale]; }
   private shelves?: THREE.Object3D;
   private phoneMat!: THREE.MeshStandardMaterial;
@@ -254,7 +256,8 @@ export class RoomWorld {
   }
   /** Model Sketchfab (CC BY): dimuat, berbayang, kemudian dinormalkan supaya tapak di y = 0 dan berpusat pada x/z. */
   private async sketch(name: string, size: { height?: number; width?: number }, dir = 'sketchfab') {
-    const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${this.opts.base}/room/${dir}/${name}.glb`);
+    const url = `${this.opts.base}/room/${dir}/${name}.glb`;
+    const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync((await this.glb(url)).slice(0), url.slice(0, url.lastIndexOf('/') + 1));
     const obj = g.scene;
     obj.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     obj.updateMatrixWorld(true);
@@ -267,6 +270,17 @@ export class RoomWorld {
     wrap.updateMatrixWorld(true);
     return wrap;
   }
+
+  /** Satu muat turun bagi setiap fail model. Dimulakan serentak pada awal binaan supaya model tidak dimuat satu demi satu. */
+  private glb(url: string) {
+    let job = this.glbs.get(url);
+    if (!job) {
+      job = fetch(url).then(r => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); });
+      this.glbs.set(url, job);
+    }
+    return job;
+  }
+  private glbs = new Map<string, Promise<ArrayBuffer>>();
 
   private async image(src: string) {
     let job = this.images.get(src);
@@ -304,12 +318,18 @@ export class RoomWorld {
 
   // ================= binaan =================
   private async build() {
-    const hdr = await new HDRLoader().loadAsync(`${this.opts.base}/room/brown_photostudio_02/brown_photostudio_02_512.hdr`);
-    hdr.mapping = THREE.EquirectangularReflectionMapping;
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.scene.environment = pmrem.fromEquirectangular(hdr).texture;
-    this.scene.environmentIntensity = 0.32;
-    hdr.dispose(); pmrem.dispose();
+    // Rangkaian perlahan: semua model dan logo mula dimuat turun serentak (bukan menunggu satu demi satu).
+    const room = `${this.opts.base}/room`;
+    for (const n of ['monitor', 'pc', 'books', 'keyboard', 'chair', 'rack', 'projector', 'ency']) this.glb(`${room}/sketchfab/${n}.glb`).catch(() => undefined);
+    for (const n of ['potted_plant_04', 'ceramic_vase_01', 'standing_picture_frame_01']) this.glb(`${room}/decor/${n}.glb`).catch(() => undefined);
+    for (const p of this.opts.data.projects) if (p.logo) void this.image(p.logo);
+    const env = new HDRLoader().loadAsync(`${room}/brown_photostudio_02/brown_photostudio_02_512.hdr`).then(hdr => {
+      hdr.mapping = THREE.EquirectangularReflectionMapping;
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.scene.environment = pmrem.fromEquirectangular(hdr).texture;
+      this.scene.environmentIntensity = 0.32;
+      hdr.dispose(); pmrem.dispose();
+    });
 
     const floor = this.pbr('dark_wooden_planks', [3, 3], 0xb9b2a8);
     this.add(new THREE.PlaneGeometry(6, 5), floor, [0, 0, 0], this.scene, false).rotation.x = -Math.PI / 2;
@@ -318,6 +338,8 @@ export class RoomWorld {
     this.add(new THREE.PlaneGeometry(5, 2.8), wall, [-3, 1.4, 0], this.scene, false).rotation.y = Math.PI / 2;
     const ceiling = this.add(new THREE.PlaneGeometry(6, 5), this.std(0x1a1c20, 0.95), [0, 2.8, 0], this.scene, true);
     ceiling.rotation.x = Math.PI / 2;
+    // Lampu utama berada dalam tudung lampu: tanpa ini tudung membentuk bulatan hitam pekat pada siling (kelihatan dari kamera telefon).
+    ceiling.receiveShadow = false;
     // Dinding kanan tidak dilukis (pandangan kamera), tetapi tetap menghalang matahari supaya lantai tidak bercahaya pelik.
     const blocker = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, side: THREE.DoubleSide });
     const right = this.add(new THREE.PlaneGeometry(5, 2.8), blocker, [3, 1.4, 0], this.scene, true);
@@ -336,7 +358,7 @@ export class RoomWorld {
 
     const [plant, shelves, ceilingLamp] = await Promise.all([
       this.gltf('potted_plant_02'), this.gltf('wooden_display_shelves_01'), this.gltf('modern_ceiling_lamp_01'),
-      this.fitComputer(), this.buildChair(), this.buildServer()
+      this.fitComputer(), this.buildChair(), this.buildServer(), env
     ]);
     plant.position.set(2.35, 0, -1.95); plant.scale.setScalar(1.15); this.scene.add(plant);
     shelves.position.set(-2.3, 0, -2.3); shelves.rotation.y = Math.PI / 2; this.scene.add(shelves); this.shelves = shelves;
@@ -348,6 +370,13 @@ export class RoomWorld {
     });
 
     await Promise.all([this.buildBooks(), this.buildSkills(), this.selectProject(0), this.buildNeon()]);
+    // Kompil semua shader secara selari sebelum render pertama. Tanpa ini setiap model baharu dikompil
+    // secara segerak semasa render dan menyekat halaman berbelas saat pada GPU terbina dalam.
+    // Sasaran render composer ditetapkan dahulu: program bagi render ke tekstur berbeza daripada render ke skrin.
+    this.renderer.setRenderTarget(this.composer.readBuffer);
+    await this.renderer.compileAsync(this.scene, this.camera).catch(() => undefined);
+    this.renderer.setRenderTarget(null);
+    this.built = true;
     // Semua model sudah dimuat: kira semula cahaya dan bayang matahari sekali.
     this.dayApplied = false;
   }
@@ -1381,7 +1410,7 @@ export class RoomWorld {
    */
   private govern(raw: number) {
     const p = this.perf;
-    if (p.level >= 2 || document.hidden) return;
+    if (p.level >= 2 || document.hidden || !this.built) return;
     if (p.wait > 0) { p.wait -= Math.min(raw, 0.1); return; }
     if (raw > 0.25) return;
     p.n++; p.sum += raw;
@@ -1487,7 +1516,7 @@ export class RoomWorld {
     }
     this.lightDay(dt);
 
-    this.composer.render();
+    if (this.built) this.composer.render();
   };
 
   dispose() {

@@ -113,6 +113,7 @@ Untuk mengelakkannya:
 | 023 | Bilik 3D: betulkan monitor, logo kemahiran, pintu rak, rak buku, tingkap dan cahaya siang | P1 | S | 022 | DONE |
 | 024 | Bilik 3D: kualiti grafik adaptif untuk GPU lemah | P1 | S | 023 | DONE |
 | 025 | Jenama baharu pada pratonton pautan (OG), favicon dan manifest | P1 | S | 024 | DONE |
+| 026 | Bilik 3D dimuat ~3× lebih pantas: muat serentak, shader dikompil selari, logo dikecilkan | P1 | S | 025 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
