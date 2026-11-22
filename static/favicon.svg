@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title id="title">Munir M monogram</title>
-  <rect width="64" height="64" rx="14" fill="#201e1b" />
-  <path d="M14 48V16h8l10 14 10-14h8v32H40V33L32 44 24 33v15Z" fill="#f3eee6" />
-  <path d="M42 16h8v32H40V33L32 44V30Z" fill="#ce9473" />
-</svg>

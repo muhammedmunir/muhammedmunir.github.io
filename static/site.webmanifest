@@ -1,13 +1,13 @@
 {
-  "name": "Muhammed Munir | Di Sebalik Sistem",
-  "short_name": "Munir",
-  "description": "Portfolio Muhammed Munir: Di Sebalik Sistem.",
+  "name": "Muhammed Munir | Full-Stack Developer",
+  "short_name": "munir.",
+  "description": "Bilik kerja 3D Muhammed Munir, Full-Stack Developer: projek, kemahiran, perjalanan kerja dan pembelajaran.",
   "lang": "ms-MY",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0f1a",
+  "background_color": "#0b0c0f",
   "theme_color": "#0a0f1a",
   "icons": [
     {

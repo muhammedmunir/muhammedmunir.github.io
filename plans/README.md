@@ -112,6 +112,7 @@ Untuk mengelakkannya:
 | 022 | Bilik 3D: model sebenar (Sketchfab CC BY, Poly Haven CC0) dengan kredit | P1 | S | 021 | DONE |
 | 023 | Bilik 3D: betulkan monitor, logo kemahiran, pintu rak, rak buku, tingkap dan cahaya siang | P1 | S | 022 | DONE |
 | 024 | Bilik 3D: kualiti grafik adaptif untuk GPU lemah | P1 | S | 023 | DONE |
+| 025 | Jenama baharu pada pratonton pautan (OG), favicon dan manifest | P1 | S | 024 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
