@@ -138,7 +138,6 @@
     { title: 'PC Monitor 27 inch', author: 'Annelida', url: 'https://sketchfab.com/3d-models/pc-monitor-27-inch-06fb18eec19245d4811c4c3c8c7ea567' },
     { title: 'Mouse and Keyboard', author: 'gorzi', url: 'https://sketchfab.com/3d-models/mouse-and-keyboard-c63ee81b71ff45b68a778101b4df3d46' },
     { title: 'Data Center Server Rack', author: 'EntropyNine', url: 'https://sketchfab.com/3d-models/data-center-server-rack-01b49d9d1f694ba5b41e4b2b0e10d16e' },
-    { title: 'Office PC', author: 'fluffyw0lf', url: 'https://sketchfab.com/3d-models/office-pc-69188a48a0b04b18aa015719b0551eaa' },
     { title: 'Projector', author: 'GokouFG', url: 'https://sketchfab.com/3d-models/projector-0f1c6b1fa0bd4d5bbe5ac10e9eee31de' },
     { title: 'Book Stack', author: 'Visthétique', url: 'https://sketchfab.com/3d-models/book-stack-198d3bdc5384426b9695394a82bc3825' }
   ];
@@ -449,5 +448,10 @@
     header nav { gap: 12px; }
     .identity { font-size: 24px; }
     header nav .pill + .pill { margin-left: -6px; }
+  }
+  @media (max-width: 380px) {
+    .identity { font-size: 21px; }
+    header nav { gap: 9px; }
+    header nav a, header nav button { font-size: .85rem; }
   }
 </style>

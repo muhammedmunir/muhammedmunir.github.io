@@ -89,8 +89,9 @@ export class RoomWorld {
   /** Peranti sentuh (telefon/tablet): resolusi, antialias, bayang dan bloom lebih ringan sejak awal. */
   private touch = matchMedia('(hover: none)').matches;
   /** Had putaran kamera gambaran keseluruhan; paparan lain mendapat had kecil di sekeliling sudut paparan. */
-  private orbit = { minAz: 0, maxAz: 0, minPolar: 0, maxPolar: 0, minDist: 0, maxDist: 0 };
+  private orbit = { az: 0, minAz: 0, maxAz: 0, minPolar: 0, maxPolar: 0, minDist: 0, maxDist: 0 };
   private downAt?: { x: number; y: number };
+  private shadowTick = 0;
   private observer: ResizeObserver;
   private frame = 0;
   private dead = false;
@@ -163,6 +164,8 @@ export class RoomWorld {
     this.renderer.shadowMap.enabled = true;
     // r186 membuang PCFSoftShadowMap; PCF dengan jejari memberi bayang lembut.
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    // Peranti sentuh: bayang dikemas kini secara berkala dalam loop (lihat shadowTick), bukan setiap bingkai.
+    this.renderer.shadowMap.autoUpdate = !this.touch;
     this.scene.background = new THREE.Color(0x0b0c0f);
 
     const v = VIEWS.overview;
@@ -179,7 +182,7 @@ export class RoomWorld {
     const az = Math.atan2(v.pos[0] - v.target[0], v.pos[2] - v.target[2]);
     this.controls.minAzimuthAngle = az - 0.5;
     this.controls.maxAzimuthAngle = az + 0.3;
-    this.orbit = { minAz: az - 0.5, maxAz: az + 0.3, minPolar: 1.31, maxPolar: 1.58, minDist: 2.4, maxDist: 5.3 };
+    this.orbit = { az, minAz: az - 0.5, maxAz: az + 0.3, minPolar: 1.31, maxPolar: 1.58, minDist: 2.4, maxDist: 5.3 };
     this.controls.update();
 
     // Sasaran render berbilang sampel: tanpanya komposer membuang antialias dan tepi objek bergerigi.
@@ -341,7 +344,7 @@ export class RoomWorld {
   private async build() {
     // Rangkaian perlahan: semua model dan logo mula dimuat turun serentak (bukan menunggu satu demi satu).
     const room = `${this.opts.base}/room`;
-    for (const n of ['monitor', 'pc', 'books', 'keyboard', 'chair', 'rack', 'projector', 'ency']) this.glb(`${room}/sketchfab/${n}.glb`).catch(() => undefined);
+    for (const n of ['monitor', 'books', 'keyboard', 'chair', 'rack', 'projector', 'ency']) this.glb(`${room}/sketchfab/${n}.glb`).catch(() => undefined);
     for (const n of ['potted_plant_04', 'ceramic_vase_01', 'standing_picture_frame_01']) this.glb(`${room}/decor/${n}.glb`).catch(() => undefined);
     for (const p of this.opts.data.projects) if (p.logo) void this.image(p.logo);
     const env = new HDRLoader(this.manager).loadAsync(`${room}/brown_photostudio_02/brown_photostudio_02_512.hdr`).then(hdr => {
@@ -468,15 +471,11 @@ export class RoomWorld {
       // Panel model tidak bercahaya (kanvas kita yang menyala).
       m.traverse(o => { const mm = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (mm?.emissive) { mm.emissiveIntensity = 0; } });
     }
-    const tower = await this.sketch('pc', { height: 0.46 });
-    // Di bawah meja, renggang daripada kaki kanan (x = 0.18).
-    tower.position.set(-0.12, 0, -2.12); tower.rotation.y = this.turn.pc;
+    const tower = this.buildTower();
+    // Di bawah meja, renggang daripada kaki kanan (x = 0.18); kaca sisi menghadap bilik.
+    tower.position.set(-0.13, 0, -2.13);
     pc.add(tower);
-    // Menara gelap dalam bayang meja: jalur LED di tepi hadapan dan permukaan yang memantulkan cahaya bilik.
-    tower.traverse(o => { const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (m && 'envMapIntensity' in m) m.envMapIntensity = 2.2; });
-    const ledMat = this.glow(0xe5b580, 2.2); // LED kuasa: sentiasa menyala, siang atau malam
-    const inner = this.add(new THREE.PlaneGeometry(0.01, 0.36), ledMat, [0.005, 0.25, -1.865], pc, false);
-    this.towerParts = [tower, inner];
+    this.towerParts = [tower];
     // Timbunan buku di sudut belakang kiri meja, di luar bingkai paparan komputer.
     const pile = await this.sketch('books', { width: 0.2 });
     pile.position.set(-1.37, deskTop, -2.36); pile.rotation.y = this.turn.books;
@@ -501,7 +500,47 @@ export class RoomWorld {
   /** Orientasi model (radian) dan anjakan projektor; ditentukan dengan menyemak gambar. */
   private projModel?: THREE.Object3D;
   private towerParts: THREE.Object3D[] = [];
-  private turn = { pc: 0, books: 0.5, projector: Math.PI, projectorDrop: 0.08, ency: 0 };
+  /**
+   * Menara PC minimalis (tiada model luar): badan aluminium gelap, panel kaca berasap di sisi kanan
+   * dengan cahaya dalaman hangat dan dua kipas bercincin, jalur LED di tepi hadapan. Semua cahaya sentiasa menyala.
+   */
+  private buildTower() {
+    const g = new THREE.Group();
+    const W = 0.2, H = 0.44, D = 0.42, lift = 0.018;
+    const body = this.std(0x1d2024, 0.32, 0.85);
+    body.envMapIntensity = 1.6;
+    this.add(new RoundedBoxGeometry(W, H, D, 3, 0.012), body, [0, lift + H / 2, 0], g);
+    // Kaki
+    for (const x of [-W / 2 + 0.03, W / 2 - 0.03]) for (const z of [-D / 2 + 0.04, D / 2 - 0.04])
+      this.add(new THREE.CylinderGeometry(0.012, 0.012, lift, 12), this.std(0x0c0d0f, 0.6), [x, lift / 2, z], g, false);
+    // Ruang dalam gelap dilihat melalui kaca sisi: papan induk, GPU dengan jalur cahaya, penyejuk CPU, dua kipas hadapan.
+    const sx = W / 2 + 0.0015, side = (geo: THREE.BufferGeometry, mat: THREE.Material, y: number, z: number, dx = 0) => {
+      const m = this.add(geo, mat, [sx + dx, y, z], g, false); m.rotation.y = Math.PI / 2; return m;
+    };
+    side(new THREE.PlaneGeometry(D - 0.05, H - 0.06), new THREE.MeshStandardMaterial({ color: 0x0e1013, roughness: 0.9, emissive: 0x3a2814, emissiveIntensity: 1 }), lift + H / 2, 0);
+    side(new THREE.PlaneGeometry(0.2, 0.24), this.std(0x0b0c0e, 0.8, 0.2), lift + H * 0.6, -0.06, 0.0003);
+    side(new THREE.PlaneGeometry(0.19, 0.045), this.std(0x555b66, 0.35, 0.6), lift + H * 0.42, -0.07, 0.0006);
+    const glow = this.glow(0xe5b580, 1.8);
+    side(new THREE.PlaneGeometry(0.17, 0.004), glow, lift + H * 0.42 - 0.025, -0.07, 0.0009);
+    side(new THREE.TorusGeometry(0.026, 0.003, 8, 32), glow, lift + H * 0.72, -0.08, 0.0009);
+    side(new THREE.PlaneGeometry(0.07, 0.07), this.std(0x2b2f36, 0.45, 0.7), lift + H * 0.72, -0.08, 0.0006);
+    for (const y of [lift + H * 0.7, lift + H * 0.38]) {
+      side(new THREE.CircleGeometry(0.046, 32), this.std(0x15171a, 0.6), y, D / 2 - 0.065, 0.0006);
+      side(new THREE.TorusGeometry(0.044, 0.004, 8, 40), glow, y, D / 2 - 0.065, 0.0009);
+      side(new THREE.CircleGeometry(0.012, 20), this.std(0x2a2d33, 0.5, 0.6), y, D / 2 - 0.065, 0.0009);
+      for (let k = 0; k < 7; k++) side(new THREE.PlaneGeometry(0.003, 0.03), this.std(0x23262b, 0.6), y, D / 2 - 0.065, 0.0008).rotation.x = (k / 7) * Math.PI;
+    }
+    // Kaca berasap di atas ruang dalam
+    const glass = new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.08, metalness: 0.4, transparent: true, opacity: 0.42, envMapIntensity: 2 });
+    this.add(new THREE.PlaneGeometry(D - 0.03, H - 0.04), glass, [W / 2 + 0.003, lift + H / 2, 0], g, false).rotation.y = Math.PI / 2;
+    // Muka hadapan: panel jaring gelap, jalur LED menegak dan butang kuasa
+    this.add(new THREE.PlaneGeometry(W - 0.03, H - 0.05), this.std(0x111316, 0.85, 0.3), [0, lift + H / 2, D / 2 + 0.0015], g, false);
+    const led = this.glow(0xe5b580, 2.4);
+    this.add(new THREE.PlaneGeometry(0.006, H - 0.08), led, [W / 2 - 0.018, lift + H / 2, D / 2 + 0.002], g, false);
+    this.add(new THREE.CircleGeometry(0.007, 20), led, [-W / 2 + 0.03, lift + H - 0.03, D / 2 + 0.002], g, false);
+    return g;
+  }
+  private turn = { books: 0.5, projector: Math.PI, projectorDrop: 0.08, ency: 0 };
 
   private async buildServer() {
     const rack = await this.sketch('rack', { height: 2.1 });
@@ -1332,7 +1371,9 @@ export class RoomWorld {
   private limitLook() {
     const c = this.controls, o = this.orbit;
     if (this.view === 'overview') {
-      Object.assign(c, { minAzimuthAngle: o.minAz, maxAzimuthAngle: o.maxAz, minPolarAngle: o.minPolar, maxPolarAngle: o.maxPolar, minDistance: o.minDist, maxDistance: o.maxDist });
+      // Skrin tegak (telefon) hanya nampak bahagian tengah bilik: benarkan pusingan lebih jauh ke rak server (kanan) dan tayangan (kiri).
+      const narrow = this.camera.aspect < 1;
+      Object.assign(c, { minAzimuthAngle: narrow ? o.az - 1.25 : o.minAz, maxAzimuthAngle: narrow ? o.az + 0.75 : o.maxAz, minPolarAngle: o.minPolar, maxPolarAngle: o.maxPolar, minDistance: o.minDist, maxDistance: o.maxDist });
       return;
     }
     const v = VIEWS[this.view], to = this.fitPos(v), at = new THREE.Vector3(...v.target);
@@ -1450,7 +1491,8 @@ export class RoomWorld {
     this.camera.fov = w / h < 1 ? 70 : 42;
     this.camera.updateProjectionMatrix();
     if (this.view === 'phone') this.aimPhone();
-    if (this.view !== 'overview' && !this.tween) { this.camera.position.copy(this.fitPos(VIEWS[this.view])); this.limitLook(); }
+    if (this.view !== 'overview' && !this.tween) this.camera.position.copy(this.fitPos(VIEWS[this.view]));
+    this.limitLook();
   };
 
   /**
@@ -1471,7 +1513,7 @@ export class RoomWorld {
     if (p.level === 0 && this.ao?.enabled) { p.level = 1; this.ao.enabled = false; return; }
     if (p.level < 2) {
       p.level = 2;
-      const r = this.touch ? 1 : Math.max(0.75, Math.min(devicePixelRatio, 2) * 0.6);
+      const r = this.touch ? Math.min(devicePixelRatio, 1.25) : Math.max(0.75, Math.min(devicePixelRatio, 2) * 0.6);
       this.renderer.setPixelRatio(r); this.composer.setPixelRatio(r); this.resize();
       return;
     }
@@ -1484,6 +1526,7 @@ export class RoomWorld {
     const raw = this.clock.getDelta(), dt = Math.min(raw, 0.05);
     const t = this.clock.elapsedTime;
     this.govern(raw);
+    if (this.touch && ++this.shadowTick % 10 === 0) this.renderer.shadowMap.needsUpdate = true;
     const k = this.reduced ? 1 : 1 - Math.exp(-7 * dt);
 
     if (this.tween) {
