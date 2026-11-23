@@ -279,7 +279,7 @@
 
   <div class="stage">
     <canvas bind:this={canvas} class:shown={ready} aria-label={ui.canvas}></canvas>
-    {#if tip}<span class="tip" style:left="{tip.x}px" style:top="{tip.y}px">{tip.text}</span>{/if}
+    {#if tip}<span class="tip" style:left="clamp(130px, {tip.x}px, calc(100% - 130px))" style:top="{tip.y}px">{tip.text}</span>{/if}
     {#if !ready}
       <div class="loading" role="status" out:fade={{ duration: reduced ? 0 : 450 }}>
         <span class="mark" aria-hidden="true">munir<span>.</span></span>
@@ -388,7 +388,7 @@
   canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; opacity: 0; transition: opacity .8s ease; }
   canvas.shown { opacity: 1; }
   header nav .pill.pending svg { visibility: hidden; }
-  .tip { position: absolute; transform: translate(14px, 14px); padding: 7px 12px; border-radius: 6px; background: rgba(12,13,16,.86); border: 1px solid rgba(255,255,255,.14); color: #f4f4f5; font-size: .8125rem; font-weight: 600; white-space: nowrap; pointer-events: none; }
+  .tip { position: absolute; transform: translate(-50%, 18px); max-width: 240px; text-align: center; padding: 7px 12px; border-radius: 6px; background: rgba(12,13,16,.86); border: 1px solid rgba(255,255,255,.14); color: #f4f4f5; font-size: .8125rem; font-weight: 600; white-space: normal; pointer-events: none; }
   .loading { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: radial-gradient(ellipse at 50% 45%, #15171c 0%, #0b0c0f 62%); color: #a1a1aa; }
   .loading .mark { font: 800 clamp(2.6rem, 6vw, 4rem)/1 var(--font-heading); letter-spacing: -.07em; color: #f4f4f5; }
   .loading .mark span { color: var(--work-accent); animation: blink 1.2s steps(1) infinite; }
@@ -453,16 +453,20 @@
   /* Telefon: kawalan lebih padat supaya bar atas tidak menjadi tiga baris dan tidak menutup bilik. Sasaran sentuh kekal >= 36 px. */
   @media (max-width: 600px) {
     header { padding-top: 10px; padding-bottom: 10px; }
-    header nav a, header nav button { min-height: 38px; }
-    header nav .pill { min-width: 38px; padding: 0 10px; }
-    .focus-bar { top: 58px; gap: 6px 8px; }
-    .back { min-height: 36px; padding: 0 12px; gap: 6px; font-size: .8125rem; }
-    .back.icon { width: 36px; font-size: 1.25rem; }
-    .focus-bar p { min-height: 36px; padding: 0 12px; font-size: .875rem; }
-    .count { min-width: 2.6em; font-size: .8125rem; }
+    header nav a, header nav button { min-height: 34px; font-size: .8125rem; }
+    header nav .pill { min-width: 34px; padding: 0 9px; }
+    header nav .pill svg { width: 16px; height: 16px; }
+    .focus-bar { top: 54px; gap: 6px; }
+    .back { min-height: 32px; padding: 0 11px; gap: 5px; font-size: .75rem; }
+    .back.icon { width: 32px; font-size: 1.15rem; }
+    .focus-bar p { min-height: 32px; padding: 0 11px; font-size: .8125rem; }
+    .count { min-width: 2.4em; font-size: .75rem; }
+    .who h1 { font-size: 1.65rem; }
+    .who p { margin-top: 6px; font-size: .8125rem; }
     .back .long { display: none; }
     .back .short { display: inline; }
-    .hint { bottom: 14px; padding: 6px 12px; font-size: .75rem; }
+    .hint { bottom: 12px; padding: 5px 11px; font-size: .6875rem; }
+    .tip { font-size: .75rem; padding: 6px 10px; }
   }
   @media (max-width: 380px) {
     .identity { font-size: 21px; }

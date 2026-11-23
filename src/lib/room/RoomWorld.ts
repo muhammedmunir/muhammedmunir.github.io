@@ -11,6 +11,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 
 /** Setiap objek dalam bilik mempunyai satu tugas. */
 export type RoomKind = 'computer' | 'launcher' | 'projection' | 'server' | 'skill' | 'badge' | 'book' | 'profile' | 'phone' | 'window';
@@ -91,7 +92,11 @@ export class RoomWorld {
   /** Had putaran kamera gambaran keseluruhan; paparan lain mendapat had kecil di sekeliling sudut paparan. */
   private orbit = { az: 0, minAz: 0, maxAz: 0, minPolar: 0, maxPolar: 0, minDist: 0, maxDist: 0 };
   private downAt?: { x: number; y: number };
-  private shadowTick = 0;
+  /** Bayang dikemas kini hanya bila objek bergerak (bilik hampir statik); peta bayang lampu titik = 6 laluan render. */
+  private shadowDirty = true;
+  /** Skala kualiti daripada pengawal prestasi (1 = penuh). */
+  private quality = 1;
+  private fxaa!: ShaderPass;
   private observer: ResizeObserver;
   private frame = 0;
   private dead = false;
@@ -136,7 +141,8 @@ export class RoomWorld {
   private noAo: THREE.Object3D[] = [];
   private ao?: GTAOPass;
   /** Pengawal prestasi: purata masa bingkai diukur setiap 90 bingkai; kualiti diturunkan berperingkat pada GPU lemah. */
-  private perf = { n: 0, sum: 0, level: 0, wait: 4 };
+  /** up: naik taraf aktif (0 asas, 1 MSAA, 2 MSAA + AO); down: penurunan (0 tiada, 1 resolusi 0.75x, 2 tanpa bloom). */
+  private perf = { n: 0, sum: 0, wait: 4, up: 0, down: 0, locked: false };
   /** Bilik hanya dirender selepas semua model dimuat dan shader dikompil (lihat build). */
   private built = false;
   private get L() { return TEXT[this.opts.data.locale]; }
@@ -165,7 +171,7 @@ export class RoomWorld {
     // r186 membuang PCFSoftShadowMap; PCF dengan jejari memberi bayang lembut.
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     // Peranti sentuh: bayang dikemas kini secara berkala dalam loop (lihat shadowTick), bukan setiap bingkai.
-    this.renderer.shadowMap.autoUpdate = !this.touch;
+    this.renderer.shadowMap.autoUpdate = false;
     this.scene.background = new THREE.Color(0x0b0c0f);
 
     const v = VIEWS.overview;
@@ -186,7 +192,7 @@ export class RoomWorld {
     this.controls.update();
 
     // Sasaran render berbilang sampel: tanpanya komposer membuang antialias dan tepi objek bergerigi.
-    this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: this.touch ? 0 : 4 }));
+    this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 0 }));
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     // Oklusi ambien (bayang sentuhan di sudut & bawah objek): desktop sahaja kerana kosnya pada GPU telefon.
     if (!matchMedia('(hover: none)').matches) {
@@ -199,6 +205,7 @@ export class RoomWorld {
         const was = this.noAo.map(o => o.visible); this.noAo.forEach(o => (o.visible = false)); render(...a); this.noAo.forEach((o, k) => (o.visible = was[k]));
       };
       this.composer.addPass(ao);
+      ao.enabled = false;
     }
     this.bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.3, 0.45, 0.97);
     this.composer.addPass(this.bloom);
@@ -210,6 +217,8 @@ export class RoomWorld {
     const hour = new Date().getHours();
     this.day = hour >= 7 && hour < 19; this.dayT = this.day ? 1 : 0;
     this.composer.addPass(new OutputPass());
+    this.fxaa = new ShaderPass(FXAAShader);
+    this.composer.addPass(this.fxaa);
 
     this.launcherCanvas.width = 1024; this.launcherCanvas.height = 576;
     this.launcherTex = this.canvasTex(this.launcherCanvas);
@@ -403,6 +412,7 @@ export class RoomWorld {
     this.opts.onProgress?.(1);
     this.renderer.setRenderTarget(null);
     this.built = true;
+    this.shadowDirty = true;
     // Semua model sudah dimuat: kira semula cahaya dan bayang matahari sekali.
     this.dayApplied = false;
   }
@@ -1151,7 +1161,7 @@ export class RoomWorld {
     key.castShadow = true; key.shadow.mapSize.setScalar(touch ? 1024 : 2048); key.shadow.bias = -0.0015; key.shadow.normalBias = 0.02; key.shadow.radius = 5;
     this.scene.add(key);
     const desk = new THREE.SpotLight(0xffc98a, 11, 2.2, 0.95, 0.7, 2); desk.position.set(-0.6, 1.34, -2.18);
-    desk.target.position.set(-0.6, 0.76, -1.85); desk.castShadow = !touch; desk.shadow.mapSize.set(1024, 1024); desk.shadow.bias = -0.001;
+    desk.target.position.set(-0.6, 0.76, -1.85); desk.castShadow = false; desk.shadow.mapSize.set(1024, 1024); desk.shadow.bias = -0.001;
     this.scene.add(desk, desk.target);
     const wallWash = new THREE.SpotLight(0xffe2c0, 2.2, 3, 0.6, 0.8, 2); wallWash.position.set(-0.6, 2.7, -1.6);
     wallWash.target.position.set(-0.6, 1.8, -2.5); this.scene.add(wallWash, wallWash.target);
@@ -1481,11 +1491,23 @@ export class RoomWorld {
     }
   };
 
+  /**
+   * Nisbah piksel mengikut bajet ~2.4 juta piksel: telefon (~0.33 juta piksel CSS) kekal 2x dan tajam;
+   * desktop besar atau skrin retina tidak lagi dirender pada 3-5 juta piksel. Didarab skala kualiti pengawal.
+   */
+  private budgetRatio(w: number, h: number) {
+    const max = Math.min(devicePixelRatio, 2), budget = Math.sqrt(2.4e6 / (w * h));
+    return Math.max(0.75, Math.min(max, budget) * this.quality);
+  }
   private resize = () => {
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
     if (!w || !h) return;
+    const ratio = this.budgetRatio(w, h);
+    if (Math.abs(ratio - this.renderer.getPixelRatio()) > 0.01) { this.renderer.setPixelRatio(ratio); this.composer.setPixelRatio(ratio); }
     this.renderer.setSize(w, h, false);
     this.composer.setSize(w, h);
+    const pr = this.renderer.getPixelRatio();
+    this.fxaa.material.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr));
     this.bloom.resolution.set(w, h);
     this.camera.aspect = w / h;
     this.camera.fov = w / h < 1 ? 70 : 42;
@@ -1496,28 +1518,37 @@ export class RoomWorld {
   };
 
   /**
-   * Bawah ~40 fps secara purata: tahap 1 matikan AO (pas paling mahal); masih bawah ~30 fps: tahap 2 kurangkan resolusi render.
-   * Tidak pernah naik semula (elak berkelip). Bingkai > 250 ms diabaikan: itu tab yang diperlahankan pelayar, bukan GPU.
+   * Pengawal prestasi (purata 90 bingkai). Semua peranti bermula ringan: tanpa MSAA (FXAA), tanpa AO.
+   * Laju (~55+ fps): naik taraf ke MSAA 4, kemudian AO (desktop). Naik taraf yang menjadikannya perlahan
+   * (bawah 40 fps; 45 pada telefon) diundur dan tidak dicuba lagi. Masih perlahan pada tahap asas:
+   * resolusi 0.75x, kemudian tanpa bloom. Bingkai > 250 ms diabaikan: itu tab yang diperlahankan pelayar.
    */
   private govern(raw: number) {
     const p = this.perf;
-    if (p.level >= 3 || document.hidden || !this.built) return;
+    if (document.hidden || !this.built) return;
     if (p.wait > 0) { p.wait -= Math.min(raw, 0.1); return; }
     if (raw > 0.25) return;
     p.n++; p.sum += raw;
     if (p.n < 90) return;
     const avg = p.sum / p.n; p.n = 0; p.sum = 0;
-    // Tahap 1 bila bawah 40 fps; tahap 2 hanya bawah 30 fps (selepas AO dimatikan, atau terus pada telefon yang tiada AO).
-    if (avg < (this.touch ? 1 / 45 : p.level === 0 && this.ao?.enabled ? 1 / 40 : 1 / 30)) return;
-    p.wait = 1.5;
-    if (p.level === 0 && this.ao?.enabled) { p.level = 1; this.ao.enabled = false; return; }
-    if (p.level < 2) {
-      p.level = 2;
-      const r = this.touch ? Math.min(devicePixelRatio, 1.5) : Math.max(0.75, Math.min(devicePixelRatio, 2) * 0.6);
-      this.renderer.setPixelRatio(r); this.composer.setPixelRatio(r); this.resize();
-      return;
+    const fast = avg < 1 / 55, slow = avg > (this.touch ? 1 / 45 : 1 / 40), verySlow = avg > (this.touch ? 1 / 45 : 1 / 30);
+    if (slow && p.up > 0) {
+      if (p.up === 2 && this.ao) this.ao.enabled = false; else this.setMsaa(false);
+      p.up--; p.locked = true; p.wait = 1.5; return;
     }
-    p.level = 3; this.bloom.enabled = false;
+    if (fast && !p.locked && p.down === 0) {
+      if (p.up === 0) { this.setMsaa(true); p.up = 1; p.wait = 1.5; return; }
+      if (p.up === 1 && this.ao) { this.ao.enabled = true; p.up = 2; p.wait = 1.5; return; }
+    }
+    if (verySlow && p.up === 0 && p.down < 2) {
+      p.down++; p.locked = true; p.wait = 1.5;
+      if (p.down === 1) { this.quality = 0.75; this.resize(); } else this.bloom.enabled = false;
+    }
+  }
+  /** MSAA 4 pada sasaran komposer (laju) atau tiada MSAA dengan FXAA (ringan). */
+  private setMsaa(on: boolean) {
+    for (const rt of [this.composer.renderTarget1, this.composer.renderTarget2]) { rt.samples = on ? 4 : 0; rt.dispose(); }
+    this.fxaa.enabled = !on;
   }
 
   private loop = () => {
@@ -1526,7 +1557,7 @@ export class RoomWorld {
     const raw = this.clock.getDelta(), dt = Math.min(raw, 0.05);
     const t = this.clock.elapsedTime;
     this.govern(raw);
-    if (this.touch && ++this.shadowTick % 10 === 0) this.renderer.shadowMap.needsUpdate = true;
+    if (this.shadowDirty) { this.renderer.shadowMap.needsUpdate = true; this.shadowDirty = false; }
     const k = this.reduced ? 1 : 1 - Math.exp(-7 * dt);
 
     if (this.tween) {
@@ -1543,6 +1574,7 @@ export class RoomWorld {
 
     // Kemahiran: pintu terbuka, logo terapung keluar mengikut baris kategori
     const serverOn = this.view === 'server' ? 1 : 0;
+    if (Math.abs(serverOn - this.doorOpen) > 1e-3) this.shadowDirty = true;
     this.doorOpen += (serverOn - this.doorOpen) * k;
     if (this.door) this.door.rotation.y = 1.9 * this.doorOpen;
     this.iconsOut += (serverOn - this.iconsOut) * (this.reduced ? 1 : 1 - Math.exp(-3 * dt));
@@ -1559,6 +1591,7 @@ export class RoomWorld {
 
     // Kerjaya: pas berayun, berpusing bila dipilih
     this.badges.forEach((b, i) => {
+      if (Math.abs(b.target - b.flip) > 1e-3) this.shadowDirty = true;
       b.flip += (b.target - b.flip) * k;
       b.group.rotation.z = this.reduced ? 0 : Math.sin(t * 0.9 + i * 1.3) * 0.025 * (1 - b.flip);
       b.card.rotation.y = Math.PI * b.flip;
@@ -1571,6 +1604,7 @@ export class RoomWorld {
     // Menutup ialah laluan yang sama secara terbalik, jadi buku kembali tepat ke slotnya.
     const r = this.reader;
     if (r) {
+      if (r.t !== r.target || r.pending >= 0) this.shadowDirty = true;
       r.t = this.reduced ? r.target : r.target > r.t ? Math.min(r.target, r.t + dt / 1.7) : Math.max(r.target, r.t - dt / 1.4);
       if (r.t === 0 && r.pending >= 0) { this.prepareBook(r.pending); r.target = 1; }
       const seg = (a: number, b: number) => ease(THREE.MathUtils.clamp((r.t - a) / (b - a), 0, 1));
@@ -1601,6 +1635,7 @@ export class RoomWorld {
     const p = this.phone;
     if (p) {
       const want = this.view === 'phone' ? 1 : 0;
+      if (p.t !== want) this.shadowDirty = true;
       p.t = this.reduced ? want : want > p.t ? Math.min(1, p.t + dt / 1.1) : Math.max(0, p.t - dt / 0.9);
       const e = ease(p.t);
       p.group.position.lerpVectors(p.home, p.held, e);

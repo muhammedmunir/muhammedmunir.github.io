@@ -123,6 +123,7 @@ Untuk mengelakkannya:
 | 033 | CPU binaan sendiri (ganti model Sketchfab), pusingan lebih luas di telefon, bayang telefon berkala, header 360 px | P1 | S | 032 | DONE |
 | 034 | Telefon kembali tajam: resolusi 2×, bloom penuh, pengawal prestasi tidak turun di bawah 1.5× | P1 | S | 033 | DONE |
 | 035 | Telefon: kawalan lebih padat (bar atas 2 baris, butang 36–38 px) dan lebih ringan (tanpa MSAA, pengawal di bawah 45 fps) | P1 | S | 034 | DONE |
+| 036 | Bilik 2.7–5× lebih ringan di semua peranti (bayang bila perlu, FXAA, bajet piksel, AO/MSAA hanya jika GPU laju); UI telefon lebih kecil; tooltip tidak terpotong | P1 | M | 035 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
