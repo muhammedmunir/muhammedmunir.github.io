@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount, untrack } from 'svelte';
+  import { onMount, tick, untrack } from 'svelte';
   import { base } from '$app/paths';
   import { MODULES } from '$lib/workbench/system-state.mjs';
   import { PROJECT_MEDIA } from '$lib/workbench/project-media';
@@ -18,7 +18,7 @@
   const touch = typeof matchMedia !== 'undefined' && matchMedia('(hover: none)').matches;
   let view = $state<RoomView>('overview');
   let tip = $state<{ text: string; x: number; y: number } | null>(null);
-  let panel = $state<{ kind: 'project' | 'about'; index: number } | null>(null);
+  let panel = $state<{ kind: 'project' | 'about' | 'skills'; index: number } | null>(null);
   let project = $state(0);
   let slide = $state({ at: 0, total: 1 });
   let day = $state(false);
@@ -40,6 +40,7 @@
       slides: { role: 'PERANAN SAYA', data: 'SENI BINA DATA', security: 'KESELAMATAN & AKSES', tech: 'TEKNOLOGI', doc: 'Kajian kes (PDF) tersedia dalam Butiran', live: 'Laman sebenar tersedia dalam Butiran' },
       credits: 'Kredit model 3D', by: 'oleh', call: 'Telefon', mail: 'E-mel', more: 'Semua pilihan hubungan', pdf: 'Resume (PDF)',
       objects: 'Objek dalam bilik', full: 'Versi teks penuh',
+      pick: { computer: 'Pilih projek untuk ditayangkan', work: 'Pilih pas untuk melihat jawatan', learning: 'Pilih buku untuk dibuka' },
       keys: ['Komputer: projek', 'Rak server: kemahiran', 'Pas ID: perjalanan kerja', 'Buku: pembelajaran dan sijil', 'Monitor kod: tentang saya', 'Telefon: hubungi'],
       canvas: 'Bilik kerja 3D Muhammed Munir. Gunakan butang navigasi objek untuk papan kekunci.',
       description: 'Bilik kerja 3D Muhammed Munir, Full-Stack Developer: projek, kemahiran, perjalanan kerja dan pembelajaran. Versi teks penuh di /cv.'
@@ -59,6 +60,7 @@
       slides: { role: 'MY ROLE', data: 'DATA ARCHITECTURE', security: 'SECURITY & ACCESS', tech: 'TECHNOLOGY', doc: 'Case study (PDF) available under Details', live: 'Live site available under Details' },
       credits: '3D model credits', by: 'by', call: 'Call', mail: 'Email', more: 'All contact options', pdf: 'Resume (PDF)',
       objects: 'Objects in the room', full: 'Full text version',
+      pick: { computer: 'Choose a project to show', work: 'Choose a pass to see the role', learning: 'Choose a book to open' },
       keys: ['Computer: projects', 'Server rack: skills', 'ID passes: work journey', 'Books: education and certificates', 'Code monitor: about me', 'Phone: contact'],
       canvas: '3D workspace of Muhammed Munir. Use the object navigation buttons with a keyboard.',
       description: '3D workspace of Muhammed Munir, Full-Stack Developer: projects, skills, work journey and education. Full text version at /cv.'
@@ -117,6 +119,12 @@
     return { projects, career, study, code, skills, locale: loc, name: PROFILE.shortName, role: 'Full-Stack Developer', contact };
   }
   const projectNames = MODULES.map(m => m.name);
+  // Senarai papan kekunci: susunan sama dengan pas dan buku dalam roomData().
+  const careerList = $derived([...CAREER_TIMELINE].reverse().map(c => `${c.company}: ${c.role[locale]} (${c.period})`));
+  const studyList = $derived([
+    ...[...EDUCATION_HISTORY].reverse().map(e => `${e.qualification[locale]}, ${e.institution} (${e.period})`),
+    ...CERTIFICATIONS.map(c => `${c.title}, ${c.issuer}${c.period ? ` (${c.period})` : ''}`)
+  ]);
   // Model Sketchfab berlesen CC BY 4.0: kredit kepada pembuat diwajibkan oleh lesen.
   const CREDITS = [
     { title: 'High-Poly PBR Office Chair', author: 'kilicarslan', url: 'https://sketchfab.com/3d-models/high-poly-pbr-office-chair-fa2d5243f916407a93db7efcaae75e0d' },
@@ -149,7 +157,28 @@
     explored = true;
     if (kind === 'launcher') project = index;
   }
-  function go(v: RoomView) { explored = true; panel = null; world?.setView(v); }
+  function go(v: RoomView) {
+    // Pengguna papan kekunci: fokus dibawa ke kawalan paparan baharu, dan kembali ke objek asal bila keluar.
+    const kbd = !!document.activeElement?.matches(':focus-visible');
+    const from = view;
+    explored = true; panel = null; world?.setView(v);
+    if (!kbd) return;
+    void tick().then(() => {
+      const keys = [...document.querySelectorAll<HTMLElement>('.keys > button')];
+      const order: RoomView[] = ['computer', 'server', 'work', 'learning', 'profile', 'phone'];
+      const target = v === 'overview' ? keys[order.indexOf(from === 'screen' ? 'computer' : from)] : document.querySelector<HTMLElement>('.focus-bar .back');
+      target?.focus();
+    });
+  }
+  /** Projek dipilih dari senarai papan kekunci: fokus ke kawalan tayangan bila paparan bertukar. */
+  let refocus = false;
+  let opener: HTMLElement | null = null;
+  function openPanel(p: NonNullable<typeof panel>) { opener = document.activeElement as HTMLElement | null; panel = p; }
+  function closePanel() {
+    panel = null;
+    const el = opener; opener = null;
+    void tick().then(() => { if (el?.isConnected) el.focus(); });
+  }
 
   let skills: RoomData['skills'] | undefined;
   let RoomCtor: typeof RoomWorld | undefined;
@@ -163,7 +192,10 @@
     const w = new RoomCtor(canvas, {
       base: `${base}`, data: roomData(loc, skills), onPick,
       onHover: t => (tip = t),
-      onView: v => { view = v; explored = explored || v !== 'overview'; },
+      onView: v => {
+        view = v; explored = explored || v !== 'overview';
+        if (refocus) { refocus = false; void tick().then(() => document.querySelector<HTMLElement>('.focus-bar .back')?.focus()); }
+      },
       onProject: i => (project = i),
       onSlide: (at, total) => (slide = { at, total }),
       onDay: d => (day = d),
@@ -192,7 +224,7 @@
       // Anak panah menukar slaid semasa menonton tayangan (kecuali fokus dalam medan teks).
       if (view === 'screen' && !panel && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) { world?.nextSlide(e.key === 'ArrowRight' ? 1 : -1); return; }
       if (e.key !== 'Escape') return;
-      if (panel) panel = null; else if (view !== 'overview') go('overview');
+      if (panel) closePanel(); else if (view !== 'overview') go('overview');
     };
     addEventListener('keydown', esc);
     return () => { alive = false; removeEventListener('keydown', esc); world?.dispose(); };
@@ -264,7 +296,10 @@
       <button type="button" class="back" onclick={() => go('overview')}><span aria-hidden="true">←</span> {ui.back}</button>
       <p><strong>{view === 'screen' ? projectNames[project] : ui.title[view]}</strong></p>
       {#if view === 'profile'}
-        <button type="button" class="back" onclick={() => (panel = { kind: 'about', index: 0 })}>{ui.details}</button>
+        <button type="button" class="back" onclick={() => openPanel({ kind: 'about', index: 0 })}>{ui.details}</button>
+      {/if}
+      {#if view === 'server'}
+        <button type="button" class="back" onclick={() => openPanel({ kind: 'skills', index: 0 })}>{ui.details}</button>
       {/if}
       {#if view === 'screen'}
         <span class="slides" role="group" aria-label={ui.slideOf(slide.at + 1, slide.total)}>
@@ -272,10 +307,25 @@
           <span class="count" aria-live="polite">{slide.at + 1} / {slide.total}</span>
           <button type="button" class="back icon" aria-label={ui.next} onclick={() => world?.nextSlide(1)}><span aria-hidden="true">›</span></button>
         </span>
-        <button type="button" class="back" onclick={() => (panel = { kind: 'project', index: project })}>{ui.details}</button>
+        <button type="button" class="back" onclick={() => openPanel({ kind: 'project', index: project })}>{ui.details}</button>
         <button type="button" class="back" onclick={() => go('computer')}>{ui.other}</button>
       {/if}
     </div>
+  {/if}
+
+  {#if (view === 'computer' || view === 'work' || view === 'learning') && !panel}
+    <section class="dial picker" aria-labelledby="picker-title">
+      <h2 id="picker-title">{ui.pick[view]}</h2>
+      <ul>
+        {#if view === 'computer'}
+          {#each projectNames as name, i (name)}<li><button type="button" onclick={() => { refocus = true; world?.present(i); }}>{name}</button></li>{/each}
+        {:else if view === 'work'}
+          {#each careerList as item, i (item)}<li><button type="button" onclick={() => world?.activate('badge', i)}>{item}</button></li>{/each}
+        {:else}
+          {#each studyList as item, i (item)}<li><button type="button" onclick={() => world?.activate('book', i)}>{item}</button></li>{/each}
+        {/if}
+      </ul>
+    </section>
   {/if}
 
   {#if view === 'phone' && !panel}
@@ -299,7 +349,7 @@
     <p class="hint" class:fade={explored && view === 'overview'} aria-live="polite">{touch ? ui.tap(ui.hint[view]) : ui.hint[view]}</p>
   {/if}
 
-  {#if panel}<ObjectPanel kind={panel.kind} index={panel.index} {locale} onclose={() => (panel = null)} />{/if}
+  {#if panel}<ObjectPanel kind={panel.kind} index={panel.index} {locale} onclose={closePanel} />{/if}
 </div>
 <ContactModal open={contact} {locale} onclose={() => (contact = false)} />
 
@@ -342,8 +392,12 @@
   .actions a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.18); color: #f4f4f5; text-decoration: none; font-size: .875rem; font-weight: 600; }
   .actions a:hover { border-color: var(--work-accent); }
   .actions a.primary { grid-column: 1 / -1; background: var(--work-accent); border-color: var(--work-accent); color: #0b0c0f; font-weight: 700; }
+  .picker ul { display: grid; gap: 6px; max-height: min(52svh, 420px); margin: 14px 0 0; padding: 0; overflow-y: auto; list-style: none; }
+  .picker h2 { font-size: 1.15rem; }
+  .picker button { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.18); background: none; color: #f4f4f5; font: inherit; font-size: .875rem; font-weight: 600; text-align: left; cursor: pointer; }
+  .picker button:hover { border-color: var(--work-accent); }
   .more { margin-top: 12px; min-height: 44px; padding: 0; border: 0; background: none; color: #d4d4d8; font: inherit; font-size: .8125rem; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
-  @media (prefers-reduced-motion: reduce) { .dial { animation: none; } }
+  @media (prefers-reduced-motion: reduce) { .dial { animation: none; } .stage, .hint { transition: none; } }
   .hint { position: absolute; z-index: 3; left: 50%; bottom: 28px; transform: translateX(-50%); margin: 0; padding: 9px 16px; border-radius: 999px; background: rgba(12,13,16,.72); border: 1px solid rgba(255,255,255,.12); color: #d4d4d8; font-size: .8125rem; white-space: nowrap; pointer-events: none; transition: opacity .6s; }
   .hint.fade { opacity: 0; }
   .credits { position: absolute; z-index: 3; right: var(--gutter); bottom: 30px; max-width: min(360px, calc(100% - 2 * var(--gutter))); color: #a1a1aa; font-size: .75rem; }
@@ -366,6 +420,7 @@
     .dial:focus-within { top: auto; bottom: 16px; right: var(--gutter); left: var(--gutter); width: auto; transform: none; padding: 18px; animation-name: dial-up; }
     @keyframes dial-up { from { opacity: 0; transform: translateY(16px); } }
     .dial p { margin-bottom: 12px; }
+    .picker ul { max-height: 30svh; }
     header nav { gap: 12px; }
     .identity { font-size: 24px; }
     header nav .pill + .pill { margin-left: -6px; }
