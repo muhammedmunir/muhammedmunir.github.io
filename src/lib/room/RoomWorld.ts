@@ -186,7 +186,7 @@ export class RoomWorld {
     this.controls.update();
 
     // Sasaran render berbilang sampel: tanpanya komposer membuang antialias dan tepi objek bergerigi.
-    this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: this.touch ? 2 : 4 }));
+    this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: this.touch ? 0 : 4 }));
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     // Oklusi ambien (bayang sentuhan di sudut & bawah objek): desktop sahaja kerana kosnya pada GPU telefon.
     if (!matchMedia('(hover: none)').matches) {
@@ -1508,7 +1508,7 @@ export class RoomWorld {
     if (p.n < 90) return;
     const avg = p.sum / p.n; p.n = 0; p.sum = 0;
     // Tahap 1 bila bawah 40 fps; tahap 2 hanya bawah 30 fps (selepas AO dimatikan, atau terus pada telefon yang tiada AO).
-    if (avg < (p.level === 0 && this.ao?.enabled ? 1 / 40 : 1 / 30)) return;
+    if (avg < (this.touch ? 1 / 45 : p.level === 0 && this.ao?.enabled ? 1 / 40 : 1 / 30)) return;
     p.wait = 1.5;
     if (p.level === 0 && this.ao?.enabled) { p.level = 1; this.ao.enabled = false; return; }
     if (p.level < 2) {

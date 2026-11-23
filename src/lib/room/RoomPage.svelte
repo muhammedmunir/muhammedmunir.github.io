@@ -39,7 +39,7 @@
       },
       tap: (h: string) => h.replace(/^Klik/, 'Ketik').replace(/^Halakan pada/, 'Ketik'),
       links: 'Pautan', resume: 'Resume', contact: 'Hubungi', lang: 'EN', langLabel: 'Switch to English',
-      back: 'Kembali', details: 'Butiran', other: 'Pilih projek lain', loading: 'Menyediakan bilik…',
+      back: 'Kembali', details: 'Butiran', other: 'Pilih projek lain', otherShort: 'Projek lain', loading: 'Menyediakan bilik…',
       loadingLabel: 'Kemajuan memuat bilik',
       prev: 'Slaid sebelumnya', next: 'Slaid seterusnya', slideOf: (a: number, n: number) => `Slaid ${a} daripada ${n}`,
       toDay: 'Tukar ke siang', toNight: 'Tukar ke malam',
@@ -60,7 +60,7 @@
       },
       tap: (h: string) => h.replace(/^Click/, 'Tap').replace(/^Point at/, 'Tap'),
       links: 'Links', resume: 'Resume', contact: 'Contact', lang: 'BM', langLabel: 'Tukar ke Bahasa Melayu',
-      back: 'Back', details: 'Details', other: 'Choose another project', loading: 'Preparing the room…',
+      back: 'Back', details: 'Details', other: 'Choose another project', otherShort: 'Other projects', loading: 'Preparing the room…',
       loadingLabel: 'Room loading progress',
       prev: 'Previous slide', next: 'Next slide', slideOf: (a: number, n: number) => `Slide ${a} of ${n}`,
       toDay: 'Switch to day', toNight: 'Switch to night',
@@ -323,7 +323,7 @@
           <button type="button" class="back icon" aria-label={ui.next} onclick={() => world?.nextSlide(1)}><span aria-hidden="true">›</span></button>
         </span>
         <button type="button" class="back" onclick={() => openPanel({ kind: 'project', index: project })}>{ui.details}</button>
-        <button type="button" class="back" onclick={() => go('computer')}>{ui.other}</button>
+        <button type="button" class="back" onclick={() => go('computer')}><span class="long">{ui.other}</span><span class="short">{ui.otherShort}</span></button>
       {/if}
     </div>
   {/if}
@@ -448,6 +448,21 @@
     header nav { gap: 12px; }
     .identity { font-size: 24px; }
     header nav .pill + .pill { margin-left: -6px; }
+  }
+  .back .short { display: none; }
+  /* Telefon: kawalan lebih padat supaya bar atas tidak menjadi tiga baris dan tidak menutup bilik. Sasaran sentuh kekal >= 36 px. */
+  @media (max-width: 600px) {
+    header { padding-top: 10px; padding-bottom: 10px; }
+    header nav a, header nav button { min-height: 38px; }
+    header nav .pill { min-width: 38px; padding: 0 10px; }
+    .focus-bar { top: 58px; gap: 6px 8px; }
+    .back { min-height: 36px; padding: 0 12px; gap: 6px; font-size: .8125rem; }
+    .back.icon { width: 36px; font-size: 1.25rem; }
+    .focus-bar p { min-height: 36px; padding: 0 12px; font-size: .875rem; }
+    .count { min-width: 2.6em; font-size: .8125rem; }
+    .back .long { display: none; }
+    .back .short { display: inline; }
+    .hint { bottom: 14px; padding: 6px 12px; font-size: .75rem; }
   }
   @media (max-width: 380px) {
     .identity { font-size: 21px; }
