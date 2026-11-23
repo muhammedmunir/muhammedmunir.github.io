@@ -53,10 +53,11 @@
 			projects: BUILT_MODULES
 		}
 	];
+	// Peranan yang sama bagi setiap sistem dalam kumpulan dipaparkan sekali di tajuk kumpulan.
+	const sharedRole = (projects: typeof BUILT_MODULES) =>
+		projects.every((project) => project.role === projects[0]?.role) ? projects[0] : undefined;
 	const personalProjects: Array<{ id: string; name: LocalizedText; summary?: LocalizedText }> = [
-		{ id: 'proj-9router', name: { ms: '9Router AI Office', en: '9Router AI Office' }, summary: archive('proj-9router')?.summary },
 		{ id: 'proj-tindak', name: { ms: 'TINDAK', en: 'TINDAK' }, summary: archive('proj-tindak')?.summary },
-		{ id: 'proj-baby-kicking', name: { ms: 'Baby Kick Tracker', en: 'Baby Kick Tracker' }, summary: archive('proj-baby-kicking')?.summary },
 		{ id: 'proj-lumina-wedding', name: { ms: 'Lumina Glass Studio', en: 'Lumina Glass Studio' }, summary: archive('proj-lumina-wedding')?.summary },
 		{
 			id: 'homelab', name: { ms: 'Homelab & Infrastruktur Linux', en: 'Homelab & Linux Infrastructure' },
@@ -86,7 +87,7 @@
 	<a class="skip-link" href="#cv-content">{text('Langkau ke kandungan CV', 'Skip to CV content')}</a>
 	<div class="document">
 		<header class="masthead">
-			<a class="home-link" href={`${base}/`}>{text('← Kembali ke Meja Projek', '← Back to Project Desk')}</a>
+			<a class="identity" href={`${base}/`} aria-label={text('munir. Kembali ke bilik 3D', 'munir. Back to the 3D room')}>munir<span aria-hidden="true">.</span></a>
 			<p>Curriculum vitae <span aria-hidden="true">/</span> {text('Versi bacaan', 'Reading version')}</p>
 			<div class="preferences" role="group" aria-label={text('Tetapan paparan', 'Display preferences')}>
 				<button type="button" onclick={toggleLocale} lang={locale === 'ms' ? 'en' : 'ms'}>
@@ -110,7 +111,6 @@
 					<div class="contact-actions">
 						<a class="resume-link" href={localLink(PROFILE.resumeUrl)} download>{text('Muat turun CV (PDF)', 'Download CV (PDF)')}</a>
 						<button type="button" aria-haspopup="dialog" onclick={() => contactOpen = true}>{text('Hubungi saya', 'Contact me')}</button>
-						<a href={`mailto:${PROFILE.email}`}>{text('Hantar e-mel', 'Send email')}</a>
 					</div>
 					<address>
 						<a href={`mailto:${PROFILE.email}`}>{PROFILE.email}</a>
@@ -167,13 +167,14 @@
 						<h2 id={`${group.id}-heading`}>{group.title[locale]}</h2>
 						<p class="project-count">{group.projects.length} {group.id === 'sistem-disenggara' ? text('sistem YHCM', 'YHCM systems') : text('projek', 'projects')}</p>
 						<p>{group.description[locale]}</p>
+						{#if sharedRole(group.projects)}<p class="shared-role">{text(sharedRole(group.projects)!.role, sharedRole(group.projects)!.roleEn)}</p>{/if}
 					</div>
 					<ul class="project-list section-body">
 						{#each group.projects as project (project.id)}
 							<li id={`project-${project.id}`}>
 								<h3>{project.name}</h3>
-								<p class="role-title">{text(project.role, project.roleEn)}</p>
-								<p>{text(project.dataArchitecture, project.dataArchitectureEn)}</p>
+								{#if !sharedRole(group.projects)}<p class="role-title">{text(project.role, project.roleEn)}</p>{/if}
+								<p class="project-summary">{text(project.dataArchitecture, project.dataArchitectureEn)}</p>
 								<p class="stack"><span>{text('Teknologi & alatan', 'Technologies & tools')}</span>{project.stack.map((item) => item === 'Eksport PDF' ? text(item, 'PDF export') : item).join(' · ')}</p>
 								<p class="access-note">{text(project.accessLabel, project.accessLabelEn)}</p>
 								<div class="project-links">
@@ -189,14 +190,13 @@
 			<section class="cv-section" id="projek" aria-labelledby="projects-heading">
 				<div class="section-heading">
 					<h2 id="projects-heading">{text('Arkib projek peribadi', 'Personal project archive')}</h2>
-					<p>{text('Berasingan daripada projek majikan. Termasuk projek peribadi yang dipaparkan di atas.', 'Separate from employer projects. Includes the personal projects featured above.')}</p>
+					<p>{text('Projek peribadi lain, di luar projek majikan dan projek di atas. Butiran tambahan atas permintaan.', 'Other personal projects, beyond employer work and the projects above. Further details on request.')}</p>
 				</div>
 				<ul class="personal-projects section-body">
 					{#each personalProjects as project (project.id)}
 						<li>
 							<h3>{project.name[locale]}</h3>
 							{#if project.summary}<p>{project.summary[locale]}</p>{/if}
-							<p class="link-note">{text('Butiran tambahan tersedia melalui hubungan terus.', 'Further details are available on request.')}</p>
 						</li>
 					{/each}
 				</ul>
@@ -262,11 +262,11 @@
 		</main>
 
 		<footer>
-			<p>{PROFILE.shortName}<br /><span>{text('CV dalam format bacaan. Projek interaktif tersedia di Meja Projek.', 'CV in a reading format. Interactive projects are available at the Project Desk.')}</span></p>
+			<p>{PROFILE.shortName}<br /><span>{text('CV dalam format bacaan. Versi interaktif ada di bilik 3D.', 'CV in a reading format. The interactive version is in the 3D room.')}</span></p>
 			<div class="footer-links">
 				<a href={PROFILE.githubUrl}>GitHub</a>
 				<a href={PROFILE.linkedinUrl}>LinkedIn</a>
-				<a href={`${base}/`}>{text('Meja Projek', 'Project Desk')}</a>
+				<a href={`${base}/`}>{text('Bilik 3D', '3D room')}</a>
 			</div>
 		</footer>
 	</div>
@@ -314,8 +314,8 @@
 	}
 	h1,
 	h2 {
-		font-family: var(--work-font-display, Georgia, 'Times New Roman', serif);
-		font-weight: 400;
+		font-family: var(--font-heading, 'Syne', sans-serif);
+		font-weight: 700;
 	}
 	h3,
 	h4 {
@@ -366,6 +366,22 @@
 		min-height: 2.75rem;
 		font-weight: 600;
 	}
+	.masthead .identity {
+		color: var(--cv-ink);
+		font-family: var(--font-heading, 'Syne', sans-serif);
+		font-size: 1.75rem;
+		font-weight: 800;
+		letter-spacing: -0.07em;
+		text-decoration: none;
+	}
+	.masthead .identity span {
+		margin: 0;
+		color: var(--cv-blue);
+	}
+	.masthead .identity:hover {
+		text-decoration: underline;
+		text-decoration-thickness: 0.08em;
+	}
 	.masthead p {
 		color: var(--cv-muted);
 	}
@@ -411,10 +427,10 @@
 		font-size: 0.875rem;
 	}
 	h1 {
-		max-width: 14ch;
-		font-size: clamp(2.6rem, 6.5vw, 5.25rem);
-		line-height: 1.04;
-		letter-spacing: -0.045em;
+		max-width: 13ch;
+		font-size: clamp(2.4rem, 5.6vw, 4.5rem);
+		line-height: 1.02;
+		letter-spacing: -0.04em;
 		text-wrap: balance;
 	}
 	.headline {
@@ -486,9 +502,9 @@
 		scroll-margin-top: 2rem;
 	}
 	.section-heading h2 {
-		font-size: clamp(1.8rem, 3vw, 2.4rem);
-		line-height: 1.15;
-		letter-spacing: -0.025em;
+		font-size: clamp(1.6rem, 2.6vw, 2.1rem);
+		line-height: 1.12;
+		letter-spacing: -0.03em;
 	}
 	.section-heading p {
 		margin-top: 0.75rem;
@@ -592,10 +608,26 @@
 		letter-spacing: 0.04em;
 		margin-top: 0.25rem;
 	}
-	.access-note {
+	.project-summary {
+		margin-top: 0.625rem;
+	}
+	.section-heading .shared-role {
+		margin-top: 1rem;
+		padding-left: 0.75rem;
+		border-left: 2px solid var(--cv-blue);
+		color: var(--cv-ink);
 		font-size: 0.8125rem;
+		font-weight: 600;
+	}
+	.access-note {
+		display: inline-block;
+		margin-top: 0.875rem;
+		padding: 0.125rem 0.5rem;
+		border: 1px solid var(--cv-line);
+		border-radius: 3px;
 		color: var(--cv-muted);
-		margin-top: 0.5rem;
+		font-size: 0.75rem;
+		line-height: 1.6;
 	}
 	.project-links {
 		display: flex;
@@ -612,10 +644,6 @@
 	}
 	.personal-projects p {
 		margin-top: 0.375rem;
-	}
-	.personal-projects .link-note {
-		color: var(--cv-muted);
-		font-size: 0.75rem;
 	}
 	.skills > div + div {
 		margin-top: 1.5rem;
@@ -726,36 +754,124 @@
 			outline: 2px solid Highlight;
 		}
 	}
+	@page {
+		size: A4;
+		margin: 14mm 15mm;
+	}
 	@media print {
+		:global(html),
+		:global(body) {
+			background: #fff !important;
+			transition: none !important;
+		}
+		.cv-page {
+			--cv-paper: #fff;
+			--cv-ink: #111;
+			--cv-muted: #444;
+			--cv-blue: #111;
+			--cv-line: #bbb;
+			--cv-surface: #f2f2f2;
+			min-height: 0;
+			font-size: 9.5pt;
+			line-height: 1.5;
+			print-color-adjust: exact;
+		}
 		.document {
 			max-width: none;
 			padding: 0;
-		}
-		.cv-page {
-			font-size: 10pt;
 		}
 		.masthead,
 		.contents,
 		.contact-actions,
 		.skip-link,
-		.footer-links {
+		.footer-links,
+		.project-links,
+		.academic-project a {
 			display: none;
 		}
-		.profile,
-		.cv-section {
-			padding-block: 1.5rem;
+		a {
+			text-decoration: none;
+		}
+		.profile {
+			grid-template-columns: 1fr 1.6fr;
+			gap: 8mm;
+			padding-block: 0 5mm;
+		}
+		.profile-detail {
+			padding-top: 0;
+		}
+		.location {
+			margin-bottom: 2mm;
 		}
 		h1 {
-			font-size: 32pt;
+			font-size: 24pt;
+		}
+		.headline {
+			margin-top: 3mm;
+			font-size: 10pt;
+		}
+		address {
+			flex-direction: row;
+			gap: 0 6mm;
+			margin-top: 3mm;
+		}
+		address a,
+		.project-references li,
+		.project-references a {
+			min-height: 0;
+		}
+		.cv-section {
+			grid-template-columns: 38mm minmax(0, 1fr);
+			gap: 6mm;
+			padding-block: 5mm;
+		}
+		.section-heading h2 {
+			font-size: 12pt;
+		}
+		.section-heading p {
+			margin-top: 1.5mm;
+			font-size: 8pt;
+		}
+		.career-entry + .career-entry,
+		.education-entry + .education-entry,
+		.project-list li + li,
+		.personal-projects li + li {
+			margin-top: 4mm;
+			padding-top: 4mm;
+		}
+		.highlights li {
+			margin-top: 1mm;
+		}
+		.stack,
+		.project-references {
+			margin-top: 2mm;
+		}
+		.academic-project {
+			margin-block: 2mm;
+			padding: 2mm 3mm;
+		}
+		.skills > div + div {
+			margin-top: 2.5mm;
+		}
+		.certifications li + li {
+			margin-top: 2mm;
+		}
+		footer {
+			padding-block: 4mm 0;
 		}
 		h2,
 		h3,
-		h4 {
+		h4,
+		.entry-meta,
+		.role-title {
 			break-after: avoid;
 		}
-		.career-entry,
-		.education-entry,
-		.certifications li {
+		.highlights li,
+		.project-list li,
+		.personal-projects li,
+		.academic-project,
+		.certifications li,
+		.skills > div {
 			break-inside: avoid;
 		}
 	}

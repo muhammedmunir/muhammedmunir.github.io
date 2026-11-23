@@ -114,6 +114,7 @@ Untuk mengelakkannya:
 | 024 | Bilik 3D: kualiti grafik adaptif untuk GPU lemah | P1 | S | 023 | DONE |
 | 025 | Jenama baharu pada pratonton pautan (OG), favicon dan manifest | P1 | S | 024 | DONE |
 | 026 | Bilik 3D dimuat ~3× lebih pantas: muat serentak, shader dikompil selari, logo dikecilkan | P1 | S | 025 | DONE |
+| 027 | `/cv` diselaraskan dengan jenama bilik 3D: fon Syne, identiti `munir.`, kandungan berulang dibuang, cetakan A4 putih | P1 | S | 026 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 

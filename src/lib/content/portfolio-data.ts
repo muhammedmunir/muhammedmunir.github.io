@@ -192,7 +192,7 @@ export const CAREER_TIMELINE: CareerEntry[] = [
 		stationId: 'enterprise',
 		highlights: {
 			ms: [
-				'Menyelenggara dan menaik taraf sistem web perusahaan kritikal untuk sektor awam/kerajaan (termasuk eMesys, Sutera, dan ADIMS) dengan mematuhi piawaian keselamatan data yang ketat, kawalan akses berasaskan peranan (RBAC), dan audit.',
+				'Menyelenggara dan menaik taraf sistem web perusahaan kritikal untuk sektor awam/kerajaan (termasuk EMESYS, SUTERA dan ADiMS) dengan mematuhi piawaian keselamatan data yang ketat, kawalan akses berasaskan peranan (RBAC), dan audit.',
 				'Mereka bentuk dan membina antara muka frontend modular menggunakan Vue.js 3 serta menyelaraskan aliran kerja pentadbiran dengan Laravel Filament.',
 				'Mengurus dan mengoptimumkan pangkalan data hubungan merentasi MySQL, MariaDB, dan PostgreSQL 17 melalui penambahbaikan pengindeksan serta skema.',
 				'Melancarkan, memantau, dan menskalakan servis berasaskan container serta aliran kerja imej menggunakan Docker dan Docker Swarm merentasi nod produksi.',
@@ -200,7 +200,7 @@ export const CAREER_TIMELINE: CareerEntry[] = [
 				'Menyelesaikan insiden operasi IT, menyediakan sokongan teknikal Tier-2/3, dan mengkonfigurasi integrasi API bersekuriti untuk operasi organisasi.'
 			],
 			en: [
-				'Maintain and upgrade mission-critical enterprise web systems for the public/government sector (including eMesys, Sutera, and ADIMS), complying with stringent data security, role-based access control (RBAC), and audit standards.',
+				'Maintain and upgrade mission-critical enterprise web systems for the public/government sector (including EMESYS, SUTERA and ADiMS), complying with stringent data security, role-based access control (RBAC), and audit standards.',
 				'Architect and build modular frontend interfaces using Vue.js 3 and streamline administration workflows with Laravel Filament.',
 				'Manage and optimize relational databases across MySQL, MariaDB, and PostgreSQL 17 with indexing and schema enhancements.',
 				'Deploy, monitor, and scale containerized services and image workflows using Docker and Docker Swarm across production nodes.',
@@ -269,14 +269,14 @@ export const CAREER_TIMELINE: CareerEntry[] = [
 		stationId: 'enterprise',
 		highlights: {
 			ms: [
-				'Menerajui pembangunan full-stack Onboardx, aplikasi onboarding merentas platform perusahaan menggunakan Flutter (Dart) dan JavaScript.',
+				'Menerajui pembangunan full-stack ONBOARDX, aplikasi onboarding merentas platform perusahaan menggunakan Flutter (Dart) dan JavaScript.',
 				'Membangunkan seni bina berbilang pangkalan data yang menyokong Firebase Realtime DB, MongoDB, Supabase, dan MySQL.',
 				'Mengkonfigurasi dan menyelenggara pelayan awan Ubuntu di Microsoft Azure, termasuk pengurusan Network Security Groups (NSGs) dan pemantauan sumber sistem.',
 				'Mengautomasikan saluran paip binaan dan penghantaran dengan Jenkins CI/CD serta memperoleh pengalaman praktikal dalam orkestrasi container menggunakan Kubernetes.',
 				'Mereka bentuk pengalaman pengguna yang intuitif dan wireframe antara muka dalam Figma; menyelesaikan tiket sokongan teknikal mengikut sasaran SLA yang ketat.'
 			],
 			en: [
-				'Spearheaded full-stack development of Onboardx, an enterprise cross-platform onboarding application utilizing Flutter (Dart) and JavaScript.',
+				'Spearheaded full-stack development of ONBOARDX, an enterprise cross-platform onboarding application utilizing Flutter (Dart) and JavaScript.',
 				'Engineered multi-database architecture supporting Firebase Realtime DB, MongoDB, Supabase, and MySQL.',
 				'Configured and maintained Ubuntu cloud servers on Microsoft Azure, managing Network Security Groups (NSGs) and system resource monitoring.',
 				'Automated build and delivery pipelines with Jenkins CI/CD and gained practical experience in container orchestration with Kubernetes.',
@@ -546,7 +546,7 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 	},
 	{
 		id: 'proj-emesys-sutera-adims',
-		name: 'eMesys, Sutera & ADIMS — Public Sector Enterprise Systems',
+		name: 'EMESYS, SUTERA & ADiMS — Public Sector Enterprise Systems',
 		badge: { ms: 'YHCM Sdn Bhd · Sistem Perusahaan', en: 'YHCM Sdn Bhd · Enterprise Systems' },
 		status: 'production',
 		stationId: 'enterprise',
@@ -609,7 +609,7 @@ export const PROJECT_ARCHIVE: ProjectArchiveEntry[] = [
 	},
 	{
 		id: 'proj-onboardx',
-		name: 'Onboardx — TNB Enterprise Cross-Platform Onboarding App',
+		name: 'ONBOARDX — TNB Enterprise Cross-Platform Onboarding App',
 		badge: { ms: 'TNB Protégé · Mobiliti Korporat', en: 'TNB Protégé · Enterprise Mobility' },
 		status: 'production',
 		stationId: 'enterprise',
