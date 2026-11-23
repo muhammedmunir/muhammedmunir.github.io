@@ -117,6 +117,7 @@ Untuk mengelakkannya:
 | 027 | `/cv` diselaraskan dengan jenama bilik 3D: fon Syne, identiti `munir.`, kandungan berulang dibuang, cetakan A4 putih | P1 | S | 026 | DONE |
 | 028 | Bilik 3D boleh digunakan sepenuhnya dengan papan kekunci: pilih projek, pas dan buku; fokus terurus | P1 | S | 027 | DONE |
 | 029 | `resume.pdf` diselaraskan dengan laman: tajuk, ejaan produk, pautan projek yang sah, tanpa emoji | P1 | S | 028 | DONE |
+| 030 | Skrin memuat berjenama dengan bar kemajuan sebenar, halaman 404 berjenama, halaman privasi Baby Kick lama dibuang | P1 | S | 029 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, tick, untrack } from 'svelte';
+  import { fade } from 'svelte/transition';
   import { base } from '$app/paths';
   import { MODULES } from '$lib/workbench/system-state.mjs';
   import { PROJECT_MEDIA } from '$lib/workbench/project-media';
@@ -22,6 +23,10 @@
   let project = $state(0);
   let slide = $state({ at: 0, total: 1 });
   let day = $state(false);
+  /** Mod siang/malam belum diketahui semasa prerender: ikon disembunyikan sehingga dikira di pelayar (elak ikon bertukar sendiri). */
+  let dayKnown = $state(false);
+  let progress = $state(0);
+  const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   let explored = $state(false);
 
   const UI = {
@@ -35,6 +40,7 @@
       tap: (h: string) => h.replace(/^Klik/, 'Ketik').replace(/^Halakan pada/, 'Ketik'),
       links: 'Pautan', resume: 'Resume', contact: 'Hubungi', lang: 'EN', langLabel: 'Switch to English',
       back: 'Kembali', details: 'Butiran', other: 'Pilih projek lain', loading: 'Menyediakan bilik…',
+      loadingLabel: 'Kemajuan memuat bilik',
       prev: 'Slaid sebelumnya', next: 'Slaid seterusnya', slideOf: (a: number, n: number) => `Slaid ${a} daripada ${n}`,
       toDay: 'Tukar ke siang', toNight: 'Tukar ke malam',
       slides: { role: 'PERANAN SAYA', data: 'SENI BINA DATA', security: 'KESELAMATAN & AKSES', tech: 'TEKNOLOGI', doc: 'Kajian kes (PDF) tersedia dalam Butiran', live: 'Laman sebenar tersedia dalam Butiran' },
@@ -55,6 +61,7 @@
       tap: (h: string) => h.replace(/^Click/, 'Tap').replace(/^Point at/, 'Tap'),
       links: 'Links', resume: 'Resume', contact: 'Contact', lang: 'BM', langLabel: 'Tukar ke Bahasa Melayu',
       back: 'Back', details: 'Details', other: 'Choose another project', loading: 'Preparing the room…',
+      loadingLabel: 'Room loading progress',
       prev: 'Previous slide', next: 'Next slide', slideOf: (a: number, n: number) => `Slide ${a} of ${n}`,
       toDay: 'Switch to day', toNight: 'Switch to night',
       slides: { role: 'MY ROLE', data: 'DATA ARCHITECTURE', security: 'SECURITY & ACCESS', tech: 'TECHNOLOGY', doc: 'Case study (PDF) available under Details', live: 'Live site available under Details' },
@@ -199,12 +206,13 @@
       onProject: i => (project = i),
       onSlide: (at, total) => (slide = { at, total }),
       onDay: d => (day = d),
+      onProgress: f => (progress = Math.max(progress, f)),
       onAction,
       onReady: () => { ready = true; if (keep !== 'overview') w.setView(keep); }
     });
     // Kekalkan pilihan siang/malam pelawat bila bilik dibina semula (tukar bahasa).
     if (world && world.isDay !== w.isDay) w.setDay(world.isDay);
-    day = w.isDay;
+    day = w.isDay; dayKnown = true;
     world = w;
     // Cangkuk ujian (mod pembangunan sahaja).
     if (import.meta.env.DEV) (window as unknown as { __room?: RoomWorld }).__room = w;
@@ -212,6 +220,8 @@
 
   onMount(() => {
     let alive = true;
+    // Peraturan yang sama dengan RoomWorld (07:00 hingga 19:00 = siang), supaya ikon betul sejak awal.
+    const hour = new Date().getHours(); day = hour >= 7 && hour < 19; dayKnown = true;
     (async () => {
       const list = await fetch(`${base}/room/icons/skills.json`).then(r => r.json()) as { name: string; category: string; hex: string; slug: string }[];
       skills = list.map(s => ({ name: s.name, category: s.category, hex: s.hex, svg: `${base}/room/icons/${s.slug}.svg` }));
@@ -246,7 +256,7 @@
     <nav aria-label={ui.links}>
       <a href="{base}/cv">{ui.resume}</a>
       <button type="button" onclick={() => (ready ? go('phone') : (contact = true))}>{ui.contact}</button>
-      <button type="button" class="pill" aria-label={day ? ui.toNight : ui.toDay} title={day ? ui.toNight : ui.toDay} onclick={() => world?.setDay(!day)}>
+      <button type="button" class="pill" class:pending={!dayKnown} aria-label={day ? ui.toNight : ui.toDay} title={day ? ui.toNight : ui.toDay} onclick={() => world?.setDay(!day)}>
         {#if day}
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
         {:else}
@@ -269,9 +279,15 @@
   </nav>
 
   <div class="stage">
-    <canvas bind:this={canvas} aria-label={ui.canvas}></canvas>
+    <canvas bind:this={canvas} class:shown={ready} aria-label={ui.canvas}></canvas>
     {#if tip}<span class="tip" style:left="{tip.x}px" style:top="{tip.y}px">{tip.text}</span>{/if}
-    {#if !ready}<p class="loading">{ui.loading}</p>{/if}
+    {#if !ready}
+      <div class="loading" role="status" out:fade={{ duration: reduced ? 0 : 450 }}>
+        <span class="mark" aria-hidden="true">munir<span>.</span></span>
+        <span class="bar" role="progressbar" aria-label={ui.loadingLabel} aria-valuemin="0" aria-valuemax="100" aria-valuenow={Math.round(progress * 100)}><span style:transform="scaleX({progress})"></span></span>
+        <span class="label">{ui.loading}</span>
+      </div>
+    {/if}
   </div>
 
   {#if view === 'overview' && !panel && ready}
@@ -370,9 +386,17 @@
   .keys > *:focus { position: static; display: inline-flex; padding: 10px 14px; background: #f4f4f5; color: #0b0c0f; border-radius: 6px; font: 600 .9rem/1 inherit; border: 0; }
   .stage { position: absolute; inset: 0; transition: left .45s cubic-bezier(.2,.7,.2,1); }
   .panel-open .stage { left: var(--side); }
-  canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; opacity: 0; transition: opacity .8s ease; }
+  canvas.shown { opacity: 1; }
+  header nav .pill.pending svg { visibility: hidden; }
   .tip { position: absolute; transform: translate(14px, 14px); padding: 7px 12px; border-radius: 6px; background: rgba(12,13,16,.86); border: 1px solid rgba(255,255,255,.14); color: #f4f4f5; font-size: .8125rem; font-weight: 600; white-space: nowrap; pointer-events: none; }
-  .loading { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: #a1a1aa; }
+  .loading { position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: radial-gradient(ellipse at 50% 45%, #15171c 0%, #0b0c0f 62%); color: #a1a1aa; }
+  .loading .mark { font: 800 clamp(2.6rem, 6vw, 4rem)/1 var(--font-heading); letter-spacing: -.07em; color: #f4f4f5; }
+  .loading .mark span { color: var(--work-accent); animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
+  .loading .bar { display: block; width: min(220px, 56vw); height: 2px; overflow: hidden; border-radius: 2px; background: rgba(255,255,255,.12); }
+  .loading .bar span { display: block; height: 100%; background: var(--work-accent); transform-origin: left; transition: transform .35s ease-out; }
+  .loading .label { font-size: .8125rem; letter-spacing: .02em; }
   .who { position: absolute; z-index: 3; left: var(--gutter); bottom: 36px; pointer-events: none; }
   .who h1 { margin: 0; font: 800 clamp(2rem, 3vw, 3.25rem)/.95 var(--font-heading); letter-spacing: -.045em; }
   .who p { margin: 10px 0 0; color: #a1a1aa; font-size: .9375rem; }
@@ -397,7 +421,7 @@
   .picker button { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,.18); background: none; color: #f4f4f5; font: inherit; font-size: .875rem; font-weight: 600; text-align: left; cursor: pointer; }
   .picker button:hover { border-color: var(--work-accent); }
   .more { margin-top: 12px; min-height: 44px; padding: 0; border: 0; background: none; color: #d4d4d8; font: inherit; font-size: .8125rem; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
-  @media (prefers-reduced-motion: reduce) { .dial { animation: none; } .stage, .hint { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .dial { animation: none; } .stage, .hint, canvas, .loading .bar span { transition: none; } .loading .mark span { animation: none; } }
   .hint { position: absolute; z-index: 3; left: 50%; bottom: 28px; transform: translateX(-50%); margin: 0; padding: 9px 16px; border-radius: 999px; background: rgba(12,13,16,.72); border: 1px solid rgba(255,255,255,.12); color: #d4d4d8; font-size: .8125rem; white-space: nowrap; pointer-events: none; transition: opacity .6s; }
   .hint.fade { opacity: 0; }
   .credits { position: absolute; z-index: 3; right: var(--gutter); bottom: 30px; max-width: min(360px, calc(100% - 2 * var(--gutter))); color: #a1a1aa; font-size: .75rem; }

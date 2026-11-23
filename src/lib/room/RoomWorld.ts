@@ -36,6 +36,8 @@ export interface RoomOptions {
   onDay?: (day: boolean) => void;
   /** Butang pada skrin telefon 3D (indeks dalam contact.actions). */
   onAction?: (index: number) => void;
+  /** Kemajuan memuat bilik, 0 hingga 1 (fail dimuat turun, kemudian kompilasi shader). */
+  onProgress?: (fraction: number) => void;
   onReady: () => void;
 }
 
@@ -223,7 +225,7 @@ export class RoomWorld {
     const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
   }
   private tex(url: string, repeat: [number, number], srgb = false) {
-    const t = new THREE.TextureLoader().load(url);
+    const t = new THREE.TextureLoader(this.manager).load(url);
     t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); t.anisotropy = 8;
     if (srgb) t.colorSpace = THREE.SRGBColorSpace;
     return t;
@@ -250,7 +252,7 @@ export class RoomWorld {
     obj.traverse(o => { if ((o as THREE.Mesh).isMesh || (o as THREE.Sprite).isSprite) { o.userData = { kind, index, label }; this.hits.push(o); } });
   }
   private async gltf(name: string) {
-    const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(`${this.opts.base}/room/${name}/${name}.gltf`);
+    const g = await new GLTFLoader(this.manager).setMeshoptDecoder(MeshoptDecoder).loadAsync(`${this.opts.base}/room/${name}/${name}.gltf`);
     g.scene.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     return g.scene;
   }
@@ -275,18 +277,30 @@ export class RoomWorld {
   private glb(url: string) {
     let job = this.glbs.get(url);
     if (!job) {
-      job = fetch(url).then(r => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); });
+      job = this.track(url, fetch(url).then(r => { if (!r.ok) throw new Error(`${r.status} ${url}`); return r.arrayBuffer(); }));
       this.glbs.set(url, job);
     }
     return job;
   }
   private glbs = new Map<string, Promise<ArrayBuffer>>();
+  /** Semua fail bilik (tekstur, model, HDR, logo) dikira di sini untuk bar kemajuan memuat. */
+  private manager = (() => {
+    const m = new THREE.LoadingManager();
+    m.onProgress = (_url, loaded, total) => this.opts.onProgress?.(0.9 * loaded / Math.max(total, 1));
+    return m;
+  })();
+  /** Jejak muat turun yang tidak melalui pemuat Three.js (fetch .glb, imej logo). */
+  private track<T>(url: string, job: Promise<T>) {
+    this.manager.itemStart(url);
+    job.then(() => this.manager.itemEnd(url), () => { this.manager.itemError(url); this.manager.itemEnd(url); });
+    return job;
+  }
 
   private async image(src: string) {
     let job = this.images.get(src);
     if (!job) {
       // Satu janji bagi setiap imej: lukisan serentak menunggu imej yang sama siap dimuat.
-      job = new Promise<HTMLImageElement>(done => { const img = new Image(); img.src = src; img.decode().catch(() => undefined).finally(() => done(img)); });
+      job = this.track(src, new Promise<HTMLImageElement>(done => { const img = new Image(); img.src = src; img.decode().catch(() => undefined).finally(() => done(img)); }));
       this.images.set(src, job);
     }
     return job;
@@ -323,7 +337,7 @@ export class RoomWorld {
     for (const n of ['monitor', 'pc', 'books', 'keyboard', 'chair', 'rack', 'projector', 'ency']) this.glb(`${room}/sketchfab/${n}.glb`).catch(() => undefined);
     for (const n of ['potted_plant_04', 'ceramic_vase_01', 'standing_picture_frame_01']) this.glb(`${room}/decor/${n}.glb`).catch(() => undefined);
     for (const p of this.opts.data.projects) if (p.logo) void this.image(p.logo);
-    const env = new HDRLoader().loadAsync(`${room}/brown_photostudio_02/brown_photostudio_02_512.hdr`).then(hdr => {
+    const env = new HDRLoader(this.manager).loadAsync(`${room}/brown_photostudio_02/brown_photostudio_02_512.hdr`).then(hdr => {
       hdr.mapping = THREE.EquirectangularReflectionMapping;
       const pmrem = new THREE.PMREMGenerator(this.renderer);
       this.scene.environment = pmrem.fromEquirectangular(hdr).texture;
@@ -373,8 +387,10 @@ export class RoomWorld {
     // Kompil semua shader secara selari sebelum render pertama. Tanpa ini setiap model baharu dikompil
     // secara segerak semasa render dan menyekat halaman berbelas saat pada GPU terbina dalam.
     // Sasaran render composer ditetapkan dahulu: program bagi render ke tekstur berbeza daripada render ke skrin.
+    this.opts.onProgress?.(0.92);
     this.renderer.setRenderTarget(this.composer.readBuffer);
     await this.renderer.compileAsync(this.scene, this.camera).catch(() => undefined);
+    this.opts.onProgress?.(1);
     this.renderer.setRenderTarget(null);
     this.built = true;
     // Semua model sudah dimuat: kira semula cahaya dan bayang matahari sekali.
