@@ -86,6 +86,11 @@ export class RoomWorld {
   private hits: THREE.Object3D[] = [];
   private clock = new THREE.Clock();
   private reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /** Peranti sentuh (telefon/tablet): resolusi, antialias, bayang dan bloom lebih ringan sejak awal. */
+  private touch = matchMedia('(hover: none)').matches;
+  /** Had putaran kamera gambaran keseluruhan; paparan lain mendapat had kecil di sekeliling sudut paparan. */
+  private orbit = { minAz: 0, maxAz: 0, minPolar: 0, maxPolar: 0, minDist: 0, maxDist: 0 };
+  private downAt?: { x: number; y: number };
   private observer: ResizeObserver;
   private frame = 0;
   private dead = false;
@@ -153,7 +158,7 @@ export class RoomWorld {
 
   constructor(private canvas: HTMLCanvasElement, private opts: RoomOptions) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.touch ? 1.5 : 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.enabled = true;
     // r186 membuang PCFSoftShadowMap; PCF dengan jejari memberi bayang lembut.
@@ -174,10 +179,11 @@ export class RoomWorld {
     const az = Math.atan2(v.pos[0] - v.target[0], v.pos[2] - v.target[2]);
     this.controls.minAzimuthAngle = az - 0.5;
     this.controls.maxAzimuthAngle = az + 0.3;
+    this.orbit = { minAz: az - 0.5, maxAz: az + 0.3, minPolar: 1.31, maxPolar: 1.58, minDist: 2.4, maxDist: 5.3 };
     this.controls.update();
 
     // Sasaran render berbilang sampel: tanpanya komposer membuang antialias dan tepi objek bergerigi.
-    this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 }));
+    this.composer = new EffectComposer(this.renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: this.touch ? 2 : 4 }));
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     // Oklusi ambien (bayang sentuhan di sudut & bawah objek): desktop sahaja kerana kosnya pada GPU telefon.
     if (!matchMedia('(hover: none)').matches) {
@@ -216,6 +222,7 @@ export class RoomWorld {
     canvas.addEventListener('pointermove', this.move);
     canvas.addEventListener('pointerleave', this.leave);
     canvas.addEventListener('click', this.click);
+    canvas.addEventListener('pointerdown', this.down);
     this.resize();
     this.frame = requestAnimationFrame(this.loop);
   }
@@ -1102,10 +1109,10 @@ export class RoomWorld {
     const hemi = new THREE.HemisphereLight(0x8899aa, 0x1a1410, 0.25);
     this.scene.add(hemi);
     const key = new THREE.PointLight(0xffd8a8, 9, 6.5, 2); key.position.set(0.35, 1.78, 0.0);
-    key.castShadow = true; key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0015; key.shadow.normalBias = 0.02; key.shadow.radius = 5;
+    key.castShadow = true; key.shadow.mapSize.setScalar(touch ? 1024 : 2048); key.shadow.bias = -0.0015; key.shadow.normalBias = 0.02; key.shadow.radius = 5;
     this.scene.add(key);
     const desk = new THREE.SpotLight(0xffc98a, 11, 2.2, 0.95, 0.7, 2); desk.position.set(-0.6, 1.34, -2.18);
-    desk.target.position.set(-0.6, 0.76, -1.85); desk.castShadow = true; desk.shadow.mapSize.set(1024, 1024); desk.shadow.bias = -0.001;
+    desk.target.position.set(-0.6, 0.76, -1.85); desk.castShadow = !touch; desk.shadow.mapSize.set(1024, 1024); desk.shadow.bias = -0.001;
     this.scene.add(desk, desk.target);
     const wallWash = new THREE.SpotLight(0xffe2c0, 2.2, 3, 0.6, 0.8, 2); wallWash.position.set(-0.6, 2.7, -1.6);
     wallWash.target.position.set(-0.6, 1.8, -2.5); this.scene.add(wallWash, wallWash.target);
@@ -1311,12 +1318,27 @@ export class RoomWorld {
       from: this.camera.position.clone(), to: this.fitPos(v),
       fromT: this.controls.target.clone(), toT: new THREE.Vector3(...v.target), t: this.reduced ? 1 : 0
     };
-    this.controls.enabled = view === 'overview';
+    // Gambaran keseluruhan: orbit penuh. Paparan lain (kecuali telefon): seret untuk melihat sedikit ke sisi, tanpa zum.
+    this.controls.enabled = view !== 'phone';
+    this.controls.enableZoom = view === 'overview';
+    this.limitLook();
     if (view === 'profile') this.typed = 0;
     if (view === 'phone') this.aimPhone();
     if (view !== 'work') this.badges.forEach(b => (b.target = 0));
     if (view !== 'learning' && this.reader) { this.reader.target = 0; this.reader.pending = -1; }
     this.opts.onView(view);
+  }
+  /** Had putaran kamera bagi paparan semasa: penuh untuk gambaran keseluruhan, ±0.35 rad mendatar dan ±0.12 rad menegak untuk paparan lain. */
+  private limitLook() {
+    const c = this.controls, o = this.orbit;
+    if (this.view === 'overview') {
+      Object.assign(c, { minAzimuthAngle: o.minAz, maxAzimuthAngle: o.maxAz, minPolarAngle: o.minPolar, maxPolarAngle: o.maxPolar, minDistance: o.minDist, maxDistance: o.maxDist });
+      return;
+    }
+    const v = VIEWS[this.view], to = this.fitPos(v), at = new THREE.Vector3(...v.target);
+    const d = to.clone().sub(at), dist = d.length();
+    const az = Math.atan2(d.x, d.z), polar = Math.acos(THREE.MathUtils.clamp(d.y / dist, -1, 1));
+    Object.assign(c, { minAzimuthAngle: az - 0.35, maxAzimuthAngle: az + 0.35, minPolarAngle: polar - 0.12, maxPolarAngle: polar + 0.12, minDistance: dist, maxDistance: dist });
   }
   /** Kedudukan kamera untuk paparan, diundur pada skrin sempit supaya objek muat; kekal dalam bilik. */
   private fitPos(v: (typeof VIEWS)[RoomView]) {
@@ -1383,7 +1405,9 @@ export class RoomWorld {
     this.opts.onHover(label ? { text: label, x: e.clientX - r.left, y: e.clientY - r.top } : null);
   };
   private leave = () => this.opts.onHover(null);
+  private down = (e: PointerEvent) => { this.downAt = { x: e.clientX, y: e.clientY }; };
   private click = (e: MouseEvent) => {
+    if (this.downAt && Math.hypot(e.clientX - this.downAt.x, e.clientY - this.downAt.y) > 8) return;
     if ((e as PointerEvent).pointerType && (e as PointerEvent).pointerType !== 'mouse') this.move(e as PointerEvent);
     const hit = this.pick(e);
     if (!hit) return;
@@ -1421,12 +1445,12 @@ export class RoomWorld {
     if (!w || !h) return;
     this.renderer.setSize(w, h, false);
     this.composer.setSize(w, h);
-    this.bloom.resolution.set(w, h);
+    this.bloom.resolution.set(this.touch ? w / 2 : w, this.touch ? h / 2 : h);
     this.camera.aspect = w / h;
     this.camera.fov = w / h < 1 ? 70 : 42;
     this.camera.updateProjectionMatrix();
     if (this.view === 'phone') this.aimPhone();
-    if (this.view !== 'overview' && !this.tween) this.camera.position.copy(this.fitPos(VIEWS[this.view]));
+    if (this.view !== 'overview' && !this.tween) { this.camera.position.copy(this.fitPos(VIEWS[this.view])); this.limitLook(); }
   };
 
   /**
@@ -1435,7 +1459,7 @@ export class RoomWorld {
    */
   private govern(raw: number) {
     const p = this.perf;
-    if (p.level >= 2 || document.hidden || !this.built) return;
+    if (p.level >= 3 || document.hidden || !this.built) return;
     if (p.wait > 0) { p.wait -= Math.min(raw, 0.1); return; }
     if (raw > 0.25) return;
     p.n++; p.sum += raw;
@@ -1445,9 +1469,13 @@ export class RoomWorld {
     if (avg < (p.level === 0 && this.ao?.enabled ? 1 / 40 : 1 / 30)) return;
     p.wait = 1.5;
     if (p.level === 0 && this.ao?.enabled) { p.level = 1; this.ao.enabled = false; return; }
-    p.level = 2;
-    const r = Math.max(0.75, Math.min(devicePixelRatio, 2) * 0.6);
-    this.renderer.setPixelRatio(r); this.composer.setPixelRatio(r); this.resize();
+    if (p.level < 2) {
+      p.level = 2;
+      const r = this.touch ? 1 : Math.max(0.75, Math.min(devicePixelRatio, 2) * 0.6);
+      this.renderer.setPixelRatio(r); this.composer.setPixelRatio(r); this.resize();
+      return;
+    }
+    p.level = 3; this.bloom.enabled = false;
   }
 
   private loop = () => {
@@ -1465,7 +1493,7 @@ export class RoomWorld {
       this.controls.target.lerpVectors(this.tween.fromT, this.tween.toT, e);
       this.camera.lookAt(this.controls.target);
       if (this.tween.t >= 1) this.tween = null;
-    } else if (this.view === 'overview') this.controls.update();
+    } else if (this.controls.enabled) this.controls.update();
     else this.camera.lookAt(this.controls.target);
 
     if (!this.reduced) for (const l of this.leds) l.mat.emissiveIntensity = Math.sin(t * l.speed + l.phase) > 0.2 ? 2.4 : 0.25;
@@ -1549,6 +1577,7 @@ export class RoomWorld {
     this.canvas.removeEventListener('pointermove', this.move);
     this.canvas.removeEventListener('pointerleave', this.leave);
     this.canvas.removeEventListener('click', this.click);
+    this.canvas.removeEventListener('pointerdown', this.down);
     this.controls.dispose(); this.renderer.dispose();
   }
 }
