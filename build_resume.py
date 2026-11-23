@@ -243,19 +243,19 @@ def build_html_resume():
     </div>
     <div class="header-info">
       <div class="name">Muhammed Munir Bin Mohd Azmi</div>
-      <div class="headline">Full-Stack Systems Engineer &amp; IT Professional &bull; Network Security (UTM)</div>
+      <div class="headline">Full-Stack Developer &bull; Network Security (UTM)</div>
       <div class="contact-bar">
-        <span class="contact-item">📍 Puchong, Selangor</span>
+        <span class="contact-item">Puchong, Selangor</span>
         <span class="separator">&bull;</span>
-        <span class="contact-item">📞 +60 13-563 6124</span>
+        <span class="contact-item">+60 13-563 6124</span>
         <span class="separator">&bull;</span>
-        <span class="contact-item">✉️ <a href="mailto:muhammed.munir97.mm@gmail.com">muhammed.munir97.mm@gmail.com</a></span>
+        <span class="contact-item"><a href="mailto:muhammed.munir97.mm@gmail.com">muhammed.munir97.mm@gmail.com</a></span>
         <span class="separator">&bull;</span>
-        <span class="contact-item">🌐 <a href="https://muhammedmunir.github.io/">muhammedmunir.github.io</a></span>
+        <span class="contact-item"><a href="https://muhammedmunir.github.io/">muhammedmunir.github.io</a></span>
         <span class="separator">&bull;</span>
-        <span class="contact-item">🔗 <a href="https://www.linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271">LinkedIn</a></span>
+        <span class="contact-item"><a href="https://www.linkedin.com/in/muhammed-munir-bin-mohd-azmi-9b233b271">LinkedIn</a></span>
         <span class="separator">&bull;</span>
-        <span class="contact-item">💻 <a href="https://github.com/muhammedmunir">GitHub</a></span>
+        <span class="contact-item"><a href="https://github.com/muhammedmunir">GitHub</a></span>
       </div>
     </div>
   </div>
@@ -264,7 +264,7 @@ def build_html_resume():
   <div class="section">
     <div class="section-title">Professional Summary</div>
     <div class="summary-text">
-      Versatile, security-conscious <strong>Full-Stack Systems Engineer</strong> with proven experience developing and maintaining high-reliability enterprise platforms, public sector asset management systems, and AI-driven automation applications. Highly skilled in <strong>Vue.js 3, Laravel 11/12 (Filament), SvelteKit, Flutter, Docker Swarm</strong>, and <strong>Python Computer Vision</strong>, backed by an academic background in <strong>Computer Science (Network Security) from UTM</strong>, industry Cisco networking certifications, and hands-on Security Operations Center (SOC) threat defense experience at Tenaga Nasional Berhad (TNB).
+      Versatile, security-conscious <strong>Full-Stack Developer</strong> with proven experience developing and maintaining high-reliability enterprise platforms, public sector asset management systems, and AI-driven automation applications. Highly skilled in <strong>Vue.js 3, Laravel 11/12 (Filament), SvelteKit, Flutter, Docker Swarm</strong>, and <strong>Python Computer Vision</strong>, backed by an academic background in <strong>Computer Science (Network Security) from UTM</strong>, industry Cisco networking certifications, and hands-on Security Operations Center (SOC) threat defense experience at Tenaga Nasional Berhad (TNB).
     </div>
   </div>
 
@@ -276,14 +276,14 @@ def build_html_resume():
     <div class="entry">
       <div class="entry-header">
         <div>
-          <span class="entry-title">Programmer / Full-Stack Enterprise Developer</span>
+          <span class="entry-title">Full-Stack Developer</span>
           &mdash; <span class="entry-company">YHCM Sdn Bhd</span>
         </div>
         <div class="entry-dates">Apr 2026 &ndash; Present</div>
       </div>
       <div class="entry-location">Shah Alam, Selangor</div>
       <ul class="bullets">
-        <li>Maintain and upgrade mission-critical enterprise web systems for the public/government sector (including <strong>eMesys</strong>, <strong>Sutera</strong>, and <strong>ADIMS</strong>), complying with stringent data security, role-based access control (RBAC), and audit standards.</li>
+        <li>Maintain and upgrade mission-critical enterprise web systems for the public/government sector (including <strong>EMESYS</strong>, <strong>SUTERA</strong> and <strong>ADiMS</strong>), complying with stringent data security, role-based access control (RBAC), and audit standards.</li>
         <li>Architect and build modular frontend interfaces using <strong>Vue.js 3</strong> and streamline administration workflows with <strong>Laravel Filament</strong>.</li>
         <li>Manage and optimize relational databases across <strong>MySQL, MariaDB</strong>, and <strong>PostgreSQL 17</strong> with indexing and schema enhancements.</li>
         <li>Deploy, monitor, and scale containerized services and image workflows using <strong>Docker</strong> and <strong>Docker Swarm</strong> across production nodes.</li>
@@ -321,7 +321,7 @@ def build_html_resume():
       </div>
       <div class="entry-location">UOA Business Park, Shah Alam</div>
       <ul class="bullets">
-        <li>Spearheaded full-stack development of <strong>Onboardx</strong>, an enterprise cross-platform onboarding application utilizing <strong>Flutter (Dart)</strong> and JavaScript.</li>
+        <li>Spearheaded full-stack development of <strong>ONBOARDX</strong>, an enterprise cross-platform onboarding application utilizing <strong>Flutter (Dart)</strong> and JavaScript.</li>
         <li>Engineered multi-database architecture supporting <strong>Firebase Realtime DB, MongoDB, Supabase</strong>, and <strong>MySQL</strong>.</li>
         <li>Configured and maintained Ubuntu cloud servers on <strong>Microsoft Azure</strong>, managing Network Security Groups (NSGs) and system resource monitoring.</li>
         <li>Automated build and delivery pipelines with <strong>Jenkins CI/CD</strong> and gained practical experience in container orchestration with <strong>Kubernetes</strong>.</li>
@@ -375,7 +375,7 @@ def build_html_resume():
           <span class="project-title">TINDAK &mdash; AI-Powered Mobile Action Engine</span>
           <span class="project-tech">| Flutter, Dart, Supabase RLS, Gemini AI</span>
         </div>
-        <div class="project-link"><a href="https://muhammedmunir.github.io/#projects">Live Demo &bull; Portfolio</a></div>
+        <div class="project-link"><a href="https://muhammedmunir.github.io/cv/#projek">Portfolio</a></div>
       </div>
       <ul class="bullets">
         <li>Engineered an Android rapid-action utility capturing mobile Share Intents to parse URLs, contact numbers, and payment details locally.</li>
@@ -386,10 +386,10 @@ def build_html_resume():
     <div class="project-entry">
       <div class="project-header">
         <div>
-          <span class="project-title">9Router Office &mdash; Autonomous AI Agent 3D Workspace</span>
+          <span class="project-title">9Router AI Office &mdash; Autonomous AI Agent 3D Workspace</span>
           <span class="project-tech">| Node.js 22+, Three.js, Model Context Protocol (MCP)</span>
         </div>
-        <div class="project-link"><a href="https://muhammedmunir.github.io/#projects">Live Demo &bull; Portfolio</a></div>
+        <div class="project-link"><a href="https://muhammedmunir.github.io/cv/#project-9router">Portfolio</a></div>
       </div>
       <ul class="bullets">
         <li>Created an interactive 3D virtual workspace in Three.js where autonomous AI agents communicate in real time via Model Context Protocol (MCP).</li>
@@ -403,7 +403,7 @@ def build_html_resume():
           <span class="project-title">Computer Vision &amp; Win32 Desktop Automation Suite</span>
           <span class="project-tech">| Python, OpenCV, CustomTkinter, Win32 API</span>
         </div>
-        <div class="project-link"><a href="https://muhammedmunir.github.io/#projects">Case Study &bull; Portfolio</a></div>
+        <div class="project-link">Details on request</div>
       </div>
       <ul class="bullets">
         <li>Built an advanced desktop automation suite utilizing multi-scale SIFT pyramid matching, CIELAB segmentation, and closed-loop visual servoing.</li>
@@ -414,10 +414,10 @@ def build_html_resume():
     <div class="project-entry">
       <div class="project-header">
         <div>
-          <span class="project-title">Baby Kicking Suite &mdash; Mobile Maternal Health Tracker</span>
+          <span class="project-title">Baby Kick Tracker &mdash; Mobile Maternal Health Tracker</span>
           <span class="project-tech">| Flutter, Dart, Firebase Firestore &amp; Functions</span>
         </div>
-        <div class="project-link"><a href="https://muhammedmunir.github.io/#projects">Mobile App &bull; Portfolio</a></div>
+        <div class="project-link"><a href="https://muhammedmunir.github.io/cv/#project-babykick">Portfolio</a></div>
       </div>
       <ul class="bullets">
         <li>Developed a cross-platform Flutter maternal wellness app enabling expectant mothers to record and track fetal movement patterns.</li>
@@ -431,7 +431,7 @@ def build_html_resume():
           <span class="project-title">Lumina Glass Studio &amp; Smart Mirror Visualizer</span>
           <span class="project-tech">| SvelteKit, Tailwind CSS, Laravel 11 RESTful API</span>
         </div>
-        <div class="project-link"><a href="https://muhammedmunir.github.io/#projects">Web App &bull; Portfolio</a></div>
+        <div class="project-link"><a href="https://muhammedmunir.github.io/cv/#projek">Portfolio</a></div>
       </div>
       <ul class="bullets">
         <li>Constructed an interactive LED smart mirror configurator featuring real-time Kelvin temperature (3000K–6500K) controls and texture shaders.</li>
