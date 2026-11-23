@@ -462,8 +462,14 @@ export class RoomWorld {
       m.traverse(o => { const mm = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (mm?.emissive) { mm.emissiveIntensity = 0; } });
     }
     const tower = await this.sketch('pc', { height: 0.46 });
-    tower.position.set(0.0, 0, -2.1); tower.rotation.y = this.turn.pc;
+    // Di bawah meja, renggang daripada kaki kanan (x = 0.18).
+    tower.position.set(-0.12, 0, -2.12); tower.rotation.y = this.turn.pc;
     pc.add(tower);
+    // Menara gelap dalam bayang meja: jalur LED di tepi hadapan dan permukaan yang memantulkan cahaya bilik.
+    tower.traverse(o => { const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined; if (m && 'envMapIntensity' in m) m.envMapIntensity = 2.2; });
+    const ledMat = this.glow(0xe5b580, 2.2); // LED kuasa: sentiasa menyala, siang atau malam
+    const inner = this.add(new THREE.PlaneGeometry(0.01, 0.36), ledMat, [0.005, 0.25, -1.865], pc, false);
+    this.towerParts = [tower, inner];
     // Timbunan buku di sudut belakang kiri meja, di luar bingkai paparan komputer.
     const pile = await this.sketch('books', { width: 0.2 });
     pile.position.set(-1.37, deskTop, -2.36); pile.rotation.y = this.turn.books;
@@ -472,6 +478,8 @@ export class RoomWorld {
     keys.position.set(-0.6, deskTop + 0.004, -1.86);
     pc.add(keys);
     this.tag(pc, 'computer', 0, this.L.computer);
+    // Menara PC hanya hiasan: klik padanya tidak membawa ke skrin projek (mengelirukan pelawat).
+    for (const part of this.towerParts) part.traverse(o => { const i = this.hits.indexOf(o); if (i >= 0) this.hits.splice(i, 1); o.userData = {}; });
     // tag(pc) menimpa data skrin; pulihkan peranan setiap skrin.
     this.monitors.forEach(({ scr }, i) => (scr.userData = i === 0 ? { kind: 'launcher', index: 0, label: this.L.launcher } : { kind: 'profile', index: 0, label: this.L.profile }));
   }
@@ -485,6 +493,7 @@ export class RoomWorld {
   private chairTurn = 0;
   /** Orientasi model (radian) dan anjakan projektor; ditentukan dengan menyemak gambar. */
   private projModel?: THREE.Object3D;
+  private towerParts: THREE.Object3D[] = [];
   private turn = { pc: 0, books: 0.5, projector: Math.PI, projectorDrop: 0.08, ency: 0 };
 
   private async buildServer() {

@@ -401,7 +401,7 @@
   .who h1 { margin: 0; font: 800 clamp(2rem, 3vw, 3.25rem)/.95 var(--font-heading); letter-spacing: -.045em; }
   .who p { margin: 10px 0 0; color: #a1a1aa; font-size: .9375rem; }
   .focus-bar { position: absolute; z-index: 4; left: var(--gutter); top: 76px; display: flex; align-items: center; gap: 16px; }
-  .focus-bar p { margin: 0; font-size: 1rem; text-shadow: 0 1px 12px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.8); }
+  .focus-bar p { display: inline-flex; align-items: center; min-height: 44px; margin: 0; padding: 0 16px; border-radius: 999px; background: rgba(12,13,16,.78); backdrop-filter: blur(8px); font-size: 1rem; }
   .back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,.2); background: rgba(12,13,16,.88); backdrop-filter: blur(8px); color: #f4f4f5; font: inherit; font-size: .9rem; cursor: pointer; }
   .back:hover { border-color: var(--work-accent); }
   .back.icon { justify-content: center; width: 44px; padding: 0; font-size: 1.4rem; line-height: 1; }
@@ -433,6 +433,7 @@
   :is(a, button):focus-visible { outline: 3px solid var(--work-accent); outline-offset: 3px; }
   @media (max-width: 999px) {
     .room { --gutter: 16px; }
+    header { background: linear-gradient(#0b0c0f 60%, rgba(11,12,15,0)); }
     .panel-open .stage { left: 0; bottom: 60svh; }
     .who { bottom: 72px; }
     .hint { bottom: 20px; max-width: calc(100% - 32px); white-space: normal; text-align: center; }
