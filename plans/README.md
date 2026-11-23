@@ -121,6 +121,7 @@ Untuk mengelakkannya:
 | 031 | Label paparan & header telefon sentiasa terbaca; CPU bawah meja tidak lagi cacat (LED, renggang dari kaki meja, bukan pautan projek) | P2 | S | 030 | DONE |
 | 032 | Mod telefon ringan (resolusi, antialias, bayang, bloom) dan seret untuk melihat sekeliling dalam setiap paparan | P1 | S | 031 | DONE |
 | 033 | CPU binaan sendiri (ganti model Sketchfab), pusingan lebih luas di telefon, bayang telefon berkala, header 360 px | P1 | S | 032 | DONE |
+| 034 | Telefon kembali tajam: resolusi 2×, bloom penuh, pengawal prestasi tidak turun di bawah 1.5× | P1 | S | 033 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 

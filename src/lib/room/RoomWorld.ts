@@ -159,7 +159,7 @@ export class RoomWorld {
 
   constructor(private canvas: HTMLCanvasElement, private opts: RoomOptions) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, this.touch ? 1.5 : 2));
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.shadowMap.enabled = true;
     // r186 membuang PCFSoftShadowMap; PCF dengan jejari memberi bayang lembut.
@@ -1486,7 +1486,7 @@ export class RoomWorld {
     if (!w || !h) return;
     this.renderer.setSize(w, h, false);
     this.composer.setSize(w, h);
-    this.bloom.resolution.set(this.touch ? w / 2 : w, this.touch ? h / 2 : h);
+    this.bloom.resolution.set(w, h);
     this.camera.aspect = w / h;
     this.camera.fov = w / h < 1 ? 70 : 42;
     this.camera.updateProjectionMatrix();
@@ -1513,7 +1513,7 @@ export class RoomWorld {
     if (p.level === 0 && this.ao?.enabled) { p.level = 1; this.ao.enabled = false; return; }
     if (p.level < 2) {
       p.level = 2;
-      const r = this.touch ? Math.min(devicePixelRatio, 1.25) : Math.max(0.75, Math.min(devicePixelRatio, 2) * 0.6);
+      const r = this.touch ? Math.min(devicePixelRatio, 1.5) : Math.max(0.75, Math.min(devicePixelRatio, 2) * 0.6);
       this.renderer.setPixelRatio(r); this.composer.setPixelRatio(r); this.resize();
       return;
     }
