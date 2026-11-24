@@ -461,7 +461,7 @@
     .back.icon { width: 32px; font-size: 1.15rem; }
     .focus-bar p { min-height: 32px; padding: 0 11px; font-size: .8125rem; }
     .count { min-width: 2.4em; font-size: .75rem; }
-    .who h1 { font-size: 1.65rem; }
+    .who h1 { font-size: min(1.65rem, 6.2vw); }
     .who p { margin-top: 6px; font-size: .8125rem; }
     .back .long { display: none; }
     .back .short { display: inline; }

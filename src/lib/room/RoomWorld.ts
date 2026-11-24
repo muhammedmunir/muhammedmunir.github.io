@@ -89,6 +89,12 @@ export class RoomWorld {
   private reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   /** Peranti sentuh (telefon/tablet): resolusi, antialias, bayang dan bloom lebih ringan sejak awal. */
   private touch = matchMedia('(hover: none)').matches;
+  /**
+   * Peranti sentuh dirender terus ke skrin, tanpa komposer. Antialias kanvas (MSAA) hampir percuma pada GPU telefon
+   * berjubin, manakala setiap laluan skrin penuh komposer (sasaran HalfFloat, bloom, vignet, FXAA) mahal dan
+   * melembutkan teks pada skrin, pas dan buku.
+   */
+  private direct = this.touch;
   /** Had putaran kamera gambaran keseluruhan; paparan lain mendapat had kecil di sekeliling sudut paparan. */
   private orbit = { az: 0, minAz: 0, maxAz: 0, minPolar: 0, maxPolar: 0, minDist: 0, maxDist: 0 };
   private downAt?: { x: number; y: number };
@@ -270,9 +276,20 @@ export class RoomWorld {
   private tag(obj: THREE.Object3D, kind: RoomKind, index = 0, label = '') {
     obj.traverse(o => { if ((o as THREE.Mesh).isMesh || (o as THREE.Sprite).isSprite) { o.userData = { kind, index, label }; this.hits.push(o); } });
   }
+  /**
+   * Berbayang, dan buang "transmission" (kaca fizikal). Satu bahan transmission (alas meja) memaksa three.js merender
+   * semua objek legap dua kali setiap bingkai: 546 lawan 277 panggilan lukis, ~3.7x masa CPU dan ~2x masa GPU.
+   */
+  private prep(o: THREE.Object3D) {
+    if (!(o as THREE.Mesh).isMesh) return;
+    o.castShadow = true; o.receiveShadow = true;
+    for (const m of [(o as THREE.Mesh).material].flat() as THREE.MeshPhysicalMaterial[]) {
+      if (m.transmission > 0) { m.transmission = 0; m.transparent = false; m.needsUpdate = true; }
+    }
+  }
   private async gltf(name: string) {
     const g = await new GLTFLoader(this.manager).setMeshoptDecoder(MeshoptDecoder).loadAsync(`${this.opts.base}/room/${name}/${name}.gltf`);
-    g.scene.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    g.scene.traverse(o => this.prep(o));
     return g.scene;
   }
   /** Model Sketchfab (CC BY): dimuat, berbayang, kemudian dinormalkan supaya tapak di y = 0 dan berpusat pada x/z. */
@@ -280,7 +297,7 @@ export class RoomWorld {
     const url = `${this.opts.base}/room/${dir}/${name}.glb`;
     const g = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync((await this.glb(url)).slice(0), url.slice(0, url.lastIndexOf('/') + 1));
     const obj = g.scene;
-    obj.traverse(o => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    obj.traverse(o => this.prep(o));
     obj.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(obj), dim = box.getSize(new THREE.Vector3());
     // Muat dalam had yang diberi (tinggi dan/atau lebar), ikut had yang paling ketat.
@@ -407,7 +424,7 @@ export class RoomWorld {
     // secara segerak semasa render dan menyekat halaman berbelas saat pada GPU terbina dalam.
     // Sasaran render composer ditetapkan dahulu: program bagi render ke tekstur berbeza daripada render ke skrin.
     this.opts.onProgress?.(0.92);
-    this.renderer.setRenderTarget(this.composer.readBuffer);
+    this.renderer.setRenderTarget(this.direct ? null : this.composer.readBuffer);
     await this.renderer.compileAsync(this.scene, this.camera).catch(() => undefined);
     this.opts.onProgress?.(1);
     this.renderer.setRenderTarget(null);
@@ -1503,12 +1520,15 @@ export class RoomWorld {
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
     if (!w || !h) return;
     const ratio = this.budgetRatio(w, h);
-    if (Math.abs(ratio - this.renderer.getPixelRatio()) > 0.01) { this.renderer.setPixelRatio(ratio); this.composer.setPixelRatio(ratio); }
+    if (Math.abs(ratio - this.renderer.getPixelRatio()) > 0.01) this.renderer.setPixelRatio(ratio);
     this.renderer.setSize(w, h, false);
-    this.composer.setSize(w, h);
-    const pr = this.renderer.getPixelRatio();
-    this.fxaa.material.uniforms.resolution.value.set(1 / (w * pr), 1 / (h * pr));
-    this.bloom.resolution.set(w, h);
+    // Render terus: sasaran komposer tidak diperuntukkan langsung (jimat memori GPU telefon).
+    if (!this.direct) {
+      this.composer.setPixelRatio(ratio);
+      this.composer.setSize(w, h);
+      this.fxaa.material.uniforms.resolution.value.set(1 / (w * ratio), 1 / (h * ratio));
+      this.bloom.resolution.set(w, h);
+    }
     this.camera.aspect = w / h;
     this.camera.fov = w / h < 1 ? 70 : 42;
     this.camera.updateProjectionMatrix();
@@ -1531,6 +1551,11 @@ export class RoomWorld {
     p.n++; p.sum += raw;
     if (p.n < 90) return;
     const avg = p.sum / p.n; p.n = 0; p.sum = 0;
+    // Render terus (telefon): tiada naik taraf. Jika sangat perlahan, resolusi 0.85x sekali sahaja; MSAA kanvas kekal, jadi masih tajam.
+    if (this.direct) {
+      if (avg > 1 / 35 && p.down === 0) { p.down = 1; p.locked = true; this.quality = 0.85; this.resize(); }
+      return;
+    }
     const fast = avg < 1 / 55, slow = avg > (this.touch ? 1 / 45 : 1 / 40), verySlow = avg > (this.touch ? 1 / 45 : 1 / 30);
     if (slow && p.up > 0) {
       if (p.up === 2 && this.ao) this.ao.enabled = false; else this.setMsaa(false);
@@ -1647,7 +1672,8 @@ export class RoomWorld {
     }
     this.lightDay(dt);
 
-    if (this.built) this.composer.render();
+    if (!this.built) return;
+    if (this.direct) this.renderer.render(this.scene, this.camera); else this.composer.render();
   };
 
   dispose() {
