@@ -369,7 +369,7 @@
 <ContactModal open={contact} {locale} onclose={() => (contact = false)} />
 
 <style>
-  .room { --gutter: 32px; --side: min(440px, 36vw); position: fixed; inset: 0; overflow: hidden; background: #0b0c0f; color: #f4f4f5; }
+  .room { --gutter: 32px; --side: min(440px, 36vw); position: fixed; inset: 0; overflow: hidden; background: #0b0c0f; color: #f4f4f5; -webkit-tap-highlight-color: transparent; }
   header { position: absolute; z-index: 6; inset: 0 0 auto 0; display: flex; justify-content: space-between; align-items: center; padding: 14px var(--gutter); background: linear-gradient(#0b0c0f 20%, transparent); pointer-events: none; }
   header > * { pointer-events: auto; }
   .identity { font-family: var(--font-heading); font-size: 30px; font-weight: 800; letter-spacing: -.07em; text-decoration: none; color: inherit; }
@@ -385,7 +385,7 @@
   .keys > *:focus { position: static; display: inline-flex; padding: 10px 14px; background: #f4f4f5; color: #0b0c0f; border-radius: 6px; font: 600 .9rem/1 inherit; border: 0; }
   .stage { position: absolute; inset: 0; transition: left .45s cubic-bezier(.2,.7,.2,1); }
   .panel-open .stage { left: var(--side); }
-  canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; opacity: 0; transition: opacity .8s ease; }
+  canvas { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; opacity: 0; transition: opacity .8s ease; }
   canvas.shown { opacity: 1; }
   header nav .pill.pending svg { visibility: hidden; }
   .tip { position: absolute; transform: translate(-50%, 18px); max-width: 240px; text-align: center; padding: 7px 12px; border-radius: 6px; background: rgba(12,13,16,.86); border: 1px solid rgba(255,255,255,.14); color: #f4f4f5; font-size: .8125rem; font-weight: 600; white-space: normal; pointer-events: none; }

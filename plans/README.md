@@ -125,6 +125,7 @@ Untuk mengelakkannya:
 | 035 | Telefon: kawalan lebih padat (bar atas 2 baris, butang 36–38 px) dan lebih ringan (tanpa MSAA, pengawal di bawah 45 fps) | P1 | S | 034 | DONE |
 | 036 | Bilik 2.7–5× lebih ringan di semua peranti (bayang bila perlu, FXAA, bajet piksel, AO/MSAA hanya jika GPU laju); UI telefon lebih kecil; tooltip tidak terpotong | P1 | M | 035 | DONE |
 | 037 | Punca lag sebenar dibuang: alas meja berbahan "transmission" merender seluruh bilik dua kali setiap bingkai (546 → 277 panggilan lukis, CPU 3.7× lebih ringan); telefon dirender terus tanpa komposer (tajam, tiada FXAA/resolusi kabur); nama tidak terpotong | P1 | S | 036 | DONE |
+| 038 | Telefon: tiada lagi kilatan biru setiap kali skrin diketik (tap highlight Chrome Android); tekan lama pada bilik tidak memilih teks | P1 | XS | 037 | DONE |
 
 Nilai status: TODO | IN PROGRESS | DONE | BLOCKED (dengan sebab satu baris) | REJECTED (dengan rasional satu baris)
 
